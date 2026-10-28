@@ -60,19 +60,16 @@ struct RatesView: View {
             }
 
             Section {
-                Toggle("Обновлять курсы", isOn: $store.autoUpdateRates)
-                if store.autoUpdateRates {
-                    Button {
-                        Task { await store.refreshRates(force: true) }
-                    } label: {
-                        HStack {
-                            Text("Обновить сейчас")
-                            Spacer()
-                            if store.isRefreshingRates { ProgressView() }
-                        }
+                Button {
+                    Task { await store.refreshRates(force: true) }
+                } label: {
+                    HStack {
+                        Text("Обновить сейчас")
+                        Spacer()
+                        if store.isRefreshingRates { ProgressView() }
                     }
-                    .disabled(store.isRefreshingRates)
                 }
+                .disabled(store.isRefreshingRates)
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     if let updated = rates.updatedAt {
@@ -81,7 +78,7 @@ struct RatesView: View {
                     if let error = store.ratesError {
                         Text(error)
                     }
-                    Text("Приложение только скачивает общие курсы валют. Ваши траты и суммы при этом никуда не отправляются. Можно выключить и вводить курсы вручную.")
+                    Text("Курсы обновляются сами каждый день. Каждая трата получает курс своего дня — и записанная задним числом тоже. Если курсы дня ещё не загрузились, трата пересчитается сама. Приложение только скачивает общие курсы, траты никуда не отправляются.")
                 }
             }
         }
@@ -123,7 +120,7 @@ struct RateEditView: View {
                             .foregroundStyle(.secondary)
                     }
                 } footer: {
-                    Text("Свой курс будет использоваться для новых трат.")
+                    Text("Свой курс получат новые траты за сегодня, пока вы его не уберёте. Траты за прошедшие дни получают общий курс своего дня.")
                 }
                 if rates.manual[currency] != nil {
                     Section {

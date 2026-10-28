@@ -11,6 +11,8 @@ struct ExpenseFormView: View {
     @State private var currency: Currency = .lira
     @State private var rateText = ""
     @State private var isEditingRate = false
+    /// Курс введён вручную для этой траты — тогда он главнее курса дня.
+    @State private var rateTouched = false
     @State private var note = ""
     @State private var categoryID: UUID?
     @State private var date = Date.now
@@ -39,9 +41,20 @@ struct ExpenseFormView: View {
         self.presetDate = presetDate
     }
 
-    /// Курсы, от которых считаем: у старой траты — её снимок, у новой — текущие.
-    private var baseRates: [Currency: Decimal] {
-        original?.rates ?? store.vault.rates.effective
+    /// Курсы дня траты: у старой траты, если день не меняли, — её снимок; иначе — курсы выбранного дня.
+    /// exact = false: курсы этого дня ещё не загружены, трата уточнится сама.
+    private var dayRates: (rates: [Currency: Decimal], exact: Bool) {
+        if let original, Calendar.current.isDate(original.date, inSameDayAs: date) {
+            return (original.rates, !original.ratesPending)
+        }
+        return store.ratesForDay(date, currency: currency)
+    }
+
+    /// Курс валюты траты, который сейчас действует: введённый вручную или курс дня.
+    private var currentRate: Decimal {
+        if rateTouched, let typed = Decimal.parse(rateText), typed > 0 { return typed }
+        // Как в Expense.rate: если в снимке старой траты нет этой валюты — запасной курс.
+        return dayRates.rates[currency] ?? Currency.fallbackPerUSD[currency] ?? 1
     }
 
     private var amount: Decimal? {
@@ -51,11 +64,16 @@ struct ExpenseFormView: View {
 
     private var draft: Expense? {
         guard let amount, let categoryID else { return nil }
-        var rates = baseRates
-        if currency != .base, let rate = Decimal.parse(rateText), rate > 0 { rates[currency] = rate }
+        let day = dayRates
+        var rates = day.rates
+        var pending = !day.exact
+        if rateTouched, currency != .base, let rate = Decimal.parse(rateText), rate > 0 {
+            rates[currency] = rate
+            pending = false
+        }
         return Expense(id: original?.id ?? UUID(), date: date, amount: amount, currency: currency,
                        categoryID: categoryID, note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-                       rates: rates)
+                       rates: rates, recurringID: original?.recurringID, ratesPending: pending)
     }
 
     private var matches: [Suggestion] {
@@ -139,8 +157,10 @@ struct ExpenseFormView: View {
             .sensoryFeedback(.selection, trigger: categoryID)
             .sensoryFeedback(.selection, trigger: currency)
             .onAppear(perform: setUp)
-            .onChange(of: currency) { _, newValue in
-                rateText = (baseRates[newValue] ?? 1).inputString
+            .onChange(of: currency) {
+                // Введённый вручную курс относился к прежней валюте.
+                rateTouched = false
+                isEditingRate = false
             }
             .onChange(of: note) { _, newValue in
                 // Знакомое место — сразу ставим его категорию, если её не выбирали вручную.
@@ -182,7 +202,8 @@ struct ExpenseFormView: View {
                 HStack {
                     Text("Курс: 1 USD =")
                         .foregroundStyle(.secondary)
-                    TextField("Курс", text: $rateText)
+                    TextField("Курс", text: Binding(get: { rateText },
+                                                   set: { rateText = $0; rateTouched = true }))
                         .keyboardType(.decimalPad)
                         .monospacedDigit()
                         .multilineTextAlignment(.trailing)
@@ -273,11 +294,14 @@ struct ExpenseFormView: View {
     @ViewBuilder
     private var rateLink: some View {
         if currency != .base && !isEditingRate {
+            let approximate = !dayRates.exact && !rateTouched
             Button {
+                rateText = currentRate.inputString
                 withAnimation(.snappy) { isEditingRate = true }
                 focus = .rate
             } label: {
-                Text("1 USD = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol) · ")
+                // «≈» и «уточнится»: курсы этого дня ещё не загружены, трата пересчитается сама.
+                Text("1 USD \(approximate ? "≈" : "=") \(Fmt.rate(currentRate)) \(currency.symbol)\(approximate ? ", уточнится" : "") · ")
                     .foregroundStyle(.secondary)
                 + Text("изменить")
                     .foregroundStyle(palette.accent)
@@ -431,7 +455,6 @@ struct ExpenseFormView: View {
         if let original {
             amountText = original.amount.inputString
             currency = original.currency
-            rateText = original.rate(original.currency).inputString
             note = original.note
             categoryID = original.categoryID
             date = original.date
@@ -441,7 +464,6 @@ struct ExpenseFormView: View {
             fill(from: template)
         } else {
             currency = store.vault.inputCurrency
-            rateText = store.vault.rates.rate(currency).inputString
             if let presetDate {
                 // День из календаря, время — текущее.
                 let time = Calendar.current.dateComponents([.hour, .minute], from: .now)
@@ -457,7 +479,6 @@ struct ExpenseFormView: View {
         withAnimation(.snappy) {
             amountText = expense.amount.inputString
             currency = expense.currency
-            rateText = store.vault.rates.rate(expense.currency).inputString
             note = expense.note
             categoryID = expense.categoryID
             date = .now

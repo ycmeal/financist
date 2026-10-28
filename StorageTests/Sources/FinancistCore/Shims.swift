@@ -159,8 +159,35 @@ enum AddRequest {
     static var pending = false
 }
 
+/// Controllable rates source: latest rates, rates by day, and an on/off switch for the network.
 enum RatesService {
-    static func fetch() async throws -> [Currency: Decimal] { [.lira: 41] }
+    struct DayRates {
+        let day: String
+        let rates: [Currency: Decimal]
+    }
+
+    nonisolated(unsafe) static var online = true
+    nonisolated(unsafe) static var latest: DayRates?
+    nonisolated(unsafe) static var byDay: [String: [Currency: Decimal]] = [:]
+    nonisolated(unsafe) static var requestedDays: [String] = []
+
+    static func reset() {
+        online = true
+        latest = nil
+        byDay = [:]
+        requestedDays = []
+    }
+
+    static func fetchLatest() async throws -> DayRates {
+        guard online, let latest else { throw URLError(.notConnectedToInternet) }
+        return latest
+    }
+
+    static func fetch(day: String) async throws -> DayRates {
+        requestedDays.append(day)
+        guard online, let rates = byDay[day] else { throw URLError(.resourceUnavailable) }
+        return DayRates(day: day, rates: rates)
+    }
 }
 
 extension URL {

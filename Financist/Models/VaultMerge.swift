@@ -45,6 +45,9 @@ extension Vault {
             trash.append(DeletedExpense(expense: mapped(deleted.expense), deletedAt: deleted.deletedAt))
             known.insert(deleted.id)
         }
+        for (day, dayRates) in incoming.rateHistory where rateHistory[day] == nil {
+            rateHistory[day] = dayRates
+        }
         let knownRecurring = Set(recurring.map(\.id))
         for payment in incoming.recurring where !knownRecurring.contains(payment.id) {
             var copy = payment

@@ -76,13 +76,14 @@ enum Currency: String, Codable, CaseIterable, Identifiable, Hashable, CodingKeyR
 
     var fractionDigits: Int { self == .uzs ? 0 : 2 }
 
-    /// Примерные курсы на случай, если интернета ещё не было ни разу.
+    /// Примерные курсы (октябрь 2026) на случай, если интернета ещё не было ни разу.
+    /// Траты с такими курсами помечаются и пересчитываются, как только загрузятся настоящие.
     static let fallbackPerUSD: [Currency: Decimal] = [
         .usd: 1,
-        .eur: Decimal(string: "0.86")!,
-        .lira: 42,
-        .rub: 80,
-        .uzs: 12_000,
+        .eur: Decimal(string: "0.899")!,
+        .lira: Decimal(string: "49.8")!,
+        .rub: Decimal(string: "80.5")!,
+        .uzs: 11_940,
         .aed: Decimal(string: "3.6725")!,
     ]
 

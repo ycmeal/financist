@@ -12,6 +12,8 @@ struct Expense: Identifiable, Codable, Hashable {
     var rates: [Currency: Decimal]
     /// Если трата записана из регулярного платежа — его id.
     var recurringID: UUID?
+    /// Курс пока примерный: курсы этого дня ещё не загружены. Как только загрузятся — пересчитается сам.
+    var ratesPending = false
 
     func rate(_ currency: Currency) -> Decimal {
         if currency == .base { return 1 }
@@ -37,6 +39,7 @@ extension Expense {
         note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
         rates = try c.decodeRates(forKey: .rates) ?? [:]
         recurringID = try c.decodeIfPresent(UUID.self, forKey: .recurringID)
+        ratesPending = try c.decodeIfPresent(Bool.self, forKey: .ratesPending) ?? false
     }
 }
 
@@ -50,6 +53,20 @@ extension RateTable {
 }
 
 extension KeyedDecodingContainer {
+    /// Архив курсов: неизвестные коды валют пропускаем.
+    func decodeRateHistory(forKey key: Key) throws -> [String: [Currency: Decimal]] {
+        guard let raw = try decodeIfPresent([String: [String: Decimal]].self, forKey: key) else { return [:] }
+        var result: [String: [Currency: Decimal]] = [:]
+        for (day, values) in raw {
+            var rates: [Currency: Decimal] = [:]
+            for (code, value) in values {
+                if let currency = Currency(code: code), value > 0 { rates[currency] = value }
+            }
+            result[day] = rates
+        }
+        return result
+    }
+
     /// Курсы по кодам валют. Неизвестные коды пропускаем: без курса трата посчитается по запасному.
     func decodeRates(forKey key: Key) throws -> [Currency: Decimal]? {
         guard let raw = try decodeIfPresent([String: Decimal].self, forKey: key) else { return nil }
@@ -113,7 +130,8 @@ struct RecurringPayment: Identifiable, Codable, Hashable {
 ///   старые коды переводить в новые (см. `Currency(code:)`).
 struct Vault: Codable {
     /// Версия формата, которую понимает эта сборка.
-    static let currentSchema = 1
+    /// 1 — первая; 2 — архив курсов по дням и отметка «курс примерный» у трат.
+    static let currentSchema = 2
 
     var schemaVersion = Vault.currentSchema
     var expenses: [Expense] = []
@@ -121,12 +139,15 @@ struct Vault: Codable {
     var trash: [DeletedExpense] = []
     var categories: [ExpenseCategory] = ExpenseCategory.defaults
     var rates = RateTable()
+    /// Курсы по дням («2026-10-28» → курсы к 1 USD). Хранятся последние 120 дней.
+    var rateHistory: [String: [Currency: Decimal]] = [:]
     /// Последняя выбранная при вводе валюта — подставляется в новую трату.
     var inputCurrency: Currency = .lira
     /// Недавние валюты ввода (первая — самая свежая), показываются кнопками.
     var recentCurrencies: [Currency] = [.lira, .usd]
     var displayCurrency: Currency = .usd
     var lockEnabled = false
+    /// Больше не используется: курсы обновляются всегда. Поле оставлено, чтобы читались старые файлы.
     var autoUpdateRates = true
     var recurring: [RecurringPayment] = []
     /// Пропущенные в этом месяце регулярные платежи: "<id>|<год>-<месяц>".
@@ -153,6 +174,8 @@ struct Vault: Codable {
         trash = try c.decodeIfPresent([DeletedExpense].self, forKey: .trash) ?? []
         categories = try c.decodeIfPresent([ExpenseCategory].self, forKey: .categories) ?? ExpenseCategory.defaults
         rates = try c.decodeIfPresent(RateTable.self, forKey: .rates) ?? RateTable()
+        // Курсы — не траты: если архив почему-то не читается, просто загрузим заново.
+        rateHistory = (try? c.decodeRateHistory(forKey: .rateHistory)) ?? [:]
         inputCurrency = (try? c.decodeIfPresent(Currency.self, forKey: .inputCurrency)) ?? .lira
         recentCurrencies = (try? c.decodeIfPresent([Currency].self, forKey: .recentCurrencies)) ?? [.lira, .usd]
         displayCurrency = (try? c.decodeIfPresent(Currency.self, forKey: .displayCurrency)) ?? .usd

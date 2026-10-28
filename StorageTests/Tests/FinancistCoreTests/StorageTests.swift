@@ -16,6 +16,7 @@ final class StorageTests: XCTestCase {
         KeyStore.createdKeys = 0
         UIApplication.shared.isProtectedDataAvailable = true
         Reminders.eveningSchedules = 0
+        RatesService.reset()
     }
 
     override func tearDown() {

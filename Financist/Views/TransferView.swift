@@ -6,6 +6,7 @@ struct TransferView: View {
     @Environment(AppStore.self) private var store
     @State private var askPassword = false
     @State private var password = ""
+    @State private var passwordRepeat = ""
     @State private var shareFile: ShareFile?
     @State private var showImporter = false
     @State private var message: String?
@@ -18,6 +19,7 @@ struct TransferView: View {
                 StepRow(number: 3, text: "Отправьте файл на новый iPhone через AirDrop или сохраните в «Файлы».")
                 Button {
                     password = ""
+                    passwordRepeat = ""
                     askPassword = true
                 } label: {
                     Label("Сохранить файл", systemImage: "square.and.arrow.up")
@@ -91,10 +93,11 @@ struct TransferView: View {
         .navigationBarTitleDisplayMode(.inline)
         .alert("Пароль для файла", isPresented: $askPassword) {
             SecureField("Пароль", text: $password)
+            SecureField("Ещё раз", text: $passwordRepeat)
             Button("Отмена", role: .cancel) {}
             Button("Сохранить") { makeBackup() }
         } message: {
-            Text("Не короче 4 символов. Запишите его — он понадобится на новом iPhone.")
+            Text("Не короче \(BackupCrypto.minimumPasswordLength) символов и хотя бы одна буква. Лучше фраза из нескольких слов, например «чай у моря в Анталье». Запишите её — она понадобится на новом iPhone.")
         }
         .fileImporter(isPresented: $showImporter, allowedContentTypes: [.financistBackup, .data]) { result in
             switch result {
@@ -123,13 +126,16 @@ struct TransferView: View {
     }
 
     private func makeBackup() {
-        guard password.count >= 4 else {
-            message = "Пароль слишком короткий — нужно хотя бы 4 символа."
+        if let problem = BackupCrypto.passwordProblem(password, repeated: passwordRepeat) {
+            message = problem
+            password = ""
+            passwordRepeat = ""
             return
         }
         do {
             let data = try store.backup(password: password)
             password = ""
+            passwordRepeat = ""
             ShareFile.cleanUp()
             shareFile = ShareFile.write(data, name: "Financist \(Self.today).fnbackup")
             if shareFile == nil { message = "Не удалось подготовить файл." }

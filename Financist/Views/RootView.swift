@@ -7,6 +7,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var didStart = false
     @State private var isAuthenticating = false
+    @State private var offerLock = false
 
     var body: some View {
         @Bindable var store = store
@@ -48,6 +49,12 @@ struct RootView: View {
             }
         }
         .onChange(of: store.isLocked) { updateCover() }
+        .alert("Защитить траты?", isPresented: $offerLock) {
+            Button("Включить") { enableLock() }
+            Button("Не сейчас", role: .cancel) {}
+        } message: {
+            Text("Тогда открыть Financist сможете только вы — по \(DeviceAuth.biometryName), даже если телефон разблокирован. Выключить можно в Настройках.")
+        }
         .alert("Данные открыты из копии", isPresented: $store.recoveredFromBackup) {
             Button("Понятно", role: .cancel) {}
         } message: {
@@ -102,6 +109,31 @@ struct RootView: View {
         ShareFile.cleanUp()
         BuildAge.recordLaunch()
         Task { await store.refreshRates(force: false) }
+        offerLockIfNeeded()
+    }
+
+    /// Один раз предлагаем вход по Face ID. Не мешаем, если приложение открыли сразу на ввод траты.
+    private func offerLockIfNeeded() {
+        let key = "lock.offered"
+        guard !store.lockEnabled, DeviceAuth.isAvailable, !UserDefaults.standard.bool(forKey: key) else { return }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            // Ссылка из виджета или файл переноса могут прийти чуть позже запуска. Если сейчас открыто
+            // что-то другое, спросим при следующем запуске.
+            guard !store.lockEnabled, !store.isAddingExpense, store.pendingRestore == nil,
+                  !store.recoveredFromBackup, store.recoveredExpenses == nil, store.saveProblem == nil
+            else { return }
+            UserDefaults.standard.set(true, forKey: key)
+            offerLock = true
+        }
+    }
+
+    private func enableLock() {
+        Task { @MainActor in
+            if await DeviceAuth.authenticate(reason: "Включить вход по \(DeviceAuth.biometryName)") {
+                store.lockEnabled = true
+            }
+        }
     }
 
     /// Экран блокировки и шторка живут в отдельном окне поверх всего,
@@ -268,7 +300,7 @@ enum DeviceAuth {
         case .faceID: return "Face ID"
         case .touchID: return "Touch ID"
         case .opticID: return "Optic ID"
-        default: return "код-пароль"
+        default: return "код-паролю"
         }
     }
 

@@ -271,11 +271,6 @@ final class AppStore {
         set { vault.lockEnabled = newValue; persist() }
     }
 
-    var autoUpdateRates: Bool {
-        get { vault.autoUpdateRates }
-        set { vault.autoUpdateRates = newValue; persist() }
-    }
-
     /// Валюты для быстрого выбора: последние использованные + валюта итогов.
     var quickCurrencies: [Currency] {
         var list = vault.recentCurrencies
@@ -434,9 +429,10 @@ final class AppStore {
     }
 
     func pay(_ payment: RecurringPayment) {
+        let day = ratesForDay(.now, currency: payment.currency)
         upsert(Expense(date: .now, amount: payment.amount, currency: payment.currency,
                        categoryID: payment.categoryID, note: payment.note,
-                       rates: vault.rates.effective, recurringID: payment.id))
+                       rates: day.rates, recurringID: payment.id, ratesPending: !day.exact))
     }
 
     func skip(_ payment: RecurringPayment) {
@@ -474,21 +470,86 @@ final class AppStore {
 
     // MARK: Курсы
 
+    /// Курсы для траты на этот день.
+    /// - Курсы этого дня уже загружены — они и берутся (exact = true).
+    /// - Ещё нет — берутся последние известные, а трата помечается «курс примерный»
+    ///   и пересчитается сама, когда курсы дня загрузятся.
+    /// - Свой курс из «Курсов валют» (курс обменника) действует для сегодняшних трат.
+    func ratesForDay(_ date: Date, currency: Currency) -> (rates: [Currency: Decimal], exact: Bool) {
+        var rates = vault.rateHistory[RateDay.key(date)] ?? [:]
+        var exact = !rates.isEmpty
+        for c in Currency.allCases where rates[c] == nil {
+            rates[c] = vault.rates.fetched[c] ?? Currency.fallbackPerUSD[c] ?? 1
+        }
+        if Calendar.current.isDateInToday(date) {
+            for (c, manual) in vault.rates.manual { rates[c] = manual }
+            if vault.rates.manual[currency] != nil { exact = true }
+        }
+        rates[.usd] = 1
+        return (rates, exact)
+    }
+
+    /// Курсы обновляются всегда: при каждом открытии, если сегодня ещё не обновлялись
+    /// (или прошло больше 6 часов). Потом пересчитываются траты с примерным курсом.
     func refreshRates(force: Bool) async {
-        guard loadState == .ready, vault.autoUpdateRates else { return }
-        if !force, let updated = vault.rates.updatedAt, Date.now.timeIntervalSince(updated) < 6 * 3600 { return }
-        guard !isRefreshingRates else { return }
+        guard loadState == .ready, !isRefreshingRates else { return }
         isRefreshingRates = true
         defer { isRefreshingRates = false }
-        do {
-            let fetched = try await RatesService.fetch()
-            vault.rates.fetched.merge(fetched) { _, new in new }
-            vault.rates.updatedAt = .now
-            ratesError = nil
-            persist()
-        } catch {
-            ratesError = "Нет интернета — курсы не обновились."
+
+        let stale = force || vault.rates.updatedAt.map {
+            RateDay.key($0) != RateDay.key(.now) || Date.now.timeIntervalSince($0) > 6 * 3600
+        } ?? true
+        if stale {
+            do {
+                let latest = try await RatesService.fetchLatest()
+                vault.rates.fetched.merge(latest.rates) { _, new in new }
+                vault.rates.updatedAt = .now
+                vault.rateHistory[latest.day] = latest.rates
+                pruneRateHistory()
+                ratesError = nil
+                persist()
+            } catch {
+                ratesError = "Нет интернета — курсы обновятся, как только он появится."
+            }
         }
+        await resolvePendingRates(force: force)
+    }
+
+    /// Чтобы не дёргать сеть при каждом возврате в приложение.
+    @ObservationIgnored private var lastPendingAttempt: Date?
+
+    /// Траты с примерным курсом получают точный курс своего дня.
+    private func resolvePendingRates(force: Bool) async {
+        guard vault.expenses.contains(where: \.ratesPending) else { return }
+        if !force, let last = lastPendingAttempt, Date.now.timeIntervalSince(last) < 30 * 60 { return }
+        lastPendingAttempt = .now
+
+        let today = RateDay.key(.now)
+        let missing = Set(vault.expenses.filter(\.ratesPending).map { RateDay.key($0.date) })
+            .filter { vault.rateHistory[$0] == nil && $0 <= today }
+        // Не больше 10 дней за раз, сначала самые свежие.
+        for day in missing.sorted(by: >).prefix(10) {
+            if let fetched = try? await RatesService.fetch(day: day) {
+                vault.rateHistory[fetched.day] = fetched.rates
+            }
+        }
+
+        // Все ожидания позади — дальше только текущее состояние, без await.
+        var changed = false
+        for index in vault.expenses.indices where vault.expenses[index].ratesPending {
+            guard var rates = vault.rateHistory[RateDay.key(vault.expenses[index].date)] else { continue }
+            rates[.usd] = 1
+            vault.expenses[index].rates = rates
+            vault.expenses[index].ratesPending = false
+            changed = true
+        }
+        if changed { persist() }
+    }
+
+    /// Архив курсов — за последние 120 дней (старые траты хранят свой курс сами).
+    private func pruneRateHistory() {
+        let cutoff = RateDay.key(Date.now.addingTimeInterval(-120 * 86_400))
+        vault.rateHistory = vault.rateHistory.filter { $0.key >= cutoff }
     }
 
     func setManualRate(_ rate: Decimal?, for currency: Currency) {

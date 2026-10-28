@@ -263,6 +263,22 @@ extension Error {
 enum BackupCrypto {
     private static let magic = Data("FNST1".utf8)
     private static let iterations: UInt32 = 310_000
+    static let minimumPasswordLength = 8
+
+    /// Короткий пароль из одних цифр подбирается за минуты, поэтому требуем длину и хотя бы одну букву.
+    /// Повтор нужен, чтобы опечатка не сделала файл бесполезным. nil — пароль подходит.
+    static func passwordProblem(_ password: String, repeated: String) -> String? {
+        if password.count < minimumPasswordLength {
+            return "Пароль слишком короткий — нужно хотя бы \(minimumPasswordLength) символов. Подойдёт фраза из нескольких слов."
+        }
+        if !password.contains(where: \.isLetter) {
+            return "В пароле нужна хотя бы одна буква — одни цифры легко подобрать."
+        }
+        if password != repeated {
+            return "Пароли не совпали. Попробуйте ещё раз."
+        }
+        return nil
+    }
 
     static func encrypt(_ vault: Vault, password: String) throws -> Data {
         var salt = Data(count: 16)

@@ -21,6 +21,13 @@ copy('Models/Formatting.swift')
 copy('Models/Suggestions.swift')
 copy('Models/ExpenseCategory.swift', no_ui)
 copy('Services/BuildAge.swift')
+copy('Services/RateDay.swift')
+
+def live_rates(s):
+    # The real network code, renamed so unit tests can't reach the network by accident.
+    s = s.replace('enum RatesService {', 'enum LiveRatesService {')
+    return '#if canImport(FoundationNetworking)\nimport FoundationNetworking\n#endif\n' + s
+copy('Services/RatesService.swift', live_rates)
 
 def store(s):
     s = s.replace('import CommonCrypto\n', '').replace('import Security\n', '')
