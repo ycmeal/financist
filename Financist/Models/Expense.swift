@@ -81,6 +81,15 @@ struct RateTable: Codable, Hashable {
     }
 }
 
+/// Удалённая трата. 30 дней лежит в «Недавно удалённых», её можно вернуть.
+struct DeletedExpense: Identifiable, Codable, Hashable {
+    var expense: Expense
+    var deletedAt: Date
+    var id: UUID { expense.id }
+
+    static let keepDays = 30
+}
+
 /// Регулярный платёж: аренда, связь, подписки. В нужный день появляется
 /// карточка «Пора оплатить» — одно касание, и трата записана.
 struct RecurringPayment: Identifiable, Codable, Hashable {
@@ -95,14 +104,21 @@ struct RecurringPayment: Identifiable, Codable, Hashable {
 
 /// Всё, что хранит приложение. Целиком шифруется и пишется в один файл.
 ///
-/// ПРАВИЛА ДЛЯ ОБНОВЛЕНИЙ (иначе у пользователя не откроются старые данные):
-/// - новые поля добавлять только с `decodeIfPresent` и значением по умолчанию;
+/// ПРАВИЛА ДЛЯ ОБНОВЛЕНИЙ (иначе у пользователя не откроются или потеряются данные):
+/// - ЛЮБОЕ изменение сохраняемых полей (даже новое необязательное поле) — увеличить `currentSchema`.
+///   Тогда более старая сборка не откроет файл и не сможет молча выбросить новые поля при сохранении,
+///   а покажет «обновите приложение»;
+/// - новые поля читать только через `decodeIfPresent` со значением по умолчанию;
 /// - не переименовывать поля и не менять их типы; не удалять случаи у `Currency` и `Palette` —
-///   старые коды переводить в новые (см. `Currency(code:)`);
-/// - при несовместимой переделке увеличить `schemaVersion` и написать перевод старых данных.
+///   старые коды переводить в новые (см. `Currency(code:)`).
 struct Vault: Codable {
-    var schemaVersion = 1
+    /// Версия формата, которую понимает эта сборка.
+    static let currentSchema = 1
+
+    var schemaVersion = Vault.currentSchema
     var expenses: [Expense] = []
+    /// «Недавно удалённые» — 30 дней.
+    var trash: [DeletedExpense] = []
     var categories: [ExpenseCategory] = ExpenseCategory.defaults
     var rates = RateTable()
     /// Последняя выбранная при вводе валюта — подставляется в новую трату.
@@ -128,9 +144,13 @@ struct Vault: Codable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        // Файл из более новой версии не открываем: иначе при сохранении пропадут поля,
+        // о которых эта версия не знает.
+        guard schemaVersion <= Vault.currentSchema else { throw VaultError.newerFormat }
         // Траты и категории читаем строго: если что-то не так, лучше не открыть файл
         // (он останется нетронутым), чем молча потерять траты.
         expenses = try c.decodeIfPresent([Expense].self, forKey: .expenses) ?? []
+        trash = try c.decodeIfPresent([DeletedExpense].self, forKey: .trash) ?? []
         categories = try c.decodeIfPresent([ExpenseCategory].self, forKey: .categories) ?? ExpenseCategory.defaults
         rates = try c.decodeIfPresent(RateTable.self, forKey: .rates) ?? RateTable()
         inputCurrency = (try? c.decodeIfPresent(Currency.self, forKey: .inputCurrency)) ?? .lira

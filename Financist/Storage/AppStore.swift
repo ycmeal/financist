@@ -9,11 +9,25 @@ struct PendingRestore: Identifiable {
     let data: Data
 }
 
+/// Почему данные не открылись. В обоих случаях файлы остаются нетронутыми.
+enum LoadFailure: Equatable {
+    /// Файл записан более новой сборкой — нужно обновить приложение.
+    case newerVersion
+    /// Файл не читается (нет ключа, сбой, ошибка в версии). Подробности — для разработчика.
+    case unreadable(String)
+}
+
 /// Состояние данных: ждём разблокировки, всё открыто или открыть не удалось.
 enum LoadState: Equatable {
     case waiting
     case ready
-    case failed(String)
+    case failed(LoadFailure)
+}
+
+/// Не получилось сохранить — показываем, а не молчим.
+enum SaveProblem: Equatable {
+    case outOfSpace
+    case other(String)
 }
 
 @Observable
@@ -21,9 +35,13 @@ enum LoadState: Equatable {
 final class AppStore {
     private(set) var vault = Vault()
     private(set) var loadState: LoadState = .waiting
-    /// Основной файл не прочитался, данные открыты из страховочной копии.
+    /// Основной файл был повреждён, данные открыты из копии.
     var recoveredFromBackup = false
-    var saveError: String?
+    /// Сколько трат вернулось из ранее нечитаемых файлов.
+    var recoveredExpenses: Int?
+    /// Последнее сохранение не удалось; изменения пока только в памяти.
+    var saveProblem: SaveProblem?
+    private(set) var hasUnsavedChanges = false
     var ratesError: String?
     private(set) var isRefreshingRates = false
 
@@ -42,49 +60,176 @@ final class AppStore {
 
     init() {}
 
+    private static var buildTag: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "0"
+        let build = info?["CFBundleVersion"] as? String ?? "0"
+        return "\(version)-\(build)"
+    }
+
+    // MARK: Открытие
+
     /// Открывает данные. Безопасно вызывать сколько угодно раз: при запуске, при возврате
     /// в приложение и когда iPhone разблокировали.
     ///
-    /// iOS может запустить приложение заранее, пока телефон ещё заблокирован, — тогда файл
-    /// и ключ недоступны. Это не ошибка: просто ждём разблокировки и ничего не трогаем.
+    /// Правила, которые нельзя нарушать:
+    /// - пока телефон заблокирован (iOS может запустить приложение заранее), ничего не читаем и не пишем;
+    /// - «первый запуск» — только если в папке нет вообще ни одного файла с данными;
+    /// - копию открываем, только если основной файл повреждён; при любой другой ошибке файлы не трогаем;
+    /// - ничего не перезаписываем, пока не прочитали.
     func loadIfNeeded() {
         guard loadState != .ready, UIApplication.shared.isProtectedDataAvailable else { return }
+        store.migrateLegacyLocation()
+        store.snapshotBeforeUpdate(tag: Self.buildTag)
+
+        guard store.mainExists else {
+            if store.allVaultFiles.isEmpty {
+                // Действительно первый запуск: файлов нет.
+                vault = Vault()
+                finishLoading()
+            } else {
+                // Основного файла нет, а копии есть (например, сбой посреди замены) — открываем копию.
+                openFromCopies(reason: "Основной файл не найден.")
+            }
+            return
+        }
+
         do {
-            if let loaded = try store.load() { vault = loaded }
+            let (loaded, size) = try store.read(store.mainURL)
+            if Self.looksWronglyEmpty(loaded, size: size) {
+                // Файл большой, а трат ноль — скорее всего, ошибка в этой версии. Ничего не трогаем.
+                loadState = .failed(.unreadable("Файл не пустой, но траты не прочитались."))
+                return
+            }
+            vault = loaded
             finishLoading()
-            store.refreshBackup()
+            store.refreshRoutineCopies()
+            recoverDisplacedCopies()
         } catch where error.isProtectedDataUnavailable {
             return
+        } catch VaultError.newerFormat {
+            loadState = .failed(.newerVersion)
+        } catch where error.isCorruptedFile {
+            openFromCopies(reason: "Основной файл повреждён.")
         } catch {
-            // Основной файл не читается — пробуем страховочную копию.
-            if let backup = try? store.loadBackup() {
-                vault = backup
-                recoveredFromBackup = true
-                store.setAsideCurrent()
-                finishLoading()
-                persist()
-            } else {
-                // Ничего не удаляем и не перезаписываем: файл остаётся на месте.
-                loadState = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            // Нет ключа, сбой связки ключей, ошибка чтения или разбора: файл цел — не трогаем, ждём.
+            loadState = .failed(.unreadable(Self.describe(error)))
+        }
+    }
+
+    /// Основной файл не открылся: берём самую свежую читаемую копию. Основной файл (если есть)
+    /// сначала копируется в сторону и только потом заменяется.
+    private func openFromCopies(reason: String) {
+        var candidate: Vault?
+        for copy in store.copies {
+            do {
+                let (copyVault, size) = try store.read(copy)
+                if Self.looksWronglyEmpty(copyVault, size: size) { continue }
+                candidate = copyVault
+                break
+            } catch VaultError.newerFormat {
+                loadState = .failed(.newerVersion)
+                return
+            } catch where error.isProtectedDataUnavailable {
+                return
+            } catch {
+                continue
             }
         }
+        guard let candidate else {
+            loadState = .failed(.unreadable(reason))
+            return
+        }
+        do {
+            try store.displaceMain()
+            try commit(candidate)
+        } catch {
+            // Не вышло записать (например, кончилось место) — ничего не меняем, попробуем позже.
+            loadState = .failed(.unreadable(error.isOutOfSpace
+                ? "На iPhone закончилось место. Освободите немного места и попробуйте ещё раз."
+                : Self.describe(error)))
+            return
+        }
+        recoveredFromBackup = true
+        finishLoading()
+    }
+
+    /// Файлы, которые когда-то пришлось заменить, потому что они не читались. Если теперь
+    /// читаются (например, после обновления), их траты возвращаются, а файл убирается.
+    private func recoverDisplacedCopies() {
+        var added = 0
+        for file in store.displacedCopies {
+            guard let other = (try? store.read(file))?.vault else { continue }
+            var merged = vault
+            let count = merged.merge(other)
+            if count > 0 {
+                do { try commit(merged) } catch { continue }
+                added += count
+            }
+            store.remove(file)
+        }
+        if added > 0 { recoveredExpenses = added }
+    }
+
+    /// Защита от ошибок в будущих версиях: если файл больше 32 КБ, а трат и удалённых нет совсем,
+    /// это не пустые данные, а ошибка чтения.
+    private static func looksWronglyEmpty(_ vault: Vault, size: Int) -> Bool {
+        vault.expenses.isEmpty && vault.trash.isEmpty && size > 32_768
+    }
+
+    private static func describe(_ error: Error) -> String {
+        (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
     }
 
     private func finishLoading() {
         loadState = .ready
         canSave = true
+        if vault.purgeOldTrash() { persist() }
         refreshReminders()
     }
 
+    // MARK: Сохранение
+
     private func persist() {
         guard canSave else { return }
+        hasUnsavedChanges = true
+        vault.schemaVersion = Vault.currentSchema
         do {
-            try store.save(vault)
-            saveError = nil
+            try store.write(vault)
+            hasUnsavedChanges = false
+            saveProblem = nil
             refreshReminders()
+        } catch where error.isProtectedDataUnavailable && !UIApplication.shared.isProtectedDataAvailable {
+            // iPhone заблокировался — сохраним при следующем открытии, пугать не нужно.
         } catch {
-            saveError = error.localizedDescription
+            saveProblem = error.isOutOfSpace ? .outOfSpace : .other(Self.describe(error))
         }
+    }
+
+    /// Записывает новые данные на диск и только после успеха показывает их в приложении.
+    /// Если запись не удалась — в памяти остаётся прежнее, ничего не теряется.
+    private func commit(_ newVault: Vault, allowNewKey: Bool = false) throws {
+        var updated = newVault
+        updated.schemaVersion = Vault.currentSchema
+        try store.write(updated, allowNewKey: allowNewKey)
+        vault = updated
+        hasUnsavedChanges = false
+        saveProblem = nil
+    }
+
+    /// Повторная попытка, если прошлое сохранение не удалось (например, кончилось место).
+    func retryUnsavedChanges() {
+        if hasUnsavedChanges { persist() }
+    }
+
+    /// При возврате в приложение: досохранить и обновить копии, если пора.
+    func appBecameActive() {
+        loadIfNeeded()
+        guard loadState == .ready else { return }
+        retryUnsavedChanges()
+        if !hasUnsavedChanges { store.refreshRoutineCopies() }
+        if vault.purgeOldTrash() { persist() }
+        refreshReminders()
     }
 
     // MARK: Ссылки
@@ -154,9 +299,21 @@ final class AppStore {
         persist()
     }
 
+    /// Удаление не навсегда: трата 30 дней лежит в «Недавно удалённых».
     func deleteExpenses(ids: [UUID]) {
         let set = Set(ids)
+        let now = Date.now
+        let removed = vault.expenses.filter { set.contains($0.id) }
         vault.expenses.removeAll { set.contains($0.id) }
+        vault.trash.append(contentsOf: removed.map { DeletedExpense(expense: $0, deletedAt: now) })
+        persist()
+    }
+
+    func restoreFromTrash(ids: [UUID]) {
+        let set = Set(ids)
+        let returning = vault.trash.filter { set.contains($0.id) }.map(\.expense)
+        vault.trash.removeAll { set.contains($0.id) }
+        vault.expenses.append(contentsOf: returning)
         persist()
     }
 
@@ -309,6 +466,8 @@ final class AppStore {
     /// Пересобирает вечерние напоминания на неделю вперёд. Текст на сегодня зависит
     /// от того, записаны ли уже траты, поэтому вызывается после каждого изменения.
     func refreshReminders() {
+        // Пока данные не открыты, не трогаем напоминания (иначе они бы отменились).
+        guard loadState == .ready else { return }
         let hasToday = vault.expenses.contains { Calendar.current.isDateInToday($0.date) }
         Reminders.scheduleEvening(vault.eveningReminder, minutes: vault.eveningMinutes, hasExpensesToday: hasToday)
     }
@@ -340,32 +499,107 @@ final class AppStore {
     // MARK: Перенос данных
 
     func backup(password: String) throws -> Data {
-        let data = try BackupCrypto.encrypt(vault, password: password)
+        try BackupCrypto.encrypt(vault, password: password)
+    }
+
+    /// Вызывается, когда файл переноса действительно отправили или сохранили.
+    func markTransferFileSaved() {
         vault.lastTransferFileAt = .now
         persist()
-        return data
     }
 
-    /// Заменяет все данные на этом iPhone данными из файла.
-    func restore(from data: Data, password: String) throws {
-        var restored = try BackupCrypto.decrypt(data, password: password)
-        restored.lockEnabled = vault.lockEnabled
-        restored.palette = vault.palette
-        // Прежние данные не пропадут: читаемые уходят в страховочную копию, нечитаемые — в сторону.
-        if loadState == .ready { store.refreshBackup() } else { store.setAsideCurrent() }
-        vault = restored
-        try store.save(vault, startingOver: true)
-        canSave = true
-        loadState = .ready
-        refreshReminders()
+    /// Траты из файла переноса добавляются к текущим — ничего не заменяется и не пропадает.
+    /// Возвращает, сколько трат добавилось.
+    @discardableResult
+    func restore(from data: Data, password: String) throws -> Int {
+        if loadState == .waiting { loadIfNeeded() }
+        let incoming = try BackupCrypto.decrypt(data, password: password)
+        switch loadState {
+        case .waiting:
+            throw VaultError.notReady
+        case .failed(.newerVersion):
+            throw VaultError.newerFormat
+        case .ready:
+            var merged = vault
+            let added = merged.merge(incoming)
+            try commit(merged)
+            refreshReminders()
+            return added
+        case .failed(.unreadable):
+            // Текущий файл не читается: кладём его копию в сторону (вернётся сам, если когда-нибудь
+            // прочитается), и только потом записываем данные из файла переноса.
+            var fresh = Vault()
+            fresh.lockEnabled = vault.lockEnabled
+            let added = fresh.merge(incoming)
+            try store.displaceMain()
+            try commit(fresh, allowNewKey: true)
+            finishLoading()
+            return added
+        }
     }
 
+    /// Выход из тупика, если данные не читаются: начать с чистого листа, но старые файлы сохранить.
+    /// Как только они снова прочитаются, траты из них вернутся сами.
+    func startFreshKeepingOldFiles() throws {
+        loadIfNeeded()
+        guard case .failed(.unreadable) = loadState else { return }
+        var fresh = Vault()
+        fresh.lockEnabled = vault.lockEnabled
+        try store.displaceMain()
+        try commit(fresh, allowNewKey: true)
+        finishLoading()
+    }
+
+    // MARK: Копии на телефоне
+
+    struct SafetyCopy: Identifiable {
+        let url: URL
+        let date: Date
+        let title: String
+        var id: URL { url }
+    }
+
+    var safetyCopies: [SafetyCopy] {
+        store.copies.map { url in
+            let name = url.lastPathComponent
+            let title: String
+            if name == store.launchCopyURL.lastPathComponent {
+                title = "Ежедневная копия"
+            } else if name == store.weeklyCopyURL.lastPathComponent {
+                title = "Еженедельная копия"
+            } else if name.hasPrefix("copy-build-") {
+                title = "Перед обновлением"
+            } else {
+                title = "Нечитаемый файл"
+            }
+            return SafetyCopy(url: url, date: store.modificationDate(url), title: title)
+        }
+    }
+
+    /// Сколько трат в копии (nil — не читается).
+    func expenseCount(in copy: SafetyCopy) -> Int? {
+        (try? store.read(copy.url))?.vault.expenses.count
+    }
+
+    /// Добавляет траты из копии к текущим. Ничего не удаляет.
+    func mergeCopy(_ copy: SafetyCopy) throws -> Int {
+        let other = try store.read(copy.url).vault
+        var merged = vault
+        let added = merged.merge(other)
+        if added > 0 { try commit(merged) }
+        return added
+    }
+
+    /// «Удалить все данные»: стирает траты, все копии на телефоне и ключ шифрования.
     func resetAll() {
         store.wipe()
         vault = Vault()
         canSave = true
         loadState = .ready
-        try? store.save(vault, startingOver: true)
+        hasUnsavedChanges = false
+        saveProblem = nil
+        try? store.write(vault, allowNewKey: true)
+        refreshReminders()
     }
 
     func csv() -> Data {

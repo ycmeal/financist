@@ -119,6 +119,8 @@ struct ExpenseFormView: View {
                     if let original { store.deleteExpenses(ids: [original.id]) }
                     dismiss()
                 }
+            } message: {
+                Text("Её можно будет вернуть в течение \(DeletedExpense.keepDays) дней: Настройки → Недавно удалённые.")
             }
             .sheet(item: $newCategory) { category in
                 CategoryEditView(category: category) { saved in

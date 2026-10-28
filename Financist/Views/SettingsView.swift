@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppStore.self) private var store
     @State private var confirmWipe = false
+    @State private var confirmWipeAgain = false
 
     var body: some View {
         @Bindable var store = store
@@ -61,6 +62,15 @@ struct SettingsView: View {
                     NavigationLink { QuickInputView() } label: {
                         SettingsLabel("Быстрый ввод", symbol: "bolt.fill", color: "purple")
                     }
+                    if !store.vault.trash.isEmpty {
+                        NavigationLink { TrashView() } label: {
+                            LabeledContent {
+                                Text("\(store.vault.trash.count)")
+                            } label: {
+                                SettingsLabel("Недавно удалённые", symbol: "trash.fill", color: "gray")
+                            }
+                        }
+                    }
                 } footer: {
                     if transferFileIsOld {
                         Text("Файл переноса давно не сохраняли. Если с телефоном что-то случится, траты можно вернуть только из него.")
@@ -89,10 +99,17 @@ struct SettingsView: View {
             }
             .warmListBackground()
             .navigationTitle("Настройки")
+            // Два шага, чтобы не стереть всё случайным касанием.
             .confirmationDialog("Удалить все траты и категории?", isPresented: $confirmWipe, titleVisibility: .visible) {
-                Button("Удалить всё", role: .destructive) { store.resetAll() }
+                Button("Удалить всё", role: .destructive) { confirmWipeAgain = true }
             } message: {
-                Text("Вернуть их можно будет только из файла переноса.")
+                Text("Удалятся и все копии на этом iPhone.")
+            }
+            .alert("Точно удалить всё?", isPresented: $confirmWipeAgain) {
+                Button("Удалить навсегда", role: .destructive) { store.resetAll() }
+                Button("Отмена", role: .cancel) {}
+            } message: {
+                Text("Это нельзя отменить. Вернуть траты можно будет только из файла переноса.")
             }
         }
     }

@@ -19,8 +19,8 @@ struct RootView: View {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(store.palette.background.ignoresSafeArea())
-            case .failed(let message):
-                LoadFailedView(message: message)
+            case .failed(let failure):
+                LoadFailedView(failure: failure)
             }
         }
         .sheet(item: $store.pendingRestore) { RestoreView(data: $0.data) }
@@ -38,18 +38,40 @@ struct RootView: View {
             if phase == .background && store.lockEnabled { store.isLocked = true }
             updateCover()
             if phase == .active {
-                store.loadIfNeeded()
+                // Открыть данные, если ещё не открыты; досохранить; обновить копии и напоминания.
+                store.appBecameActive()
                 if store.isLocked { authenticate() }
                 Task { await store.refreshRates(force: false) }
-                // Новый день — переставляем вечерние напоминания на неделю вперёд.
-                store.refreshReminders()
+            } else {
+                // Уходим в фон — последняя попытка сохранить, если раньше не вышло.
+                store.retryUnsavedChanges()
             }
         }
         .onChange(of: store.isLocked) { updateCover() }
-        .alert("Данные открыты из страховочной копии", isPresented: $store.recoveredFromBackup) {
+        .alert("Данные открыты из копии", isPresented: $store.recoveredFromBackup) {
             Button("Понятно", role: .cancel) {}
         } message: {
-            Text("Основной файл не прочитался, поэтому траты открыты из копии, сделанной при прошлом запуске. Проверьте, все ли последние траты на месте.")
+            Text("Основной файл был повреждён, поэтому траты открыты из последней копии на телефоне. Проверьте, все ли последние траты на месте.")
+        }
+        .alert("Траты вернулись", isPresented: Binding(get: { store.recoveredExpenses != nil },
+                                                       set: { if !$0 { store.recoveredExpenses = nil } })) {
+            Button("Хорошо", role: .cancel) {}
+        } message: {
+            Text("Нашлись траты, которые раньше не читались: \(Fmt.count(store.recoveredExpenses ?? 0, "трата", "траты", "трат")). Они снова на месте.")
+        }
+        .alert("Траты пока не сохранились", isPresented: Binding(get: { store.saveProblem != nil },
+                                                                 set: { if !$0 { store.saveProblem = nil } })) {
+            Button("Попробовать ещё раз") { store.retryUnsavedChanges() }
+            Button("Позже", role: .cancel) {}
+        } message: {
+            switch store.saveProblem {
+            case .outOfSpace:
+                Text("На iPhone закончилось место. Освободите немного места (например, удалите старые видео) — Financist сохранит всё сам. Не закрывайте приложение до этого.")
+            case .other(let detail):
+                Text("Не закрывайте приложение — Financist попробует ещё раз.\n\n\(detail)")
+            case nil:
+                Text("")
+            }
         }
     }
 
@@ -77,6 +99,7 @@ struct RootView: View {
         updateCover()
         if store.isLocked { authenticate() }
         store.consumeAddRequest()
+        ShareFile.cleanUp()
         Task { await store.refreshRates(force: false) }
     }
 
@@ -123,22 +146,25 @@ final class CoverWindow {
     }
 }
 
-/// Данные не открылись. Ничего не удаляем — только «попробовать ещё раз» или файл переноса.
+/// Данные не открылись. Ничего не удаляем: «попробовать ещё раз», файл переноса
+/// или «начать заново» — при этом старые файлы остаются и вернутся сами, если снова прочитаются.
 private struct LoadFailedView: View {
     @Environment(AppStore.self) private var store
-    let message: String
+    let failure: LoadFailure
     @State private var showImporter = false
+    @State private var confirmFresh = false
+    @State private var error: String?
 
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
-                Image(systemName: "externaldrive.badge.exclamationmark")
+                Image(systemName: failure == .newerVersion ? "arrow.down.app.fill" : "externaldrive.badge.exclamationmark")
                     .font(.largeTitle)
                     .foregroundStyle(.tint)
-                Text("Не получилось открыть траты")
+                Text(failure == .newerVersion ? "Нужна новая версия" : "Не получилось открыть траты")
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
-                Text("Ничего не удалено — данные на месте. Попробуйте ещё раз или перезапустите приложение. Если не поможет, траты можно вернуть из файла переноса.")
+                Text(explanation)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                 Button {
@@ -148,11 +174,22 @@ private struct LoadFailedView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                Button("Загрузить файл переноса") { showImporter = true }
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
+
+                if case .unreadable(let detail) = failure {
+                    Button("Загрузить файл переноса") { showImporter = true }
+                    Button("Начать заново, сохранив старые файлы") { confirmFresh = true }
+                        .font(.subheadline)
+                    Text(detail)
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                }
+                if let error {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
             }
             .padding(24)
             .frame(maxWidth: .infinity)
@@ -160,6 +197,22 @@ private struct LoadFailedView: View {
         .background(store.palette.background.ignoresSafeArea())
         .fileImporter(isPresented: $showImporter, allowedContentTypes: [.financistBackup, .data]) { result in
             if case .success(let url) = result { store.handle(url: url) }
+        }
+        .confirmationDialog("Начать заново?", isPresented: $confirmFresh, titleVisibility: .visible) {
+            Button("Начать заново") {
+                do { try store.startFreshKeepingOldFiles() } catch { self.error = error.localizedDescription }
+            }
+        } message: {
+            Text("Старые файлы не удаляются. Если они когда-нибудь снова прочитаются, траты из них вернутся сами.")
+        }
+    }
+
+    private var explanation: String {
+        switch failure {
+        case .newerVersion:
+            "Траты записаны более новой версией Financist. Обновите приложение в TestFlight — всё откроется, ничего не потеряется."
+        case .unreadable:
+            "Ничего не удалено — данные на месте. Попробуйте ещё раз или перезапустите приложение. Если не поможет, можно загрузить файл переноса: траты из него добавятся."
         }
     }
 }

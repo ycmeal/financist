@@ -8,13 +8,17 @@ enum VaultError: LocalizedError {
     case keyMissing
     case badBackup
     case wrongPassword
+    case newerFormat
+    case notReady
 
     var errorDescription: String? {
         switch self {
-        case .keychain(let status): "Ошибка связки ключей (\(status))."
-        case .keyMissing: "Ключ шифрования не найден на этом устройстве. Данные невозможно расшифровать."
-        case .badBackup: "Это не файл резервной копии Financist."
+        case .keychain(let status): "Связка ключей iPhone сейчас недоступна (\(status)). Попробуйте чуть позже."
+        case .keyMissing: "Ключ шифрования не найден на этом iPhone."
+        case .badBackup: "Это не файл переноса Financist."
         case .wrongPassword: "Неверный пароль или файл повреждён."
+        case .newerFormat: "Данные записаны более новой версией Financist. Обновите приложение в TestFlight — ничего не потеряется."
+        case .notReady: "Разблокируйте iPhone и попробуйте ещё раз."
         }
     }
 }
@@ -32,6 +36,8 @@ enum KeyStore {
          kSecAttrAccount as String: account]
     }
 
+    /// nil — только если связка ключей уверенно ответила «такого ключа нет».
+    /// Любой другой ответ (iPhone заблокирован, сбой) — ошибка, а не повод создавать новый ключ.
     static func existing() throws -> SymmetricKey? {
         var query = baseQuery
         query[kSecReturnData as String] = true
@@ -39,12 +45,15 @@ enum KeyStore {
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess, let data = item as? Data else { throw VaultError.keychain(status) }
+        guard status == errSecSuccess, let data = item as? Data, data.count == 32 else {
+            throw VaultError.keychain(status)
+        }
         return SymmetricKey(data: data)
     }
 
-    static func loadOrCreate() throws -> SymmetricKey {
-        if let key = try existing() { return key }
+    /// Создаёт новый ключ. Если ключ на самом деле есть (сбой при чтении), iOS ответит
+    /// «дубликат», и мы ничего не тронем.
+    static func create() throws -> SymmetricKey {
         let key = SymmetricKey(size: .bits256)
         var attributes = baseQuery
         attributes[kSecValueData as String] = key.withUnsafeBytes { Data($0) }
@@ -59,87 +68,155 @@ enum KeyStore {
     }
 }
 
-/// Файл с данными: JSON → AES-256-GCM → файл с защитой `.completeFileProtection`
-/// (iOS дополнительно шифрует его ключом устройства, пока iPhone заблокирован).
+/// Хранилище на диске. Все файлы — в папке `Application Support/Financist`, зашифрованы одним ключом,
+/// защищены `.completeFileProtection` и не попадают в резервные копии iCloud/компьютера.
 ///
-/// Защита от потери данных:
-/// - запись атомарная: сначала во временный файл, потом подмена — сбой посреди записи не портит данные;
-/// - при каждом успешном открытии делается страховочная копия `vault.backup.sealed`,
-///   и если основной файл не читается, приложение открывает копию;
-/// - если файл есть, а ключа нет, новый ключ не создаётся — старый файл не затирается.
+/// - `main.sealed` — текущие данные. Запись атомарная: сначала временный файл, потом подмена.
+/// - `copy-launch.sealed` — копия при открытии (не чаще раза в сутки).
+/// - `copy-weekly.sealed` — копия раз в неделю.
+/// - `copy-build-<версия>.sealed` — копия перед первым запуском новой сборки (хранятся 3 последние).
+/// - `copy-displaced-….sealed` — нечитаемый файл, который пришлось заменить. Никогда не удаляется сам:
+///   как только он снова читается (например, после обновления), траты из него автоматически добавляются обратно.
+///
+/// Правило: файлы удаляются только по явной команде «Удалить все данные».
 struct EncryptedStore {
-    private static let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-    let url = EncryptedStore.directory.appendingPathComponent("vault.sealed")
-    let backupURL = EncryptedStore.directory.appendingPathComponent("vault.backup.sealed")
+    static let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("Financist", isDirectory: true)
 
-    var fileExists: Bool { FileManager.default.fileExists(atPath: url.path) }
+    let mainURL = EncryptedStore.directory.appendingPathComponent("main.sealed")
+    let launchCopyURL = EncryptedStore.directory.appendingPathComponent("copy-launch.sealed")
+    let weeklyCopyURL = EncryptedStore.directory.appendingPathComponent("copy-weekly.sealed")
 
-    /// Возвращает nil, если данных ещё нет (первый запуск).
-    func load() throws -> Vault? {
-        guard fileExists else { return nil }
-        return try read(url)
+    private var manager: FileManager { .default }
+
+    var mainExists: Bool { manager.fileExists(atPath: mainURL.path) }
+
+    /// Все файлы с данными в папке (основной и копии).
+    var allVaultFiles: [URL] {
+        let files = (try? manager.contentsOfDirectory(at: Self.directory, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+        return files.filter { $0.pathExtension == "sealed" }
     }
 
-    /// Страховочная копия — на случай, если основной файл повреждён.
-    func loadBackup() throws -> Vault? {
-        guard FileManager.default.fileExists(atPath: backupURL.path) else { return nil }
-        return try read(backupURL)
+    /// Копии от новых к старым: при открытии, недельная, перед обновлениями, вытесненные.
+    var copies: [URL] {
+        let files = allVaultFiles.filter { $0 != mainURL }
+        func rank(_ url: URL) -> Int {
+            switch url.lastPathComponent {
+            case launchCopyURL.lastPathComponent: 0
+            case weeklyCopyURL.lastPathComponent: 1
+            default: url.lastPathComponent.hasPrefix("copy-build-") ? 2 : 3
+            }
+        }
+        return files.sorted { a, b in
+            rank(a) != rank(b) ? rank(a) < rank(b) : modificationDate(a) > modificationDate(b)
+        }
     }
 
-    private func read(_ file: URL) throws -> Vault {
+    var displacedCopies: [URL] {
+        allVaultFiles.filter { $0.lastPathComponent.hasPrefix("copy-displaced-") }
+    }
+
+    func modificationDate(_ url: URL) -> Date {
+        (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+    }
+
+    // MARK: Чтение
+
+    /// Расшифровывает и разбирает файл. Возвращает и размер — для проверки «подозрительно пусто».
+    func read(_ file: URL) throws -> (vault: Vault, size: Int) {
         guard let key = try KeyStore.existing() else { throw VaultError.keyMissing }
         let sealed = try Data(contentsOf: file)
         let json = try AES.GCM.open(AES.GCM.SealedBox(combined: sealed), using: key)
-        return try JSONDecoder().decode(Vault.self, from: json)
+        return (try JSONDecoder().decode(Vault.self, from: json), sealed.count)
     }
 
-    /// Обновляет страховочную копию из основного файла (тем же ключом, теми же правами).
-    func refreshBackup() {
-        let manager = FileManager.default
-        guard fileExists else { return }
-        let temp = backupURL.appendingPathExtension("tmp")
-        try? manager.removeItem(at: temp)
-        guard (try? manager.copyItem(at: url, to: temp)) != nil else { return }
-        try? manager.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: temp.path)
-        if manager.fileExists(atPath: backupURL.path) {
-            _ = try? manager.replaceItemAt(backupURL, withItemAt: temp)
-        } else {
-            try? manager.moveItem(at: temp, to: backupURL)
-        }
-        excludeFromBackup(backupURL)
-    }
+    // MARK: Запись
 
-    /// `startingOver` — только для «Удалить всё» и загрузки файла переноса: тогда при пропавшем ключе
-    /// старый нечитаемый файл откладывается в сторону, а не затирается.
-    func save(_ vault: Vault, startingOver: Bool = false) throws {
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+    /// `allowNewKey` — только при явном действии пользователя (загрузка файла переноса, «начать заново»).
+    /// Без него новый ключ создаётся лишь при самом первом запуске, когда файлов с данными нет вообще.
+    func write(_ vault: Vault, allowNewKey: Bool = false) throws {
+        try prepareDirectory()
         let key: SymmetricKey
         if let existing = try KeyStore.existing() {
             key = existing
-        } else if fileExists && !startingOver {
-            // Файл есть, а ключа нет — ни в коем случае не создаём новый ключ поверх.
-            throw VaultError.keyMissing
+        } else if allowNewKey || allVaultFiles.isEmpty {
+            key = try KeyStore.create()
         } else {
-            if fileExists { setAside(url) }
-            if FileManager.default.fileExists(atPath: backupURL.path) { setAside(backupURL) }
-            key = try KeyStore.loadOrCreate()
+            // Файлы есть, а ключа нет — ни в коем случае не создаём новый ключ поверх.
+            throw VaultError.keyMissing
         }
         let json = try JSONEncoder().encode(vault)
         guard let sealed = try AES.GCM.seal(json, using: key).combined else { throw VaultError.badBackup }
-        try sealed.write(to: url, options: [.atomic, .completeFileProtection])
-        excludeFromBackup(url)
+        try sealed.write(to: mainURL, options: [.atomic, .completeFileProtection])
+        excludeFromBackup(mainURL)
     }
 
-    /// Откладывает основной файл в сторону (например, если он не читается этой версией приложения).
-    func setAsideCurrent() {
-        if fileExists { setAside(url) }
+    /// Побайтовая копия основного файла (тем же ключом). Основной файл не трогается.
+    /// Запись атомарная, с той же защитой, что у основного файла; дата копии — момент копирования.
+    func copyMain(to target: URL) throws {
+        guard mainExists else { return }
+        try prepareDirectory()
+        let bytes = try Data(contentsOf: mainURL)
+        try bytes.write(to: target, options: [.atomic, .completeFileProtection])
+        excludeFromBackup(target)
     }
 
-    /// Нечитаемый файл не удаляем, а переименовываем — вдруг ключ найдётся или поможет новая версия.
-    private func setAside(_ file: URL) {
+    /// Копия основного файла, который сейчас придётся заменить. Если копия не удалась —
+    /// ошибка, и замены не будет.
+    func displaceMain() throws {
+        guard mainExists else { return }
         let stamp = Int(Date.now.timeIntervalSince1970)
-        let target = file.deletingPathExtension().appendingPathExtension("unreadable-\(stamp).sealed")
-        try? FileManager.default.moveItem(at: file, to: target)
+        try copyMain(to: Self.directory.appendingPathComponent("copy-displaced-\(stamp)-\(UUID().uuidString.prefix(8)).sealed"))
+    }
+
+    /// Копии при открытии (раз в сутки) и раз в неделю.
+    func refreshRoutineCopies() {
+        let now = Date.now
+        if !manager.fileExists(atPath: launchCopyURL.path) || now.timeIntervalSince(modificationDate(launchCopyURL)) > 86_400 {
+            try? copyMain(to: launchCopyURL)
+        }
+        if !manager.fileExists(atPath: weeklyCopyURL.path) || now.timeIntervalSince(modificationDate(weeklyCopyURL)) > 7 * 86_400 {
+            try? copyMain(to: weeklyCopyURL)
+        }
+    }
+
+    /// Перед первым запуском новой сборки сохраняем файл таким, каким его оставила прошлая.
+    func snapshotBeforeUpdate(tag: String) {
+        let target = Self.directory.appendingPathComponent("copy-build-\(tag).sealed")
+        guard mainExists, !manager.fileExists(atPath: target.path) else { return }
+        try? copyMain(to: target)
+        let builds = allVaultFiles
+            .filter { $0.lastPathComponent.hasPrefix("copy-build-") }
+            .sorted { modificationDate($0) > modificationDate($1) }
+        for old in builds.dropFirst(3) { try? manager.removeItem(at: old) }
+    }
+
+    /// Файлы прошлых тестовых версий лежали прямо в Application Support — переносим в папку.
+    func migrateLegacyLocation() {
+        let legacy = Self.directory.deletingLastPathComponent()
+        let oldMain = legacy.appendingPathComponent("vault.sealed")
+        let oldCopy = legacy.appendingPathComponent("vault.backup.sealed")
+        guard manager.fileExists(atPath: oldMain.path) || manager.fileExists(atPath: oldCopy.path) else { return }
+        try? prepareDirectory()
+        if manager.fileExists(atPath: oldMain.path) && !mainExists { try? manager.moveItem(at: oldMain, to: mainURL) }
+        if manager.fileExists(atPath: oldCopy.path) && !manager.fileExists(atPath: launchCopyURL.path) {
+            try? manager.moveItem(at: oldCopy, to: launchCopyURL)
+        }
+    }
+
+    func remove(_ file: URL) {
+        try? manager.removeItem(at: file)
+    }
+
+    /// Только для «Удалить все данные»: стирает все файлы и ключ.
+    func wipe() {
+        try? manager.removeItem(at: Self.directory)
+        KeyStore.delete()
+    }
+
+    private func prepareDirectory() throws {
+        try manager.createDirectory(at: Self.directory, withIntermediateDirectories: true)
+        excludeFromBackup(Self.directory)
     }
 
     /// Без iCloud: файлы не попадают в резервные копии iCloud/компьютера.
@@ -149,20 +226,35 @@ struct EncryptedStore {
         values.isExcludedFromBackup = true
         try? fileURL.setResourceValues(values)
     }
-
-    func wipe() {
-        try? FileManager.default.removeItem(at: url)
-        try? FileManager.default.removeItem(at: backupURL)
-        KeyStore.delete()
-    }
 }
 
-/// Ошибка, которая проходит сама: iPhone заблокирован, и iOS пока не даёт читать защищённые данные.
 extension Error {
+    /// iPhone заблокирован, и iOS пока не даёт читать защищённые данные. Проходит само.
     var isProtectedDataUnavailable: Bool {
-        if case VaultError.keychain(let status) = self, status == errSecInteractionNotAllowed { return true }
+        if let vaultError = self as? VaultError, case .keychain(let status) = vaultError {
+            return status == errSecInteractionNotAllowed
+        }
         let ns = self as NSError
-        return ns.domain == NSCocoaErrorDomain && ns.code == NSFileReadNoPermissionError
+        return ns.domain == NSCocoaErrorDomain
+            && (ns.code == NSFileReadNoPermissionError || ns.code == NSFileWriteNoPermissionError)
+    }
+
+    /// Содержимое файла повреждено (не сходится проверка шифра). Только в этом случае
+    /// имеет смысл открывать копию — во всех остальных файл цел, и его нельзя трогать.
+    var isCorruptedFile: Bool {
+        if self is CryptoKitError { return true }
+        let ns = self as NSError
+        return ns.domain == NSCocoaErrorDomain && ns.code == NSFileReadCorruptFileError
+    }
+
+    var isOutOfSpace: Bool {
+        let ns = self as NSError
+        if ns.domain == NSCocoaErrorDomain && ns.code == NSFileWriteOutOfSpaceError { return true }
+        if ns.domain == NSPOSIXErrorDomain && ns.code == Int(ENOSPC) { return true }
+        if let underlying = ns.userInfo[NSUnderlyingErrorKey] as? NSError {
+            return underlying.domain == NSPOSIXErrorDomain && underlying.code == Int(ENOSPC)
+        }
+        return false
     }
 }
 
@@ -191,12 +283,14 @@ enum BackupCrypto {
         let r = bytes[(magic.count + 16)..<header]
         let rounds = r.reduce(UInt32(0)) { $0 << 8 | UInt32($1) }
         let key = try deriveKey(password: password, salt: salt, rounds: rounds)
+        let json: Data
         do {
-            let json = try AES.GCM.open(AES.GCM.SealedBox(combined: Data(bytes[header...])), using: key)
-            return try JSONDecoder().decode(Vault.self, from: json)
+            json = try AES.GCM.open(AES.GCM.SealedBox(combined: Data(bytes[header...])), using: key)
         } catch {
             throw VaultError.wrongPassword
         }
+        // Пароль верный. Если файл из более новой версии — так и скажем, а не «неверный пароль».
+        return try JSONDecoder().decode(Vault.self, from: json)
     }
 
     private static func deriveKey(password: String, salt: Data, rounds: UInt32) throws -> SymmetricKey {
