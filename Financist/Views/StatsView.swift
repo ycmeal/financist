@@ -18,6 +18,7 @@ struct StatsContent: View {
     @Environment(AppStore.self) private var store
     @State private var period: StatsPeriod
     @State private var anchor: Date
+    @State private var keepAnchor = false
     private let showsPicker: Bool
 
     init(period: StatsPeriod, anchor: Date, showsPicker: Bool = true) {
@@ -129,7 +130,21 @@ struct StatsContent: View {
             }
         }
         .warmListBackground()
-        .onChange(of: period) { anchor = .now }
+        .animation(.snappy, value: anchor)
+        .onChange(of: period) {
+            if keepAnchor { keepAnchor = false } else { anchor = .now }
+        }
+        .onAppear(perform: applyJump)
+        .onChange(of: store.statsJump) { applyJump() }
+    }
+
+    /// Переход из карточки «месяц закрыт» на вкладке «Траты».
+    private func applyJump() {
+        guard showsPicker, let jump = store.statsJump else { return }
+        store.statsJump = nil
+        if period != .month { keepAnchor = true }
+        period = .month
+        anchor = jump
     }
 
     private func shift(_ value: Int) {

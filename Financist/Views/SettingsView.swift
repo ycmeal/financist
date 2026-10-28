@@ -28,6 +28,25 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink { BudgetView() } label: {
+                        SettingsLabel("Бюджет на месяц", symbol: "gauge.with.needle.fill", color: "green")
+                    }
+                    NavigationLink { RecurringListView() } label: {
+                        SettingsLabel("Регулярные платежи", symbol: "repeat", color: "indigo")
+                    }
+                    Toggle(isOn: reminderBinding) {
+                        SettingsLabel("Напомнить вечером", symbol: "bell.fill", color: "red")
+                    }
+                    NavigationLink { SiriGuideView() } label: {
+                        SettingsLabel("Siri и кнопка действия", symbol: "mic.fill", color: "pink")
+                    }
+                } header: {
+                    Text("Помощники")
+                } footer: {
+                    Text("В 21:00 iPhone спросит, записали ли вы траты. Напоминания создаёт сам телефон.")
+                }
+
+                Section {
                     NavigationLink { TransferView() } label: {
                         SettingsLabel("Перенос на новый iPhone", symbol: "iphone.and.arrow.forward", color: "teal")
                     }
@@ -64,6 +83,18 @@ struct SettingsView: View {
                 Text("Вернуть их можно будет только из файла переноса.")
             }
         }
+    }
+
+    private var reminderBinding: Binding<Bool> {
+        Binding(
+            get: { store.eveningReminder },
+            set: { enable in
+                Task { @MainActor in
+                    if enable { guard await Reminders.requestPermission() else { return } }
+                    store.eveningReminder = enable
+                }
+            }
+        )
     }
 
     private var lockBinding: Binding<Bool> {

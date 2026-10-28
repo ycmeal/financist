@@ -4,7 +4,7 @@ struct RatesView: View {
     @Environment(AppStore.self) private var store
     @State private var editing: Currency?
     @State private var amountText = "100"
-    @State private var from: Currency = .usdt
+    @State private var from: Currency = .usd
     @FocusState private var amountFocused: Bool
 
     var body: some View {
@@ -35,7 +35,7 @@ struct RatesView: View {
             }
 
             Section {
-                ForEach(Currency.allCases.filter { $0 != .usdt }) { currency in
+                ForEach(Currency.allCases.filter { $0 != .base }) { currency in
                     Button { editing = currency } label: {
                         LabeledContent {
                             HStack(spacing: 6) {
@@ -54,7 +54,7 @@ struct RatesView: View {
                     .tint(Color.primary)
                 }
             } header: {
-                Text("За 1 USDT")
+                Text("За 1 USD")
             } footer: {
                 Text("Нажмите на валюту, чтобы указать свой курс — например, из обменника.")
             }
@@ -111,7 +111,7 @@ struct RateEditView: View {
             Form {
                 Section {
                     HStack {
-                        Text("1 USDT =")
+                        Text("1 USD =")
                             .foregroundStyle(.secondary)
                         TextField("Курс", text: $text)
                             .keyboardType(.decimalPad)

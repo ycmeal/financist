@@ -21,6 +21,8 @@ final class AppStore {
     var selectedTab: AppTab = .expenses
     var isAddingExpense = false
     var pendingRestore: PendingRestore?
+    /// Открыть «Итоги» на нужном месяце (из карточки «месяц закрыт»).
+    var statsJump: Date?
     /// Приложение закрыто замком Face ID.
     var isLocked = false
 
@@ -48,6 +50,13 @@ final class AppStore {
     }
 
     // MARK: Ссылки
+
+    func consumeAddRequest() {
+        guard AddRequest.pending else { return }
+        AddRequest.pending = false
+        selectedTab = .expenses
+        isAddingExpense = true
+    }
 
     func handle(url: URL) {
         if url.isFileURL {
@@ -118,15 +127,30 @@ final class AppStore {
         vault.categories.first { $0.id == id } ?? .unknown
     }
 
-    /// Категории, отсортированные по частоте использования — нужные всегда сверху.
+    /// Категории по частоте: свежие траты (последние 2 месяца) весят втрое больше старых,
+    /// поэтому список подстраивается под то, на что тратите сейчас.
     var categoriesByUsage: [ExpenseCategory] {
-        let counts = Dictionary(grouping: vault.expenses, by: \.categoryID).mapValues(\.count)
+        let recent = Date.now.addingTimeInterval(-60 * 86_400)
+        var score: [UUID: Double] = [:]
+        for e in vault.expenses { score[e.categoryID, default: 0] += e.date >= recent ? 3 : 1 }
         return vault.categories.enumerated()
             .sorted { a, b in
-                let ca = counts[a.element.id] ?? 0, cb = counts[b.element.id] ?? 0
-                return ca != cb ? ca > cb : a.offset < b.offset
+                let sa = score[a.element.id] ?? 0, sb = score[b.element.id] ?? 0
+                return sa != sb ? sa > sb : a.offset < b.offset
             }
             .map(\.element)
+    }
+
+    /// Недавние разные траты (по месту и категории) — чтобы повторить одним касанием.
+    var recentTemplates: [Expense] {
+        var seen = Set<String>()
+        var result: [Expense] = []
+        for e in vault.expenses.sorted(by: { $0.date > $1.date }) where !e.note.isEmpty {
+            let key = SuggestionEngine.normalize(e.note) + "|" + e.categoryID.uuidString
+            if seen.insert(key).inserted { result.append(e) }
+            if result.count == 6 { break }
+        }
+        return result
     }
 
     func upsert(_ category: ExpenseCategory) {
@@ -165,6 +189,75 @@ final class AppStore {
 
     func expenseCount(in categoryID: UUID) -> Int {
         vault.expenses.filter { $0.categoryID == categoryID }.count
+    }
+
+    // MARK: Бюджет
+
+    var budget: MonthlyBudget? {
+        get { vault.budget }
+        set { vault.budget = newValue; persist() }
+    }
+
+    /// Сколько потрачено в этом месяце в валюте бюджета.
+    func spentThisMonth(in currency: Currency) -> Decimal {
+        vault.expenses
+            .filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
+            .total(in: currency)
+    }
+
+    // MARK: Регулярные платежи
+
+    private func monthKey(_ id: UUID, _ date: Date = .now) -> String {
+        let c = Calendar.current.dateComponents([.year, .month], from: date)
+        return "\(id.uuidString)|\(c.year ?? 0)-\(c.month ?? 0)"
+    }
+
+    /// Платежи, у которых уже наступил день в этом месяце, но они ещё не записаны и не пропущены.
+    var dueRecurring: [RecurringPayment] {
+        let calendar = Calendar.current
+        let today = calendar.component(.day, from: .now)
+        let paidIDs = Set(vault.expenses
+            .filter { calendar.isDate($0.date, equalTo: .now, toGranularity: .month) }
+            .compactMap(\.recurringID))
+        return vault.recurring.filter {
+            $0.day <= today && !paidIDs.contains($0.id) && !vault.skippedRecurring.contains(monthKey($0.id))
+        }
+    }
+
+    func upsert(_ payment: RecurringPayment) {
+        if let index = vault.recurring.firstIndex(where: { $0.id == payment.id }) {
+            vault.recurring[index] = payment
+        } else {
+            vault.recurring.append(payment)
+        }
+        persist()
+        Reminders.scheduleRecurring(vault.recurring)
+    }
+
+    func deleteRecurring(ids: [UUID]) {
+        vault.recurring.removeAll { ids.contains($0.id) }
+        persist()
+        Reminders.scheduleRecurring(vault.recurring)
+    }
+
+    func pay(_ payment: RecurringPayment) {
+        upsert(Expense(date: .now, amount: payment.amount, currency: payment.currency,
+                       categoryID: payment.categoryID, note: payment.note,
+                       rates: vault.rates.effective, recurringID: payment.id))
+    }
+
+    func skip(_ payment: RecurringPayment) {
+        vault.skippedRecurring.append(monthKey(payment.id))
+        // Старые отметки больше не нужны — храним только последние.
+        vault.skippedRecurring = Array(vault.skippedRecurring.suffix(100))
+        persist()
+    }
+
+    // MARK: Напоминания
+
+    var eveningReminder: Bool {
+        get { vault.eveningReminder }
+        set { vault.eveningReminder = newValue; persist(); Reminders.scheduleEvening(newValue) }
     }
 
     // MARK: Курсы
@@ -221,7 +314,7 @@ final class AppStore {
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
 
-        var lines = ["Дата;Сумма;Валюта;Категория;Заметка;Сумма в USDT;Курс за 1 USDT"]
+        var lines = ["Дата;Сумма;Валюта;Категория;Заметка;Сумма в USD;Курс за 1 USD"]
         for e in vault.expenses.sorted(by: { $0.date < $1.date }) {
             lines.append([
                 dateFormatter.string(from: e.date),
@@ -229,7 +322,7 @@ final class AppStore {
                 e.currency.code,
                 esc(category(for: e.categoryID).name),
                 esc(e.note),
-                num(e.amountUSDT.rounded(scale: 4)),
+                num(e.amountUSD.rounded(scale: 4)),
                 num(e.rate(e.currency)),
             ].joined(separator: ";"))
         }

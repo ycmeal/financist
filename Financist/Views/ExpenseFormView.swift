@@ -7,7 +7,7 @@ struct ExpenseFormView: View {
     let original: Expense?
 
     @State private var amountText = ""
-    @State private var currency: Currency = .usdt
+    @State private var currency: Currency = .lira
     @State private var rateText = ""
     @State private var isEditingRate = false
     @State private var note = ""
@@ -19,13 +19,22 @@ struct ExpenseFormView: View {
     @State private var newCategory: ExpenseCategory?
     @State private var isSetUp = false
     @State private var suggestions: [Suggestion] = []
+    @State private var templates: [Expense] = []
+    @State private var orderedCategories: [ExpenseCategory] = []
     @State private var confirmDelete = false
+    @State private var isScanning = false
+    @State private var scanStatus: String?
     @FocusState private var focus: Field?
+    private let template: Expense?
+    private let presetDate: Date?
 
     private enum Field { case amount, rate, note }
 
-    init(expense: Expense?) {
+    /// `template` — повтор прошлой траты: всё заполнено, дата — сейчас.
+    init(expense: Expense?, template: Expense? = nil, presetDate: Date? = nil) {
         original = expense
+        self.template = template
+        self.presetDate = presetDate
     }
 
     /// Курсы, от которых считаем: у старой траты — её снимок, у новой — текущие.
@@ -41,7 +50,7 @@ struct ExpenseFormView: View {
     private var draft: Expense? {
         guard let amount, let categoryID else { return nil }
         var rates = baseRates
-        if currency != .usdt, let rate = Decimal.parse(rateText), rate > 0 { rates[currency] = rate }
+        if currency != .base, let rate = Decimal.parse(rateText), rate > 0 { rates[currency] = rate }
         return Expense(id: original?.id ?? UUID(), date: date, amount: amount, currency: currency,
                        categoryID: categoryID, note: note.trimmingCharacters(in: .whitespacesAndNewlines),
                        rates: rates)
@@ -55,6 +64,9 @@ struct ExpenseFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if original == nil && amountText.isEmpty && !templates.isEmpty {
+                    recentSection
+                }
                 amountSection
                 categorySection
                 noteSection
@@ -110,10 +122,20 @@ struct ExpenseFormView: View {
             }
             .sheet(item: $newCategory) { category in
                 CategoryEditView(category: category) { saved in
+                    orderedCategories.insert(saved, at: 0)
                     categoryID = saved.id
                     categoryTouched = true
                 }
             }
+            .fullScreenCover(isPresented: $isScanning) {
+                CameraPicker { image in
+                    isScanning = false
+                    if let image { Task { await readReceipt(image) } }
+                }
+                .ignoresSafeArea()
+            }
+            .sensoryFeedback(.selection, trigger: categoryID)
+            .sensoryFeedback(.selection, trigger: currency)
             .onAppear(perform: setUp)
             .onChange(of: currency) { _, newValue in
                 rateText = (baseRates[newValue] ?? 1).inputString
@@ -123,6 +145,38 @@ struct ExpenseFormView: View {
                 guard !categoryTouched, let known = SuggestionEngine.exact(newValue, in: suggestions) else { return }
                 categoryID = known.categoryID
             }
+        }
+    }
+
+    // MARK: Недавние
+
+    private var recentSection: some View {
+        Section {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(templates) { expense in
+                        Button { fill(from: expense) } label: {
+                            HStack(spacing: 8) {
+                                CategoryIcon(category: store.category(for: expense.categoryID))
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(expense.note).lineLimit(1)
+                                    Text(expense.currency.format(expense.amount))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .monospacedDigit()
+                                }
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        } header: {
+            Text("Повторить недавнюю")
         }
     }
 
@@ -140,6 +194,12 @@ struct ExpenseFormView: View {
                 Text(currency.symbol)
                     .font(.title2)
                     .foregroundStyle(.secondary)
+            }
+
+            if original == nil {
+                Button { isScanning = true } label: {
+                    Label(scanStatus ?? "Сканировать чек", systemImage: "doc.text.viewfinder")
+                }
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -166,10 +226,10 @@ struct ExpenseFormView: View {
                 .padding(.vertical, 2)
             }
 
-            if currency != .usdt {
+            if currency != .base {
                 if isEditingRate {
                     HStack {
-                        Text("1 USDT =")
+                        Text("1 USD =")
                             .foregroundStyle(.secondary)
                         TextField("Курс", text: $rateText)
                             .keyboardType(.decimalPad)
@@ -186,13 +246,13 @@ struct ExpenseFormView: View {
                     } label: {
                         ViewThatFits {
                             HStack {
-                                Text("Курс: 1 USDT = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol)")
+                                Text("Курс: 1 USD = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol)")
                                     .foregroundStyle(.secondary)
                                 Spacer()
                                 Text("Изменить")
                             }
                             VStack(alignment: .leading) {
-                                Text("Курс: 1 USDT = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol)")
+                                Text("Курс: 1 USD = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol)")
                                     .foregroundStyle(.secondary)
                                 Text("Изменить")
                             }
@@ -223,7 +283,7 @@ struct ExpenseFormView: View {
     // MARK: Категория
 
     private var categorySection: some View {
-        let all = store.categoriesByUsage
+        let all = orderedCategories
         var visible = showAllCategories ? all : Array(all.prefix(8))
         if let categoryID, !visible.contains(where: { $0.id == categoryID }),
            let selected = all.first(where: { $0.id == categoryID }) {
@@ -300,7 +360,10 @@ struct ExpenseFormView: View {
     private func setUp() {
         guard !isSetUp else { return }
         isSetUp = true
+        // Считаем один раз при открытии, чтобы ввод не подтормаживал.
         suggestions = store.suggestions
+        templates = store.recentTemplates
+        orderedCategories = store.categoriesByUsage
         if let original {
             amountText = original.amount.inputString
             currency = original.currency
@@ -310,11 +373,54 @@ struct ExpenseFormView: View {
             date = original.date
             categoryTouched = true
             currencyTouched = true
+        } else if let template {
+            fill(from: template)
         } else {
             currency = store.vault.inputCurrency
             rateText = store.vault.rates.rate(currency).inputString
+            if let presetDate {
+                // День из календаря, время — текущее.
+                let time = Calendar.current.dateComponents([.hour, .minute], from: .now)
+                date = Calendar.current.date(bySettingHour: time.hour ?? 12, minute: time.minute ?? 0,
+                                             second: 0, of: presetDate) ?? presetDate
+            }
             focus = .amount
         }
+    }
+
+    /// Заполняет форму прошлой тратой: сумма, валюта, категория, комментарий. Дата — сейчас.
+    private func fill(from expense: Expense) {
+        withAnimation(.snappy) {
+            amountText = expense.amount.inputString
+            currency = expense.currency
+            rateText = store.vault.rates.rate(expense.currency).inputString
+            note = expense.note
+            categoryID = expense.categoryID
+            date = .now
+        }
+        categoryTouched = true
+        currencyTouched = true
+    }
+
+    private func readReceipt(_ image: UIImage) async {
+        scanStatus = "Читаю чек…"
+        let result = await ReceiptScanner.scan(image)
+        withAnimation(.snappy) {
+            if let amount = result.amount { amountText = amount.inputString }
+            if let merchant = result.merchant, note.isEmpty {
+                // Знакомый магазин — берём привычное название и категорию.
+                let key = SuggestionEngine.normalize(merchant)
+                if let known = suggestions.first(where: { key.contains($0.id) }) {
+                    note = known.note
+                    if !categoryTouched { categoryID = known.categoryID }
+                } else {
+                    note = merchant.capitalized
+                }
+            }
+        }
+        scanStatus = result.amount == nil
+            ? "Сумму не нашёл — введите вручную"
+            : "Проверьте сумму · сканировать ещё раз"
     }
 
     private func save() {

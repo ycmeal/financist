@@ -28,6 +28,10 @@ struct RootView: View {
             store.isLocked = store.lockEnabled
             updateCover()
             if store.isLocked { authenticate() }
+            store.consumeAddRequest()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AddRequest.notification)) { _ in
+            store.consumeAddRequest()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background && store.lockEnabled { store.isLocked = true }

@@ -1,23 +1,23 @@
 import Foundation
 
-/// Валюты приложения. Все курсы хранятся как «сколько единиц валюты за 1 USDT».
+/// Валюты приложения. Базовая — доллар: все курсы хранятся как «сколько единиц валюты за 1 USD».
 enum Currency: String, Codable, CaseIterable, Identifiable, Hashable, CodingKeyRepresentable {
-    case usdt = "USDT"
-    case lira = "TRY"
     case usd = "USD"
+    case lira = "TRY"
     case eur = "EUR"
     case rub = "RUB"
     case uzs = "UZS"
     case aed = "AED"
+
+    static let base: Currency = .usd
 
     var id: String { rawValue }
     var code: String { rawValue }
 
     var name: String {
         switch self {
-        case .usdt: "Tether"
-        case .lira: "Турецкая лира"
         case .usd: "Доллар США"
+        case .lira: "Турецкая лира"
         case .eur: "Евро"
         case .rub: "Российский рубль"
         case .uzs: "Узбекский сум"
@@ -27,9 +27,8 @@ enum Currency: String, Codable, CaseIterable, Identifiable, Hashable, CodingKeyR
 
     var flag: String {
         switch self {
-        case .usdt: "💠"
-        case .lira: "🇹🇷"
         case .usd: "🇺🇸"
+        case .lira: "🇹🇷"
         case .eur: "🇪🇺"
         case .rub: "🇷🇺"
         case .uzs: "🇺🇿"
@@ -39,9 +38,8 @@ enum Currency: String, Codable, CaseIterable, Identifiable, Hashable, CodingKeyR
 
     var symbol: String {
         switch self {
-        case .usdt: "USDT"
-        case .lira: "₺"
         case .usd: "$"
+        case .lira: "₺"
         case .eur: "€"
         case .rub: "₽"
         case .uzs: "сум"
@@ -52,9 +50,8 @@ enum Currency: String, Codable, CaseIterable, Identifiable, Hashable, CodingKeyR
     /// Для статистики «где тратили».
     var placeName: String {
         switch self {
-        case .usdt: "В USDT"
-        case .lira: "Турция"
         case .usd: "В долларах"
+        case .lira: "Турция"
         case .eur: "Европа"
         case .rub: "Россия"
         case .uzs: "Узбекистан"
@@ -65,8 +62,7 @@ enum Currency: String, Codable, CaseIterable, Identifiable, Hashable, CodingKeyR
     var fractionDigits: Int { self == .uzs ? 0 : 2 }
 
     /// Примерные курсы на случай, если интернета ещё не было ни разу.
-    static let fallbackPerUSDT: [Currency: Decimal] = [
-        .usdt: 1,
+    static let fallbackPerUSD: [Currency: Decimal] = [
         .usd: 1,
         .eur: Decimal(string: "0.86")!,
         .lira: 42,
