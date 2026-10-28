@@ -14,6 +14,7 @@ struct ExpenseFormView: View {
     @State private var note = ""
     @State private var categoryID: UUID?
     @State private var date = Date.now
+    @State private var pickingOtherDay = false
     @State private var categoryTouched = false
     @State private var currencyTouched = false
     @State private var showAllCategories = false
@@ -71,9 +72,7 @@ struct ExpenseFormView: View {
                 }
                 categorySection
                 noteSection
-                Section {
-                    DatePicker("Когда", selection: $date)
-                }
+                whenSection
                 if let draft, original != nil {
                     conversionSection(draft)
                 }
@@ -350,6 +349,51 @@ struct ExpenseFormView: View {
                 Text("Нажмите на подсказку — подставится и категория.")
             }
         }
+    }
+
+    // MARK: Когда
+
+    private enum Day: Hashable { case today, yesterday, other }
+
+    /// По умолчанию «Сегодня» — трогать не нужно. «Вчера» — одно касание, «Другой» открывает дату.
+    private var whenSection: some View {
+        Section {
+            Picker("Когда", selection: dayBinding.animation(.snappy)) {
+                Text("Сегодня").tag(Day.today)
+                Text("Вчера").tag(Day.yesterday)
+                Text("Другой").tag(Day.other)
+            }
+            .pickerStyle(.segmented)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+
+            if dayBinding.wrappedValue == .other {
+                DatePicker("Дата", selection: $date, in: ...Date.now)
+            }
+        } header: {
+            Text("Когда")
+        }
+    }
+
+    private var dayBinding: Binding<Day> {
+        Binding(
+            get: {
+                let calendar = Calendar.current
+                if pickingOtherDay { return .other }
+                if calendar.isDateInToday(date) { return .today }
+                if calendar.isDateInYesterday(date) { return .yesterday }
+                return .other
+            },
+            set: { day in
+                pickingOtherDay = day == .other
+                guard day != .other else { return }
+                // Меняем только день, время оставляем текущим.
+                let calendar = Calendar.current
+                let base = calendar.date(byAdding: .day, value: day == .yesterday ? -1 : 0, to: .now) ?? .now
+                let time = calendar.dateComponents([.hour, .minute], from: day == .today ? .now : date)
+                date = calendar.date(bySettingHour: time.hour ?? 12, minute: time.minute ?? 0, second: 0, of: base) ?? base
+            }
+        )
     }
 
     // MARK: Пересчёт
