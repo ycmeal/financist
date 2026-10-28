@@ -10,7 +10,52 @@ struct RootView: View {
 
     var body: some View {
         @Bindable var store = store
-        TabView(selection: $store.selectedTab) {
+        Group {
+            switch store.loadState {
+            case .ready:
+                tabs
+            case .waiting:
+                // iPhone ещё заблокирован или данные открываются — показываем только фон.
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(store.palette.background.ignoresSafeArea())
+            case .failed(let message):
+                LoadFailedView(message: message)
+            }
+        }
+        .sheet(item: $store.pendingRestore) { RestoreView(data: $0.data) }
+        .onAppear { store.loadIfNeeded() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.protectedDataDidBecomeAvailableNotification)) { _ in
+            store.loadIfNeeded()
+        }
+        .onChange(of: store.loadState) { _, state in
+            if state == .ready { start() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AddRequest.notification)) { _ in
+            store.consumeAddRequest()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background && store.lockEnabled { store.isLocked = true }
+            updateCover()
+            if phase == .active {
+                store.loadIfNeeded()
+                if store.isLocked { authenticate() }
+                Task { await store.refreshRates(force: false) }
+                // Новый день — переставляем вечерние напоминания на неделю вперёд.
+                store.refreshReminders()
+            }
+        }
+        .onChange(of: store.isLocked) { updateCover() }
+        .alert("Данные открыты из страховочной копии", isPresented: $store.recoveredFromBackup) {
+            Button("Понятно", role: .cancel) {}
+        } message: {
+            Text("Основной файл не прочитался, поэтому траты открыты из копии, сделанной при прошлом запуске. Проверьте, все ли последние траты на месте.")
+        }
+    }
+
+    private var tabs: some View {
+        @Bindable var store = store
+        return TabView(selection: $store.selectedTab) {
             ExpensesView()
                 .tabItem { Label("Траты", systemImage: "list.bullet.rectangle.portrait") }
                 .tag(AppTab.expenses)
@@ -21,36 +66,17 @@ struct RootView: View {
                 .tabItem { Label("Настройки", systemImage: "gearshape") }
                 .tag(AppTab.settings)
         }
-        .sheet(item: $store.pendingRestore) { RestoreView(data: $0.data) }
-        .onAppear {
-            guard !didStart else { return }
-            didStart = true
-            store.isLocked = store.lockEnabled
-            updateCover()
-            if store.isLocked { authenticate() }
-            store.consumeAddRequest()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: AddRequest.notification)) { _ in
-            store.consumeAddRequest()
-        }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .background && store.lockEnabled { store.isLocked = true }
-            updateCover()
-            if phase == .active {
-                if store.isLocked { authenticate() }
-                Task { await store.refreshRates(force: false) }
-                // Новый день — переставляем вечерние напоминания на неделю вперёд.
-                store.refreshReminders()
-            }
-        }
-        .onChange(of: store.isLocked) { updateCover() }
-        .task { await store.refreshRates(force: false) }
-        .alert("Не удалось открыть данные", isPresented: .constant(store.loadError != nil)) {
-            Button("Удалить и начать заново", role: .destructive) { store.resetAll() }
-            Button("Позже", role: .cancel) { store.loadError = nil }
-        } message: {
-            Text((store.loadError ?? "") + "\n\nДанные можно вернуть из файла переноса: Настройки → Перенос на новый iPhone.")
-        }
+    }
+
+    /// Запуск после того, как данные открыты: замок, отложенный ввод траты, курсы.
+    private func start() {
+        guard !didStart else { return }
+        didStart = true
+        store.isLocked = store.lockEnabled
+        updateCover()
+        if store.isLocked { authenticate() }
+        store.consumeAddRequest()
+        Task { await store.refreshRates(force: false) }
     }
 
     /// Экран блокировки и шторка живут в отдельном окне поверх всего,
@@ -93,6 +119,47 @@ final class CoverWindow {
     func hide() {
         window?.isHidden = true
         window = nil
+    }
+}
+
+/// Данные не открылись. Ничего не удаляем — только «попробовать ещё раз» или файл переноса.
+private struct LoadFailedView: View {
+    @Environment(AppStore.self) private var store
+    let message: String
+    @State private var showImporter = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                Image(systemName: "externaldrive.badge.exclamationmark")
+                    .font(.largeTitle)
+                    .foregroundStyle(.tint)
+                Text("Не получилось открыть траты")
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+                Text("Ничего не удалено — данные на месте. Попробуйте ещё раз или перезапустите приложение. Если не поможет, траты можно вернуть из файла переноса.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                Button {
+                    store.loadIfNeeded()
+                } label: {
+                    Text("Попробовать ещё раз").frame(maxWidth: 320)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                Button("Загрузить файл переноса") { showImporter = true }
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity)
+        }
+        .background(store.palette.background.ignoresSafeArea())
+        .fileImporter(isPresented: $showImporter, allowedContentTypes: [.financistBackup, .data]) { result in
+            if case .success(let url) = result { store.handle(url: url) }
+        }
     }
 }
 

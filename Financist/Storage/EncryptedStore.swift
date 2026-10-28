@@ -61,30 +61,90 @@ enum KeyStore {
 
 /// Файл с данными: JSON → AES-256-GCM → файл с защитой `.completeFileProtection`
 /// (iOS дополнительно шифрует его ключом устройства, пока iPhone заблокирован).
+///
+/// Защита от потери данных:
+/// - запись атомарная: сначала во временный файл, потом подмена — сбой посреди записи не портит данные;
+/// - при каждом успешном открытии делается страховочная копия `vault.backup.sealed`,
+///   и если основной файл не читается, приложение открывает копию;
+/// - если файл есть, а ключа нет, новый ключ не создаётся — старый файл не затирается.
 struct EncryptedStore {
-    let url: URL = {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return dir.appendingPathComponent("vault.sealed")
-    }()
+    private static let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    let url = EncryptedStore.directory.appendingPathComponent("vault.sealed")
+    let backupURL = EncryptedStore.directory.appendingPathComponent("vault.backup.sealed")
 
     var fileExists: Bool { FileManager.default.fileExists(atPath: url.path) }
 
+    /// Возвращает nil, если данных ещё нет (первый запуск).
     func load() throws -> Vault? {
         guard fileExists else { return nil }
+        return try read(url)
+    }
+
+    /// Страховочная копия — на случай, если основной файл повреждён.
+    func loadBackup() throws -> Vault? {
+        guard FileManager.default.fileExists(atPath: backupURL.path) else { return nil }
+        return try read(backupURL)
+    }
+
+    private func read(_ file: URL) throws -> Vault {
         guard let key = try KeyStore.existing() else { throw VaultError.keyMissing }
-        let sealed = try Data(contentsOf: url)
+        let sealed = try Data(contentsOf: file)
         let json = try AES.GCM.open(AES.GCM.SealedBox(combined: sealed), using: key)
         return try JSONDecoder().decode(Vault.self, from: json)
     }
 
-    func save(_ vault: Vault) throws {
+    /// Обновляет страховочную копию из основного файла (тем же ключом, теми же правами).
+    func refreshBackup() {
+        let manager = FileManager.default
+        guard fileExists else { return }
+        let temp = backupURL.appendingPathExtension("tmp")
+        try? manager.removeItem(at: temp)
+        guard (try? manager.copyItem(at: url, to: temp)) != nil else { return }
+        try? manager.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: temp.path)
+        if manager.fileExists(atPath: backupURL.path) {
+            _ = try? manager.replaceItemAt(backupURL, withItemAt: temp)
+        } else {
+            try? manager.moveItem(at: temp, to: backupURL)
+        }
+        excludeFromBackup(backupURL)
+    }
+
+    /// `startingOver` — только для «Удалить всё» и загрузки файла переноса: тогда при пропавшем ключе
+    /// старый нечитаемый файл откладывается в сторону, а не затирается.
+    func save(_ vault: Vault, startingOver: Bool = false) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let key = try KeyStore.loadOrCreate()
+        let key: SymmetricKey
+        if let existing = try KeyStore.existing() {
+            key = existing
+        } else if fileExists && !startingOver {
+            // Файл есть, а ключа нет — ни в коем случае не создаём новый ключ поверх.
+            throw VaultError.keyMissing
+        } else {
+            if fileExists { setAside(url) }
+            if FileManager.default.fileExists(atPath: backupURL.path) { setAside(backupURL) }
+            key = try KeyStore.loadOrCreate()
+        }
         let json = try JSONEncoder().encode(vault)
         guard let sealed = try AES.GCM.seal(json, using: key).combined else { throw VaultError.badBackup }
         try sealed.write(to: url, options: [.atomic, .completeFileProtection])
-        // Без iCloud: файл не попадает в резервные копии iCloud/iTunes.
-        var fileURL = url
+        excludeFromBackup(url)
+    }
+
+    /// Откладывает основной файл в сторону (например, если он не читается этой версией приложения).
+    func setAsideCurrent() {
+        if fileExists { setAside(url) }
+    }
+
+    /// Нечитаемый файл не удаляем, а переименовываем — вдруг ключ найдётся или поможет новая версия.
+    private func setAside(_ file: URL) {
+        let stamp = Int(Date.now.timeIntervalSince1970)
+        let target = file.deletingPathExtension().appendingPathExtension("unreadable-\(stamp).sealed")
+        try? FileManager.default.moveItem(at: file, to: target)
+    }
+
+    /// Без iCloud: файлы не попадают в резервные копии iCloud/компьютера.
+    private func excludeFromBackup(_ file: URL) {
+        var fileURL = file
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
         try? fileURL.setResourceValues(values)
@@ -92,7 +152,17 @@ struct EncryptedStore {
 
     func wipe() {
         try? FileManager.default.removeItem(at: url)
+        try? FileManager.default.removeItem(at: backupURL)
         KeyStore.delete()
+    }
+}
+
+/// Ошибка, которая проходит сама: iPhone заблокирован, и iOS пока не даёт читать защищённые данные.
+extension Error {
+    var isProtectedDataUnavailable: Bool {
+        if case VaultError.keychain(let status) = self, status == errSecInteractionNotAllowed { return true }
+        let ns = self as NSError
+        return ns.domain == NSCocoaErrorDomain && ns.code == NSFileReadNoPermissionError
     }
 }
 

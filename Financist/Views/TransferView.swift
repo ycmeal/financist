@@ -30,7 +30,14 @@ struct TransferView: View {
             } header: {
                 Text("На старом iPhone")
             } footer: {
-                Text("В файле \(Fmt.count(store.vault.expenses.count, "трата", "траты", "трат")), категории и курсы.")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("В файле \(Fmt.count(store.vault.expenses.count, "трата", "траты", "трат")), категории и курсы.")
+                    if let last = store.vault.lastTransferFileAt {
+                        Text("Последний раз сохраняли: \(RuDate.dayTitle(last)).")
+                    } else {
+                        Text("Файл ещё ни разу не сохраняли.")
+                    }
+                }
             }
 
             Section {

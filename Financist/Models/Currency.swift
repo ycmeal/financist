@@ -11,6 +11,21 @@ enum Currency: String, Codable, CaseIterable, Identifiable, Hashable, CodingKeyR
 
     static let base: Currency = .usd
 
+    /// Код из сохранённых данных. Старые коды переводим в нынешние (USDT ≈ доллар).
+    init?(code: String) {
+        if code == "USDT" { self = .usd; return }
+        self.init(rawValue: code)
+    }
+
+    init(from decoder: Decoder) throws {
+        let code = try decoder.singleValueContainer().decode(String.self)
+        guard let currency = Currency(code: code) else {
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath,
+                                                    debugDescription: "Неизвестная валюта \(code)"))
+        }
+        self = currency
+    }
+
     var id: String { rawValue }
     var code: String { rawValue }
 

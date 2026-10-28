@@ -25,6 +25,42 @@ struct Expense: Identifiable, Codable, Hashable {
     }
 }
 
+// Чтение старых и будущих файлов. В расширениях — чтобы у структур остались обычные инициализаторы.
+extension Expense {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        date = try c.decode(Date.self, forKey: .date)
+        amount = try c.decode(Decimal.self, forKey: .amount)
+        currency = try c.decode(Currency.self, forKey: .currency)
+        categoryID = try c.decode(UUID.self, forKey: .categoryID)
+        note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+        rates = try c.decodeRates(forKey: .rates) ?? [:]
+        recurringID = try c.decodeIfPresent(UUID.self, forKey: .recurringID)
+    }
+}
+
+extension RateTable {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        fetched = try c.decodeRates(forKey: .fetched) ?? Currency.fallbackPerUSD
+        manual = try c.decodeRates(forKey: .manual) ?? [:]
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt)
+    }
+}
+
+extension KeyedDecodingContainer {
+    /// Курсы по кодам валют. Неизвестные коды пропускаем: без курса трата посчитается по запасному.
+    func decodeRates(forKey key: Key) throws -> [Currency: Decimal]? {
+        guard let raw = try decodeIfPresent([String: Decimal].self, forKey: key) else { return nil }
+        var result: [Currency: Decimal] = [:]
+        for (code, value) in raw {
+            if let currency = Currency(code: code), value > 0 { result[currency] = value }
+        }
+        return result
+    }
+}
+
 /// Текущие курсы: автоматически загруженные + ручные правки.
 struct RateTable: Codable, Hashable {
     var fetched: [Currency: Decimal] = Currency.fallbackPerUSD
@@ -58,7 +94,14 @@ struct RecurringPayment: Identifiable, Codable, Hashable {
 }
 
 /// Всё, что хранит приложение. Целиком шифруется и пишется в один файл.
+///
+/// ПРАВИЛА ДЛЯ ОБНОВЛЕНИЙ (иначе у пользователя не откроются старые данные):
+/// - новые поля добавлять только с `decodeIfPresent` и значением по умолчанию;
+/// - не переименовывать поля и не менять их типы; не удалять случаи у `Currency` и `Palette` —
+///   старые коды переводить в новые (см. `Currency(code:)`);
+/// - при несовместимой переделке увеличить `schemaVersion` и написать перевод старых данных.
 struct Vault: Codable {
+    var schemaVersion = 1
     var expenses: [Expense] = []
     var categories: [ExpenseCategory] = ExpenseCategory.defaults
     var rates = RateTable()
@@ -76,24 +119,30 @@ struct Vault: Codable {
     /// Время вечернего напоминания в минутах от полуночи, не позже 21:00.
     var eveningMinutes = 20 * 60 + 30
     var palette: Palette = .sage
+    /// Когда последний раз сохраняли файл переноса — чтобы мягко напомнить.
+    var lastTransferFileAt: Date?
 
     init() {}
 
     // Новые поля добавлять через decodeIfPresent, чтобы старые файлы читались.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        // Траты и категории читаем строго: если что-то не так, лучше не открыть файл
+        // (он останется нетронутым), чем молча потерять траты.
         expenses = try c.decodeIfPresent([Expense].self, forKey: .expenses) ?? []
         categories = try c.decodeIfPresent([ExpenseCategory].self, forKey: .categories) ?? ExpenseCategory.defaults
         rates = try c.decodeIfPresent(RateTable.self, forKey: .rates) ?? RateTable()
-        inputCurrency = try c.decodeIfPresent(Currency.self, forKey: .inputCurrency) ?? .lira
-        recentCurrencies = try c.decodeIfPresent([Currency].self, forKey: .recentCurrencies) ?? [.lira, .usd]
-        displayCurrency = try c.decodeIfPresent(Currency.self, forKey: .displayCurrency) ?? .usd
+        inputCurrency = (try? c.decodeIfPresent(Currency.self, forKey: .inputCurrency)) ?? .lira
+        recentCurrencies = (try? c.decodeIfPresent([Currency].self, forKey: .recentCurrencies)) ?? [.lira, .usd]
+        displayCurrency = (try? c.decodeIfPresent(Currency.self, forKey: .displayCurrency)) ?? .usd
         lockEnabled = try c.decodeIfPresent(Bool.self, forKey: .lockEnabled) ?? false
         autoUpdateRates = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateRates) ?? true
         recurring = try c.decodeIfPresent([RecurringPayment].self, forKey: .recurring) ?? []
         skippedRecurring = try c.decodeIfPresent([String].self, forKey: .skippedRecurring) ?? []
         eveningReminder = try c.decodeIfPresent(Bool.self, forKey: .eveningReminder) ?? false
-        palette = try c.decodeIfPresent(Palette.self, forKey: .palette) ?? .sage
+        palette = (try? c.decodeIfPresent(Palette.self, forKey: .palette)) ?? .sage
+        lastTransferFileAt = try c.decodeIfPresent(Date.self, forKey: .lastTransferFileAt)
         eveningMinutes = try min(21 * 60, c.decodeIfPresent(Int.self, forKey: .eveningMinutes) ?? 20 * 60 + 30)
     }
 }

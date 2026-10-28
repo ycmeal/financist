@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import UIKit
 
 /// Файл резервной копии, который нужно восстановить (выбран в «Файлах» или пришёл по AirDrop).
 struct PendingRestore: Identifiable {
@@ -8,11 +9,20 @@ struct PendingRestore: Identifiable {
     let data: Data
 }
 
+/// Состояние данных: ждём разблокировки, всё открыто или открыть не удалось.
+enum LoadState: Equatable {
+    case waiting
+    case ready
+    case failed(String)
+}
+
 @Observable
 @MainActor
 final class AppStore {
     private(set) var vault = Vault()
-    var loadError: String?
+    private(set) var loadState: LoadState = .waiting
+    /// Основной файл не прочитался, данные открыты из страховочной копии.
+    var recoveredFromBackup = false
     var saveError: String?
     var ratesError: String?
     private(set) var isRefreshingRates = false
@@ -27,16 +37,43 @@ final class AppStore {
     var isLocked = false
 
     private let store = EncryptedStore()
-    /// false, если файл не удалось расшифровать — чтобы не затереть его пустыми данными.
-    private var canSave = true
+    /// Сохраняем только после успешного открытия — иначе можно затереть настоящие данные пустыми.
+    private var canSave = false
 
-    init() {
+    init() {}
+
+    /// Открывает данные. Безопасно вызывать сколько угодно раз: при запуске, при возврате
+    /// в приложение и когда iPhone разблокировали.
+    ///
+    /// iOS может запустить приложение заранее, пока телефон ещё заблокирован, — тогда файл
+    /// и ключ недоступны. Это не ошибка: просто ждём разблокировки и ничего не трогаем.
+    func loadIfNeeded() {
+        guard loadState != .ready, UIApplication.shared.isProtectedDataAvailable else { return }
         do {
             if let loaded = try store.load() { vault = loaded }
+            finishLoading()
+            store.refreshBackup()
+        } catch where error.isProtectedDataUnavailable {
+            return
         } catch {
-            loadError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            canSave = false
+            // Основной файл не читается — пробуем страховочную копию.
+            if let backup = try? store.loadBackup() {
+                vault = backup
+                recoveredFromBackup = true
+                store.setAsideCurrent()
+                finishLoading()
+                persist()
+            } else {
+                // Ничего не удаляем и не перезаписываем: файл остаётся на месте.
+                loadState = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            }
         }
+    }
+
+    private func finishLoading() {
+        loadState = .ready
+        canSave = true
+        refreshReminders()
     }
 
     private func persist() {
@@ -279,7 +316,7 @@ final class AppStore {
     // MARK: Курсы
 
     func refreshRates(force: Bool) async {
-        guard vault.autoUpdateRates else { return }
+        guard loadState == .ready, vault.autoUpdateRates else { return }
         if !force, let updated = vault.rates.updatedAt, Date.now.timeIntervalSince(updated) < 6 * 3600 { return }
         guard !isRefreshingRates else { return }
         isRefreshingRates = true
@@ -303,24 +340,32 @@ final class AppStore {
     // MARK: Перенос данных
 
     func backup(password: String) throws -> Data {
-        try BackupCrypto.encrypt(vault, password: password)
+        let data = try BackupCrypto.encrypt(vault, password: password)
+        vault.lastTransferFileAt = .now
+        persist()
+        return data
     }
 
     /// Заменяет все данные на этом iPhone данными из файла.
     func restore(from data: Data, password: String) throws {
         var restored = try BackupCrypto.decrypt(data, password: password)
         restored.lockEnabled = vault.lockEnabled
+        restored.palette = vault.palette
+        // Прежние данные не пропадут: читаемые уходят в страховочную копию, нечитаемые — в сторону.
+        if loadState == .ready { store.refreshBackup() } else { store.setAsideCurrent() }
         vault = restored
+        try store.save(vault, startingOver: true)
         canSave = true
-        loadError = nil
-        persist()
+        loadState = .ready
+        refreshReminders()
     }
 
     func resetAll() {
         store.wipe()
         vault = Vault()
         canSave = true
-        loadError = nil
+        loadState = .ready
+        try? store.save(vault, startingOver: true)
     }
 
     func csv() -> Data {

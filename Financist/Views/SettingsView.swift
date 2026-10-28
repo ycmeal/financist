@@ -61,6 +61,10 @@ struct SettingsView: View {
                     NavigationLink { QuickInputView() } label: {
                         SettingsLabel("Быстрый ввод", symbol: "bolt.fill", color: "purple")
                     }
+                } footer: {
+                    if transferFileIsOld {
+                        Text("Файл переноса давно не сохраняли. Если с телефоном что-то случится, траты можно вернуть только из него.")
+                    }
                 }
 
                 Section {
@@ -91,6 +95,13 @@ struct SettingsView: View {
                 Text("Вернуть их можно будет только из файла переноса.")
             }
         }
+    }
+
+    /// Мягкая подсказка: трат уже много, а файла переноса нет больше месяца.
+    private var transferFileIsOld: Bool {
+        guard store.vault.expenses.count >= 20 else { return false }
+        guard let last = store.vault.lastTransferFileAt else { return true }
+        return Date.now.timeIntervalSince(last) > 30 * 86_400
     }
 
     /// С 17:00 до 21:00 — позже напоминать не будем.
