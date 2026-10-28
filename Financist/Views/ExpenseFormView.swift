@@ -65,6 +65,9 @@ struct ExpenseFormView: View {
         NavigationStack {
             Form {
                 amountSection
+                if original == nil && amountText.isEmpty && !templates.isEmpty {
+                    recentSection
+                }
                 categorySection
                 noteSection
                 Section {
@@ -149,109 +152,139 @@ struct ExpenseFormView: View {
 
     private var amountSection: some View {
         Section {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(spacing: 10) {
                 TextField("0", text: $amountText)
                     .keyboardType(.decimalPad)
                     .font(.largeTitle.weight(.semibold))
                     .monospacedDigit()
                     .focused($focus, equals: .amount)
                     .accessibilityLabel("Сумма")
-                Text(currency.symbol)
-                    .font(.title2)
+                if original == nil {
+                    Button { isScanning = true } label: {
+                        Image(systemName: "doc.text.viewfinder")
+                            .font(.title3)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                    .accessibilityLabel("Сканировать чек")
+                }
+                currencyMenu
+            }
+
+            if let scanStatus {
+                Label(scanStatus, systemImage: "doc.text.viewfinder")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
-            if original == nil && amountText.isEmpty && !templates.isEmpty {
-                // Тихая подсказка: прошлые траты одним касанием. Исчезает, как только вводите сумму.
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        Text("Как в прошлый раз:")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        ForEach(Array(templates.prefix(4))) { expense in
-                            Button { fill(from: expense) } label: {
-                                Text("\(expense.note) · \(expense.currency.format(expense.amount))")
-                                    .font(.subheadline)
-                            }
-                            .buttonStyle(.bordered)
-                            .buttonBorderShape(.capsule)
-                            .controlSize(.small)
-                            .tint(Color.secondary)
-                        }
-                    }
-                }
-                .transition(.opacity)
-            }
-
-            if original == nil {
-                Button { isScanning = true } label: {
-                    Label(scanStatus ?? "Сканировать чек", systemImage: "doc.text.viewfinder")
-                }
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(currencyChoices) { cur in
-                        Button { selectCurrency(cur) } label: {
-                            Text("\(cur.flag) \(cur.code)")
-                                .font(.body.weight(cur == currency ? .semibold : .regular))
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(cur == currency ? Color.accentColor : Color.secondary)
-                        .accessibilityAddTraits(cur == currency ? .isSelected : [])
-                    }
-                    Menu {
-                        ForEach(Currency.allCases) { cur in
-                            Button("\(cur.flag) \(cur.code) — \(cur.name)") { selectCurrency(cur) }
-                        }
-                    } label: {
-                        Text("Другая")
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(Color.secondary)
-                }
-                .padding(.vertical, 2)
-            }
-
-            if currency != .base {
-                if isEditingRate {
-                    HStack {
-                        Text("1 USD =")
-                            .foregroundStyle(.secondary)
-                        TextField("Курс", text: $rateText)
-                            .keyboardType(.decimalPad)
-                            .monospacedDigit()
-                            .multilineTextAlignment(.trailing)
-                            .focused($focus, equals: .rate)
-                        Text(currency.symbol)
-                            .foregroundStyle(.secondary)
-                    }
-                } else {
-                    Button {
-                        isEditingRate = true
-                        focus = .rate
-                    } label: {
-                        ViewThatFits {
-                            HStack {
-                                Text("Курс: 1 USD = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol)")
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Text("Изменить")
-                            }
-                            VStack(alignment: .leading) {
-                                Text("Курс: 1 USD = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol)")
-                                    .foregroundStyle(.secondary)
-                                Text("Изменить")
-                            }
-                        }
-                    }
+            if currency != .base && isEditingRate {
+                HStack {
+                    Text("Курс: 1 USD =")
+                        .foregroundStyle(.secondary)
+                    TextField("Курс", text: $rateText)
+                        .keyboardType(.decimalPad)
+                        .monospacedDigit()
+                        .multilineTextAlignment(.trailing)
+                        .focused($focus, equals: .rate)
+                    Text(currency.symbol)
+                        .foregroundStyle(.secondary)
                 }
             }
         } footer: {
-            if let draft, draft.currency != store.displayCurrency {
-                Text("≈ " + store.displayCurrency.format(draft.amount(in: store.displayCurrency).rounded(scale: 2)))
-                    .font(.body)
+            // Тонкая подпись: пересчёт и курс, который можно поправить.
+            ViewThatFits(in: .horizontal) {
+                HStack { conversionText; Spacer(); rateLink }
+                VStack(alignment: .leading, spacing: 4) { conversionText; rateLink }
             }
+        }
+    }
+
+    /// Недавние траты отдельным тихим блоком: одно касание — всё заполнено.
+    private var recentSection: some View {
+        Section {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(templates.prefix(5))) { expense in
+                        Button { fill(from: expense) } label: {
+                            HStack(spacing: 7) {
+                                Circle()
+                                    .fill(store.category(for: expense.categoryID).color)
+                                    .frame(width: 8, height: 8)
+                                Text(expense.note)
+                                Text(expense.currency.format(expense.amount))
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                            .font(.subheadline)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+        } header: {
+            Text("Недавние")
+        }
+    }
+
+    /// Кнопка валюты справа от суммы: по нажатию — список, недавние сверху.
+    private var currencyMenu: some View {
+        Menu {
+            Section("Недавние") {
+                ForEach(currencyChoices) { currencyItem($0) }
+            }
+            Section("Все валюты") {
+                ForEach(Currency.allCases.filter { !currencyChoices.contains($0) }) { currencyItem($0) }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text("\(currency.flag) \(currency.code)")
+                    .fontWeight(.semibold)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(Color.primary)
+        .accessibilityLabel("Валюта: \(currency.name)")
+    }
+
+    private func currencyItem(_ cur: Currency) -> some View {
+        Button { selectCurrency(cur) } label: {
+            if cur == currency {
+                Label("\(cur.flag) \(cur.code) — \(cur.name)", systemImage: "checkmark")
+            } else {
+                Text("\(cur.flag) \(cur.code) — \(cur.name)")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var conversionText: some View {
+        if let draft, draft.currency != store.displayCurrency {
+            Text("≈ " + store.displayCurrency.format(draft.amount(in: store.displayCurrency).rounded(scale: 2)))
+        }
+    }
+
+    @ViewBuilder
+    private var rateLink: some View {
+        if currency != .base && !isEditingRate {
+            Button {
+                withAnimation(.snappy) { isEditingRate = true }
+                focus = .rate
+            } label: {
+                Text("1 USD = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol) · ")
+                    .foregroundStyle(.secondary)
+                + Text("изменить")
+                    .foregroundStyle(Color.accentColor)
+            }
+            .font(.footnote)
         }
     }
 
@@ -265,6 +298,7 @@ struct ExpenseFormView: View {
     private func selectCurrency(_ cur: Currency) {
         currency = cur
         currencyTouched = true
+        isEditingRate = false
     }
 
     // MARK: Категория
