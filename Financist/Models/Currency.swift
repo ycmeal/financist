@@ -49,6 +49,19 @@ enum Currency: String, Codable, CaseIterable, Identifiable, Hashable, CodingKeyR
         }
     }
 
+    /// Для статистики «где тратили».
+    var placeName: String {
+        switch self {
+        case .usdt: "В USDT"
+        case .lira: "Турция"
+        case .usd: "В долларах"
+        case .eur: "Европа"
+        case .rub: "Россия"
+        case .uzs: "Узбекистан"
+        case .aed: "ОАЭ"
+        }
+    }
+
     var fractionDigits: Int { self == .uzs ? 0 : 2 }
 
     /// Примерные курсы на случай, если интернета ещё не было ни разу.

@@ -1,6 +1,12 @@
 import Foundation
 import Observation
 
+/// Файл резервной копии, который нужно восстановить (выбран в «Файлах» или пришёл по AirDrop).
+struct PendingRestore: Identifiable {
+    let id = UUID()
+    let data: Data
+}
+
 @Observable
 @MainActor
 final class AppStore {
@@ -9,6 +15,13 @@ final class AppStore {
     var saveError: String?
     var ratesError: String?
     private(set) var isRefreshingRates = false
+
+    // Навигация: виджет открывает ввод траты, AirDrop — восстановление.
+    var selectedTab: AppTab = .expenses
+    var isAddingExpense = false
+    var pendingRestore: PendingRestore?
+    /// Приложение закрыто замком Face ID.
+    var isLocked = false
 
     private let store = EncryptedStore()
     /// false, если файл не удалось расшифровать — чтобы не затереть его пустыми данными.
@@ -33,6 +46,21 @@ final class AppStore {
         }
     }
 
+    // MARK: Ссылки
+
+    func handle(url: URL) {
+        if url.isFileURL {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            if let data = try? Data(contentsOf: url) { pendingRestore = PendingRestore(data: data) }
+            // Копию из AirDrop (папка Inbox) больше не храним.
+            if url.path.contains("/Inbox/") { try? FileManager.default.removeItem(at: url) }
+        } else if url.scheme == "financist" && url.host == "add" {
+            selectedTab = .expenses
+            isAddingExpense = true
+        }
+    }
+
     // MARK: Настройки
 
     var displayCurrency: Currency {
@@ -40,14 +68,21 @@ final class AppStore {
         set { vault.displayCurrency = newValue; persist() }
     }
 
-    var inputCurrency: Currency {
-        get { vault.inputCurrency }
-        set { vault.inputCurrency = newValue; persist() }
-    }
-
     var lockEnabled: Bool {
         get { vault.lockEnabled }
         set { vault.lockEnabled = newValue; persist() }
+    }
+
+    var autoUpdateRates: Bool {
+        get { vault.autoUpdateRates }
+        set { vault.autoUpdateRates = newValue; persist() }
+    }
+
+    /// Валюты для быстрого выбора: последние использованные + валюта итогов.
+    var quickCurrencies: [Currency] {
+        var list = vault.recentCurrencies
+        if !list.contains(vault.displayCurrency) { list.append(vault.displayCurrency) }
+        return Array(list.prefix(4))
     }
 
     // MARK: Траты
@@ -57,6 +92,11 @@ final class AppStore {
             vault.expenses[index] = expense
         } else {
             vault.expenses.append(expense)
+            // Запоминаем выбор валюты для следующей траты.
+            vault.inputCurrency = expense.currency
+            vault.recentCurrencies.removeAll { $0 == expense.currency }
+            vault.recentCurrencies.insert(expense.currency, at: 0)
+            vault.recentCurrencies = Array(vault.recentCurrencies.prefix(4))
         }
         persist()
     }
@@ -75,6 +115,17 @@ final class AppStore {
 
     func category(for id: UUID) -> ExpenseCategory {
         vault.categories.first { $0.id == id } ?? .unknown
+    }
+
+    /// Категории, отсортированные по частоте использования — нужные всегда сверху.
+    var categoriesByUsage: [ExpenseCategory] {
+        let counts = Dictionary(grouping: vault.expenses, by: \.categoryID).mapValues(\.count)
+        return vault.categories.enumerated()
+            .sorted { a, b in
+                let ca = counts[a.element.id] ?? 0, cb = counts[b.element.id] ?? 0
+                return ca != cb ? ca > cb : a.offset < b.offset
+            }
+            .map(\.element)
     }
 
     func upsert(_ category: ExpenseCategory) {
@@ -96,18 +147,17 @@ final class AppStore {
         let removing = Set(ids)
         guard vault.categories.count > removing.count else { return }
         vault.categories.removeAll { removing.contains($0.id) }
-        let fallback: ExpenseCategory
-        if let other = vault.categories.first(where: { $0.name == ExpenseCategory.otherName }) {
-            fallback = other
-        } else if vault.expenses.contains(where: { removing.contains($0.categoryID) }) {
-            fallback = ExpenseCategory.defaults.last!
-            vault.categories.append(fallback)
-        } else {
-            persist()
-            return
-        }
-        for index in vault.expenses.indices where removing.contains(vault.expenses[index].categoryID) {
-            vault.expenses[index].categoryID = fallback.id
+        if vault.expenses.contains(where: { removing.contains($0.categoryID) }) {
+            let fallback: ExpenseCategory
+            if let other = vault.categories.first(where: { $0.name == ExpenseCategory.otherName }) {
+                fallback = other
+            } else {
+                fallback = ExpenseCategory.defaults.last!
+                vault.categories.append(fallback)
+            }
+            for index in vault.expenses.indices where removing.contains(vault.expenses[index].categoryID) {
+                vault.expenses[index].categoryID = fallback.id
+            }
         }
         persist()
     }
@@ -119,6 +169,7 @@ final class AppStore {
     // MARK: Курсы
 
     func refreshRates(force: Bool) async {
+        guard vault.autoUpdateRates else { return }
         if !force, let updated = vault.rates.updatedAt, Date.now.timeIntervalSince(updated) < 6 * 3600 { return }
         guard !isRefreshingRates else { return }
         isRefreshingRates = true
@@ -130,7 +181,7 @@ final class AppStore {
             ratesError = nil
             persist()
         } catch {
-            ratesError = "Не удалось обновить курсы. Проверь интернет."
+            ratesError = "Нет интернета — курсы не обновились."
         }
     }
 
@@ -139,12 +190,13 @@ final class AppStore {
         persist()
     }
 
-    // MARK: Данные
+    // MARK: Перенос данных
 
     func backup(password: String) throws -> Data {
         try BackupCrypto.encrypt(vault, password: password)
     }
 
+    /// Заменяет все данные на этом iPhone данными из файла.
     func restore(from data: Data, password: String) throws {
         var restored = try BackupCrypto.decrypt(data, password: password)
         restored.lockEnabled = vault.lockEnabled
@@ -162,11 +214,11 @@ final class AppStore {
     }
 
     func csv() -> Data {
+        func esc(_ s: String) -> String { "\"" + s.replacingOccurrences(of: "\"", with: "\"\"") + "\"" }
+        func num(_ d: Decimal) -> String { Fmt.number(d, minFraction: 0, maxFraction: 6, grouping: false) }
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-        func esc(_ s: String) -> String { "\"" + s.replacingOccurrences(of: "\"", with: "\"\"") + "\"" }
-        func num(_ d: Decimal) -> String { Fmt.number(d, minFraction: 0, maxFraction: 6, grouping: false) }
 
         var lines = ["Дата;Сумма;Валюта;Категория;Заметка;Сумма в USDT;Курс за 1 USDT"]
         for e in vault.expenses.sorted(by: { $0.date < $1.date }) {
@@ -183,4 +235,8 @@ final class AppStore {
         // BOM, чтобы Excel открыл кириллицу правильно.
         return Data("\u{FEFF}".utf8) + Data(lines.joined(separator: "\n").utf8)
     }
+}
+
+enum AppTab: Hashable {
+    case expenses, stats, settings
 }

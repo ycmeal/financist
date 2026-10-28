@@ -12,11 +12,12 @@ struct CategoriesView: View {
                         HStack(spacing: 12) {
                             CategoryIcon(category: category)
                             Text(category.name)
-                            Spacer()
+                            Spacer(minLength: 0)
                             let count = store.expenseCount(in: category.id)
                             if count > 0 {
                                 Text("\(count)")
                                     .foregroundStyle(.secondary)
+                                    .accessibilityLabel(Fmt.count(count, "трата", "траты", "трат"))
                             }
                         }
                     }
@@ -27,16 +28,17 @@ struct CategoriesView: View {
                     store.deleteCategories(ids: offsets.map { store.vault.categories[$0].id })
                 }
             } footer: {
-                Text("При удалении категории её траты переедут в «\(ExpenseCategory.otherName)».")
+                Text("Если удалить категорию, её траты перейдут в «\(ExpenseCategory.otherName)».")
             }
         }
+        .warmBackground()
         .navigationTitle("Категории")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { EditButton() }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    editing = ExpenseCategory(name: "", symbol: "sparkles", colorName: "blue")
+                    editing = ExpenseCategory(name: "", symbol: "star.fill", colorName: "orange")
                 } label: { Image(systemName: "plus") }
                     .accessibilityLabel("Новая категория")
             }
@@ -49,12 +51,16 @@ struct CategoryEditView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var category: ExpenseCategory
+    @FocusState private var nameFocused: Bool
+    private let onSave: (ExpenseCategory) -> Void
 
-    init(category: ExpenseCategory) {
+    init(category: ExpenseCategory, onSave: @escaping (ExpenseCategory) -> Void = { _ in }) {
         _category = State(initialValue: category)
+        self.onSave = onSave
     }
 
     private var isNew: Bool { !store.vault.categories.contains { $0.id == category.id } }
+    private var trimmedName: String { category.name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var body: some View {
         NavigationStack {
@@ -63,14 +69,17 @@ struct CategoryEditView: View {
                     HStack(spacing: 12) {
                         CategoryIcon(category: category)
                         TextField("Название", text: $category.name)
+                            .focused($nameFocused)
                     }
+                } footer: {
+                    Text("Например: «Рынок», «Бензин», «Внуки».")
                 }
                 Section("Цвет") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 10)], spacing: 10) {
                         ForEach(CategoryPalette.names, id: \.self) { name in
                             Button { category.colorName = name } label: {
                                 Image(systemName: category.colorName == name ? "checkmark.circle.fill" : "circle.fill")
-                                    .font(.title2)
+                                    .font(.largeTitle)
                                     .foregroundStyle(CategoryPalette.color(named: name))
                             }
                             .buttonStyle(.plain)
@@ -79,18 +88,16 @@ struct CategoryEditView: View {
                     .padding(.vertical, 4)
                 }
                 Section("Значок") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 48), spacing: 8)], spacing: 8) {
                         ForEach(CategoryPalette.symbols, id: \.self) { symbol in
+                            let selected = category.symbol == symbol
                             Button { category.symbol = symbol } label: {
                                 Image(systemName: symbol)
-                                    .font(.title3)
-                                    .frame(maxWidth: .infinity, minHeight: 36)
-                                    .foregroundStyle(category.symbol == symbol ? category.color : .secondary)
-                                    .background {
-                                        if category.symbol == symbol {
-                                            RoundedRectangle(cornerRadius: 8).fill(category.color.opacity(0.2))
-                                        }
-                                    }
+                                    .font(.title2)
+                                    .frame(maxWidth: .infinity, minHeight: 48)
+                                    .foregroundStyle(selected ? category.color : .secondary)
+                                    .background(selected ? category.color.opacity(0.2) : .clear,
+                                                in: .rect(cornerRadius: 10))
                             }
                             .buttonStyle(.plain)
                         }
@@ -98,6 +105,7 @@ struct CategoryEditView: View {
                     .padding(.vertical, 4)
                 }
             }
+            .warmBackground()
             .navigationTitle(isNew ? "Новая категория" : "Категория")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -106,13 +114,15 @@ struct CategoryEditView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Сохранить") {
-                        category.name = category.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                        category.name = trimmedName
                         store.upsert(category)
+                        onSave(category)
                         dismiss()
                     }
-                    .disabled(category.name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(trimmedName.isEmpty)
                 }
             }
+            .onAppear { if isNew { nameFocused = true } }
         }
     }
 }

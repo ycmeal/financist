@@ -48,9 +48,13 @@ struct Vault: Codable {
     var expenses: [Expense] = []
     var categories: [ExpenseCategory] = ExpenseCategory.defaults
     var rates = RateTable()
-    var inputCurrency: Currency = .lira
+    /// Последняя выбранная при вводе валюта — подставляется в новую трату.
+    var inputCurrency: Currency = .usdt
+    /// Недавние валюты ввода (первая — самая свежая), показываются кнопками.
+    var recentCurrencies: [Currency] = [.usdt, .lira]
     var displayCurrency: Currency = .usdt
     var lockEnabled = false
+    var autoUpdateRates = true
 
     init() {}
 
@@ -60,8 +64,10 @@ struct Vault: Codable {
         expenses = try c.decodeIfPresent([Expense].self, forKey: .expenses) ?? []
         categories = try c.decodeIfPresent([ExpenseCategory].self, forKey: .categories) ?? ExpenseCategory.defaults
         rates = try c.decodeIfPresent(RateTable.self, forKey: .rates) ?? RateTable()
-        inputCurrency = try c.decodeIfPresent(Currency.self, forKey: .inputCurrency) ?? .lira
+        inputCurrency = try c.decodeIfPresent(Currency.self, forKey: .inputCurrency) ?? .usdt
+        recentCurrencies = try c.decodeIfPresent([Currency].self, forKey: .recentCurrencies) ?? [.usdt, .lira]
         displayCurrency = try c.decodeIfPresent(Currency.self, forKey: .displayCurrency) ?? .usdt
         lockEnabled = try c.decodeIfPresent(Bool.self, forKey: .lockEnabled) ?? false
+        autoUpdateRates = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateRates) ?? true
     }
 }

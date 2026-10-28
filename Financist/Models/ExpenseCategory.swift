@@ -8,16 +8,21 @@ struct ExpenseCategory: Identifiable, Codable, Hashable {
 
     var color: Color { CategoryPalette.color(named: colorName) }
 
+    /// Короткие названия — чтобы помещались даже при крупном шрифте.
     static let defaults: [ExpenseCategory] = [
         .init(name: "Продукты", symbol: "cart.fill", colorName: "green"),
-        .init(name: "Рестораны", symbol: "fork.knife", colorName: "orange"),
+        .init(name: "Кафе", symbol: "cup.and.saucer.fill", colorName: "orange"),
         .init(name: "Доставка", symbol: "takeout.bag.and.cup.and.straw.fill", colorName: "red"),
-        .init(name: "Развлечения", symbol: "party.popper.fill", colorName: "purple"),
-        .init(name: "Связь", symbol: "antenna.radiowaves.left.and.right", colorName: "blue"),
+        .init(name: "Транспорт", symbol: "car.fill", colorName: "indigo"),
         .init(name: "Жильё", symbol: "house.fill", colorName: "brown"),
+        .init(name: "Связь", symbol: "antenna.radiowaves.left.and.right", colorName: "blue"),
         .init(name: "Здоровье", symbol: "cross.case.fill", colorName: "pink"),
         .init(name: "Покупки", symbol: "bag.fill", colorName: "teal"),
-        .init(name: "Транспорт", symbol: "car.fill", colorName: "indigo"),
+        .init(name: "Одежда", symbol: "tshirt.fill", colorName: "purple"),
+        .init(name: "Для дома", symbol: "sofa.fill", colorName: "mint"),
+        .init(name: "Досуг", symbol: "party.popper.fill", colorName: "yellow"),
+        .init(name: "Подарки", symbol: "gift.fill", colorName: "red"),
+        .init(name: "Поездки", symbol: "airplane", colorName: "cyan"),
         .init(name: "Другое", symbol: "ellipsis.circle.fill", colorName: "gray"),
     ]
 
@@ -47,14 +52,15 @@ enum CategoryPalette {
     }
 
     static let symbols = [
-        "cart.fill", "fork.knife", "takeout.bag.and.cup.and.straw.fill", "cup.and.saucer.fill",
-        "wineglass.fill", "birthday.cake.fill", "box.truck.fill", "party.popper.fill",
-        "film.fill", "gamecontroller.fill", "music.note", "antenna.radiowaves.left.and.right",
-        "wifi", "phone.fill", "house.fill", "bolt.fill", "drop.fill", "cross.case.fill",
-        "pills.fill", "stethoscope", "heart.fill", "bag.fill", "tshirt.fill", "gift.fill",
-        "car.fill", "bus.fill", "tram.fill", "airplane", "fuelpump.fill", "book.fill",
-        "graduationcap.fill", "pawprint.fill", "dumbbell.fill", "scissors",
-        "figure.and.child.holdinghands", "wrench.and.screwdriver.fill", "creditcard.fill",
-        "banknote.fill", "sparkles", "ellipsis.circle.fill",
+        "cart.fill", "basket.fill", "fork.knife", "cup.and.saucer.fill", "takeout.bag.and.cup.and.straw.fill",
+        "wineglass.fill", "birthday.cake.fill", "carrot.fill", "fish.fill", "leaf.fill",
+        "car.fill", "bus.fill", "tram.fill", "airplane", "fuelpump.fill", "parkingsign.circle.fill",
+        "house.fill", "sofa.fill", "bolt.fill", "drop.fill", "flame.fill", "wifi", "phone.fill",
+        "antenna.radiowaves.left.and.right", "cross.case.fill", "pills.fill", "heart.fill",
+        "bag.fill", "tshirt.fill", "shoe.fill", "gift.fill", "party.popper.fill", "film.fill",
+        "book.fill", "newspaper.fill", "graduationcap.fill", "pawprint.fill", "figure.walk",
+        "dumbbell.fill", "scissors", "comb.fill", "wrench.and.screwdriver.fill", "hammer.fill",
+        "creditcard.fill", "banknote.fill", "building.columns.fill", "hands.and.sparkles.fill",
+        "sparkles", "star.fill", "ellipsis.circle.fill",
     ]
 }

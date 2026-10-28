@@ -7,13 +7,16 @@ struct ExpenseFormView: View {
     let original: Expense?
 
     @State private var amountText = ""
-    @State private var currency: Currency = .lira
+    @State private var currency: Currency = .usdt
     @State private var rateText = ""
+    @State private var isEditingRate = false
     @State private var note = ""
     @State private var categoryID: UUID?
     @State private var date = Date.now
     @State private var categoryTouched = false
     @State private var currencyTouched = false
+    @State private var showAllCategories = false
+    @State private var newCategory: ExpenseCategory?
     @State private var isSetUp = false
     @State private var suggestions: [Suggestion] = []
     @State private var confirmDelete = false
@@ -35,23 +38,13 @@ struct ExpenseFormView: View {
         return value
     }
 
-    private var rates: [Currency: Decimal] {
-        var result = baseRates
-        if currency != .usdt, let rate = Decimal.parse(rateText), rate > 0 { result[currency] = rate }
-        return result
-    }
-
     private var draft: Expense? {
         guard let amount, let categoryID else { return nil }
-        return Expense(
-            id: original?.id ?? UUID(),
-            date: date,
-            amount: amount,
-            currency: currency,
-            categoryID: categoryID,
-            note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-            rates: rates
-        )
+        var rates = baseRates
+        if currency != .usdt, let rate = Decimal.parse(rateText), rate > 0 { rates[currency] = rate }
+        return Expense(id: original?.id ?? UUID(), date: date, amount: amount, currency: currency,
+                       categoryID: categoryID, note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+                       rates: rates)
     }
 
     private var matches: [Suggestion] {
@@ -63,19 +56,29 @@ struct ExpenseFormView: View {
         NavigationStack {
             Form {
                 amountSection
+                categorySection
                 noteSection
                 Section {
-                    Picker("Категория", selection: categoryBinding) {
-                        if categoryID == nil {
-                            Text("Не выбрана").tag(UUID?.none)
-                        }
-                        ForEach(store.vault.categories) { category in
-                            Label(category.name, systemImage: category.symbol)
-                                .tag(Optional(category.id))
-                        }
+                    DatePicker("Когда", selection: $date)
+                }
+                if let draft, original != nil {
+                    conversionSection(draft)
+                }
+                Section {
+                    Button { save() } label: {
+                        Text("Сохранить")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
                     }
-                    .pickerStyle(.navigationLink)
-                    DatePicker("Дата", selection: $date)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(draft == nil)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                } footer: {
+                    if draft == nil {
+                        Text(amount == nil ? "Введите сумму." : "Выберите категорию.")
+                    }
                 }
                 if original != nil {
                     Section {
@@ -83,6 +86,7 @@ struct ExpenseFormView: View {
                     }
                 }
             }
+            .warmBackground()
             .navigationTitle(original == nil ? "Новая трата" : "Трата")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -90,12 +94,12 @@ struct ExpenseFormView: View {
                     Button("Отмена") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Сохранить") { save() }
+                    Button("Готово") { save() }
                         .disabled(draft == nil)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Готово") { focus = nil }
+                    Button("Скрыть") { focus = nil }
                 }
             }
             .confirmationDialog("Удалить эту трату?", isPresented: $confirmDelete, titleVisibility: .visible) {
@@ -104,101 +108,186 @@ struct ExpenseFormView: View {
                     dismiss()
                 }
             }
+            .sheet(item: $newCategory) { category in
+                CategoryEditView(category: category) { saved in
+                    categoryID = saved.id
+                    categoryTouched = true
+                }
+            }
             .onAppear(perform: setUp)
             .onChange(of: currency) { _, newValue in
                 rateText = (baseRates[newValue] ?? 1).inputString
             }
             .onChange(of: note) { _, newValue in
-                // Знакомое место — сразу ставим его категорию, если пользователь её не выбирал сам.
+                // Знакомое место — сразу ставим его категорию, если её не выбирали вручную.
                 guard !categoryTouched, let known = SuggestionEngine.exact(newValue, in: suggestions) else { return }
                 categoryID = known.categoryID
             }
         }
     }
 
+    // MARK: Сумма и валюта
+
     private var amountSection: some View {
         Section {
-            HStack {
-                TextField("Сумма", text: $amountText)
+            HStack(alignment: .firstTextBaseline) {
+                TextField("0", text: $amountText)
                     .keyboardType(.decimalPad)
-                    .font(.title2)
+                    .font(.largeTitle.weight(.semibold))
                     .monospacedDigit()
                     .focused($focus, equals: .amount)
-                Picker("Валюта", selection: currencyBinding) {
-                    ForEach(Currency.allCases) { Text("\($0.flag) \($0.code)").tag($0) }
-                }
-                .labelsHidden()
+                    .accessibilityLabel("Сумма")
+                Text(currency.symbol)
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
             }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(currencyChoices) { cur in
+                        Button { selectCurrency(cur) } label: {
+                            Text("\(cur.flag) \(cur.code)")
+                                .font(.body.weight(cur == currency ? .semibold : .regular))
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(cur == currency ? Color.accentColor : Color.secondary)
+                        .accessibilityAddTraits(cur == currency ? .isSelected : [])
+                    }
+                    Menu {
+                        ForEach(Currency.allCases) { cur in
+                            Button("\(cur.flag) \(cur.code) — \(cur.name)") { selectCurrency(cur) }
+                        }
+                    } label: {
+                        Text("Другая")
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(Color.secondary)
+                }
+                .padding(.vertical, 2)
+            }
+
             if currency != .usdt {
-                HStack {
-                    Text("Курс: 1 USDT =")
-                        .foregroundStyle(.secondary)
-                    TextField("Курс", text: $rateText)
-                        .keyboardType(.decimalPad)
-                        .monospacedDigit()
-                        .multilineTextAlignment(.trailing)
-                        .focused($focus, equals: .rate)
-                    Text(currency.symbol)
-                        .foregroundStyle(.secondary)
+                if isEditingRate {
+                    HStack {
+                        Text("1 USDT =")
+                            .foregroundStyle(.secondary)
+                        TextField("Курс", text: $rateText)
+                            .keyboardType(.decimalPad)
+                            .monospacedDigit()
+                            .multilineTextAlignment(.trailing)
+                            .focused($focus, equals: .rate)
+                        Text(currency.symbol)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Button {
+                        isEditingRate = true
+                        focus = .rate
+                    } label: {
+                        ViewThatFits {
+                            HStack {
+                                Text("Курс: 1 USDT = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol)")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text("Изменить")
+                            }
+                            VStack(alignment: .leading) {
+                                Text("Курс: 1 USDT = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol)")
+                                    .foregroundStyle(.secondary)
+                                Text("Изменить")
+                            }
+                        }
+                    }
                 }
             }
         } footer: {
-            if let draft {
-                Text(conversionLine(draft))
+            if let draft, draft.currency != store.displayCurrency {
+                Text("≈ " + store.displayCurrency.format(draft.amount(in: store.displayCurrency).rounded(scale: 2)))
+                    .font(.body)
             }
         }
     }
 
+    /// Последние валюты + текущая, без повторов.
+    private var currencyChoices: [Currency] {
+        var list = store.quickCurrencies
+        if !list.contains(currency) { list.insert(currency, at: 0) }
+        return list
+    }
+
+    private func selectCurrency(_ cur: Currency) {
+        currency = cur
+        currencyTouched = true
+    }
+
+    // MARK: Категория
+
+    private var categorySection: some View {
+        let all = store.categoriesByUsage
+        var visible = showAllCategories ? all : Array(all.prefix(8))
+        if let categoryID, !visible.contains(where: { $0.id == categoryID }),
+           let selected = all.first(where: { $0.id == categoryID }) {
+            visible.insert(selected, at: 0)
+        }
+        return Section {
+            CategoryGrid(categories: visible, selection: categoryID) { picked in
+                categoryID = picked.id
+                categoryTouched = true
+            } onAdd: {
+                newCategory = ExpenseCategory(name: "", symbol: "star.fill", colorName: "orange")
+            }
+            if all.count > 8 {
+                Button(showAllCategories ? "Свернуть" : "Все категории (\(all.count))") {
+                    withAnimation { showAllCategories.toggle() }
+                }
+            }
+        } header: {
+            Text("Категория")
+        }
+    }
+
+    // MARK: Комментарий
+
     private var noteSection: some View {
         Section {
-            TextField("Где или на что (Migros, аптека…)", text: $note)
+            TextField("Например: Migros, аптека", text: $note)
                 .focused($focus, equals: .note)
                 .submitLabel(.done)
             ForEach(matches) { suggestion in
                 Button { apply(suggestion) } label: {
-                    let category = store.category(for: suggestion.categoryID)
                     HStack(spacing: 12) {
-                        CategoryIcon(category: category)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(suggestion.note)
-                            Text(category.name)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        if let last = suggestion.lastAmount, let cur = suggestion.currency {
-                            Text(cur.format(last))
-                                .font(.caption)
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                        }
+                        CategoryIcon(category: store.category(for: suggestion.categoryID))
+                        Text(suggestion.note)
+                        Spacer(minLength: 0)
+                        Image(systemName: "arrow.up.left")
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .tint(Color.primary)
             }
         } header: {
-            Text("Заметка")
+            Text("Комментарий")
         } footer: {
             if !matches.isEmpty {
-                Text("Подсказки из твоих прошлых трат — нажми, чтобы подставить место и категорию.")
+                Text("Нажмите на подсказку — подставится и категория.")
             }
         }
     }
 
-    private var categoryBinding: Binding<UUID?> {
-        Binding(get: { categoryID }, set: { categoryID = $0; categoryTouched = true })
+    // MARK: Пересчёт
+
+    private func conversionSection(_ expense: Expense) -> some View {
+        Section("В других валютах") {
+            ForEach(Currency.allCases.filter { $0 != expense.currency }) { target in
+                LabeledContent("\(target.flag) \(target.code)") {
+                    Text(target.format(expense.amount(in: target).rounded(scale: target.fractionDigits)))
+                        .monospacedDigit()
+                }
+            }
+        }
     }
 
-    private var currencyBinding: Binding<Currency> {
-        Binding(get: { currency }, set: { currency = $0; currencyTouched = true })
-    }
-
-    private func conversionLine(_ expense: Expense) -> String {
-        let targets = [Currency.usdt, store.displayCurrency]
-            .reduce(into: [Currency]()) { if !$0.contains($1) && $1 != expense.currency { $0.append($1) } }
-        guard !targets.isEmpty else { return "" }
-        return "≈ " + targets.map { $0.format(expense.amount(in: $0).rounded(scale: 2)) }.joined(separator: " · ")
-    }
+    // MARK: Действия
 
     private func apply(_ suggestion: Suggestion) {
         note = suggestion.note
@@ -222,7 +311,7 @@ struct ExpenseFormView: View {
             categoryTouched = true
             currencyTouched = true
         } else {
-            currency = store.inputCurrency
+            currency = store.vault.inputCurrency
             rateText = store.vault.rates.rate(currency).inputString
             focus = .amount
         }
@@ -232,5 +321,53 @@ struct ExpenseFormView: View {
         guard let draft else { return }
         store.upsert(draft)
         dismiss()
+    }
+}
+
+/// Плитки категорий: значок и название. Растут вместе со шрифтом.
+struct CategoryGrid: View {
+    let categories: [ExpenseCategory]
+    let selection: UUID?
+    let onSelect: (ExpenseCategory) -> Void
+    let onAdd: () -> Void
+    @ScaledMetric(relativeTo: .body) private var tileWidth: CGFloat = 88
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: tileWidth), spacing: 8)], spacing: 8) {
+            ForEach(categories) { category in
+                Button { onSelect(category) } label: {
+                    tile(icon: CategoryIcon(category: category), title: category.name,
+                         selected: category.id == selection)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(category.id == selection ? .isSelected : [])
+            }
+            Button(action: onAdd) {
+                tile(icon: Image(systemName: "plus").font(.title2).foregroundStyle(.tint),
+                     title: "Своя", selected: false)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Новая категория")
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func tile(icon: some View, title: String, selected: Bool) -> some View {
+        VStack(spacing: 6) {
+            icon
+            Text(title)
+                .font(.footnote)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, minHeight: tileWidth * 0.85)
+        .padding(.vertical, 6)
+        .background(selected ? Color.accentColor.opacity(0.15) : Color(.tertiarySystemFill),
+                    in: .rect(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 2)
+        }
     }
 }

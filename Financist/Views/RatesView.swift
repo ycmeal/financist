@@ -8,94 +8,93 @@ struct RatesView: View {
     @FocusState private var amountFocused: Bool
 
     var body: some View {
+        @Bindable var store = store
         let rates = store.vault.rates
-        NavigationStack {
-            List {
-                Section {
-                    ForEach(Currency.allCases.filter { $0 != .usdt }) { currency in
-                        Button { editing = currency } label: {
-                            HStack {
-                                Text(currency.flag)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(currency.code)
-                                    Text(currency.name)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
+        Form {
+            Section("Пересчёт") {
+                HStack(alignment: .firstTextBaseline) {
+                    TextField("Сумма", text: $amountText)
+                        .keyboardType(.decimalPad)
+                        .font(.title.weight(.semibold))
+                        .monospacedDigit()
+                        .focused($amountFocused)
+                    Picker("Валюта", selection: $from) {
+                        ForEach(Currency.allCases) { Text("\($0.flag) \($0.code)").tag($0) }
+                    }
+                    .labelsHidden()
+                }
+                if let amount = Decimal.parse(amountText) {
+                    ForEach(Currency.allCases.filter { $0 != from }) { target in
+                        LabeledContent("\(target.flag) \(target.code)") {
+                            Text(target.format(rates.convert(amount, from: from, to: target).rounded(scale: target.fractionDigits)))
+                                .monospacedDigit()
+                                .textSelection(.enabled)
+                        }
+                    }
+                }
+            }
+
+            Section {
+                ForEach(Currency.allCases.filter { $0 != .usdt }) { currency in
+                    Button { editing = currency } label: {
+                        LabeledContent {
+                            HStack(spacing: 6) {
                                 if rates.manual[currency] != nil {
                                     Image(systemName: "pencil.circle.fill")
-                                        .foregroundStyle(.orange)
-                                        .accessibilityLabel("Задан вручную")
+                                        .foregroundStyle(.tint)
+                                        .accessibilityLabel("Свой курс")
                                 }
-                                Text(Fmt.rate(rates.rate(currency)) + " " + currency.symbol)
+                                Text("\(Fmt.rate(rates.rate(currency))) \(currency.symbol)")
                                     .monospacedDigit()
                             }
+                        } label: {
+                            Text("\(currency.flag) \(currency.code)")
                         }
-                        .tint(Color.primary)
                     }
-                } header: {
-                    Text("За 1 USDT")
-                } footer: {
-                    ratesFooter(rates)
+                    .tint(Color.primary)
                 }
+            } header: {
+                Text("За 1 USDT")
+            } footer: {
+                Text("Нажмите на валюту, чтобы указать свой курс — например, из обменника.")
+            }
 
-                Section("Конвертер") {
-                    HStack {
-                        TextField("Сумма", text: $amountText)
-                            .keyboardType(.decimalPad)
-                            .monospacedDigit()
-                            .focused($amountFocused)
-                        Picker("Из валюты", selection: $from) {
-                            ForEach(Currency.allCases) { Text("\($0.flag) \($0.code)").tag($0) }
-                        }
-                        .labelsHidden()
-                    }
-                    if let amount = Decimal.parse(amountText) {
-                        ForEach(Currency.allCases.filter { $0 != from }) { target in
-                            LabeledContent("\(target.flag) \(target.code)") {
-                                Text(target.format(rates.convert(amount, from: from, to: target).rounded(scale: target.fractionDigits)))
-                                    .monospacedDigit()
-                                    .textSelection(.enabled)
-                            }
+            Section {
+                Toggle("Обновлять курсы", isOn: $store.autoUpdateRates)
+                if store.autoUpdateRates {
+                    Button {
+                        Task { await store.refreshRates(force: true) }
+                    } label: {
+                        HStack {
+                            Text("Обновить сейчас")
+                            Spacer()
+                            if store.isRefreshingRates { ProgressView() }
                         }
                     }
+                    .disabled(store.isRefreshingRates)
+                }
+            } footer: {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let updated = rates.updatedAt {
+                        Text("Обновлено: \(RuDate.dayTitle(updated)), \(RuDate.time(updated)).")
+                    }
+                    if let error = store.ratesError {
+                        Text(error)
+                    }
+                    Text("Приложение только скачивает общие курсы валют. Ваши траты и суммы при этом никуда не отправляются. Можно выключить и вводить курсы вручную.")
                 }
             }
-            .navigationTitle("Курсы")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    if store.isRefreshingRates {
-                        ProgressView()
-                    } else {
-                        Button { Task { await store.refreshRates(force: true) } } label: {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                        .accessibilityLabel("Обновить курсы")
-                    }
-                }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Готово") { amountFocused = false }
-                }
-            }
-            .refreshable { await store.refreshRates(force: true) }
-            .sheet(item: $editing) { RateEditView(currency: $0) }
         }
-    }
-
-    private func ratesFooter(_ rates: RateTable) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let updated = rates.updatedAt {
-                Text("Обновлено \(updated.formatted(date: .abbreviated, time: .shortened)). Источники: open.er-api.com и CoinGecko.")
-            } else {
-                Text("Курсы ещё не загружались — сейчас используются примерные значения.")
+        .warmBackground()
+        .navigationTitle("Курсы валют")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Скрыть") { amountFocused = false }
             }
-            if let error = store.ratesError {
-                Text(error).foregroundStyle(.red)
-            }
-            Text("Нажми на валюту, чтобы задать свой курс (например, курс твоего обменника). Каждая трата запоминает курс на момент записи.")
         }
+        .sheet(item: $editing) { RateEditView(currency: $0) }
     }
 }
 
@@ -116,6 +115,7 @@ struct RateEditView: View {
                             .foregroundStyle(.secondary)
                         TextField("Курс", text: $text)
                             .keyboardType(.decimalPad)
+                            .font(.title2)
                             .monospacedDigit()
                             .multilineTextAlignment(.trailing)
                             .focused($focused)
@@ -123,17 +123,20 @@ struct RateEditView: View {
                             .foregroundStyle(.secondary)
                     }
                 } footer: {
-                    Text("Автоматический курс: \(Fmt.rate(rates.fetched[currency] ?? rates.rate(currency))) \(currency.symbol). Свой курс применяется к новым тратам.")
+                    Text("Свой курс будет использоваться для новых трат.")
                 }
                 if rates.manual[currency] != nil {
                     Section {
-                        Button("Вернуть автоматический курс") {
+                        Button("Вернуть общий курс") {
                             store.setManualRate(nil, for: currency)
                             dismiss()
                         }
+                    } footer: {
+                        Text("Общий курс: \(Fmt.rate(rates.fetched[currency] ?? 0)) \(currency.symbol)")
                     }
                 }
             }
+            .warmBackground()
             .navigationTitle("\(currency.flag) \(currency.code)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -153,6 +156,6 @@ struct RateEditView: View {
                 focused = true
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 }
