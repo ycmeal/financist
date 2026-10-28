@@ -39,6 +39,8 @@ struct RootView: View {
             if phase == .active {
                 if store.isLocked { authenticate() }
                 Task { await store.refreshRates(force: false) }
+                // Новый день — переставляем вечерние напоминания на неделю вперёд.
+                store.refreshReminders()
             }
         }
         .onChange(of: store.isLocked) { updateCover() }

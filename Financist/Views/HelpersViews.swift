@@ -1,63 +1,5 @@
 import SwiftUI
 
-/// Бюджет на месяц: сумма и валюта. На главном экране — полоска «осталось».
-struct BudgetView: View {
-    @Environment(AppStore.self) private var store
-    @State private var enabled = false
-    @State private var amountText = ""
-    @State private var currency: Currency = .usd
-    @State private var isSetUp = false
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        Form {
-            Section {
-                Toggle("Бюджет на месяц", isOn: $enabled.animation(.snappy))
-            } footer: {
-                Text("На главном экране появится полоска: сколько осталось и сколько можно тратить в день.")
-            }
-            if enabled {
-                Section {
-                    HStack(alignment: .firstTextBaseline) {
-                        TextField("Сумма", text: $amountText)
-                            .keyboardType(.decimalPad)
-                            .font(.title.weight(.semibold))
-                            .monospacedDigit()
-                            .focused($focused)
-                        Picker("Валюта", selection: $currency) {
-                            ForEach(Currency.allCases) { Text("\($0.flag) \($0.code)").tag($0) }
-                        }
-                        .labelsHidden()
-                    }
-                } footer: {
-                    let spent = store.spentThisMonth(in: currency)
-                    Text("В этом месяце уже потрачено \(currency.format(spent.rounded(scale: 0))).")
-                }
-            }
-        }
-        .warmListBackground()
-        .navigationTitle("Бюджет")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            guard !isSetUp else { return }
-            isSetUp = true
-            enabled = store.budget != nil
-            currency = store.budget?.currency ?? store.displayCurrency
-            amountText = store.budget?.amount.inputString ?? ""
-        }
-        .onDisappear(perform: save)
-        .onChange(of: enabled) { if enabled { focused = true } else { save() } }
-    }
-
-    private func save() {
-        if enabled, let amount = Decimal.parse(amountText), amount > 0 {
-            store.budget = MonthlyBudget(amount: amount, currency: currency)
-        } else if !enabled {
-            store.budget = nil
-        }
-    }
-}
-
 /// Регулярные платежи: аренда, связь, подписки.
 struct RecurringListView: View {
     @Environment(AppStore.self) private var store
@@ -181,36 +123,5 @@ struct RecurringEditView: View {
                 }
             }
         }
-    }
-}
-
-/// Как вызвать ввод траты голосом или кнопкой действия.
-struct SiriGuideView: View {
-    var body: some View {
-        Form {
-            Section("Siri") {
-                StepRow(number: 1, text: "Скажите: «Привет, Siri, новая трата в Financist».")
-                StepRow(number: 2, text: "Откроется ввод траты.")
-            }
-            Section {
-                StepRow(number: 1, text: "Откройте «Настройки» iPhone → «Кнопка действия».")
-                StepRow(number: 2, text: "Листайте до «Быстрая команда» и нажмите «Выбрать…».")
-                StepRow(number: 3, text: "Выберите Financist → «Новая трата».")
-            } header: {
-                Text("Кнопка действия")
-            } footer: {
-                Text("Есть на iPhone 15 Pro и новее. Одно нажатие сбоку — и можно вводить трату.")
-            }
-            Section {
-                Label {
-                    Text("Siri только открывает приложение. Суммы и траты Siri не передаются.")
-                } icon: {
-                    Image(systemName: "hand.raised.fill").foregroundStyle(.green)
-                }
-            }
-        }
-        .warmListBackground()
-        .navigationTitle("Siri и кнопка действия")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }

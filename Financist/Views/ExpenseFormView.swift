@@ -64,9 +64,6 @@ struct ExpenseFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                if original == nil && amountText.isEmpty && !templates.isEmpty {
-                    recentSection
-                }
                 amountSection
                 categorySection
                 noteSection
@@ -148,38 +145,6 @@ struct ExpenseFormView: View {
         }
     }
 
-    // MARK: Недавние
-
-    private var recentSection: some View {
-        Section {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(templates) { expense in
-                        Button { fill(from: expense) } label: {
-                            HStack(spacing: 8) {
-                                CategoryIcon(category: store.category(for: expense.categoryID))
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Text(expense.note).lineLimit(1)
-                                    Text(expense.currency.format(expense.amount))
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                        .monospacedDigit()
-                                }
-                            }
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 12))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.vertical, 2)
-            }
-        } header: {
-            Text("Повторить недавнюю")
-        }
-    }
-
     // MARK: Сумма и валюта
 
     private var amountSection: some View {
@@ -194,6 +159,28 @@ struct ExpenseFormView: View {
                 Text(currency.symbol)
                     .font(.title2)
                     .foregroundStyle(.secondary)
+            }
+
+            if original == nil && amountText.isEmpty && !templates.isEmpty {
+                // Тихая подсказка: прошлые траты одним касанием. Исчезает, как только вводите сумму.
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        Text("Как в прошлый раз:")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        ForEach(Array(templates.prefix(4))) { expense in
+                            Button { fill(from: expense) } label: {
+                                Text("\(expense.note) · \(expense.currency.format(expense.amount))")
+                                    .font(.subheadline)
+                            }
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.capsule)
+                            .controlSize(.small)
+                            .tint(Color.secondary)
+                        }
+                    }
+                }
+                .transition(.opacity)
             }
 
             if original == nil {

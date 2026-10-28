@@ -39,23 +39,17 @@ struct ExpensesView: View {
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
 
-                    ForEach(store.dueRecurring) { payment in
-                        Section { RecurringCard(payment: payment) }
+                    let due = store.dueRecurring
+                    if !due.isEmpty {
+                        Section {
+                            ForEach(due) { RecurringCard(payment: $0) }
+                        } footer: {
+                            Text("Смахните влево, чтобы пропустить в этом месяце.")
+                        }
                     }
 
                     if let closed = closedMonth {
                         Section { MonthClosedCard(month: closed) }
-                    }
-
-                    if !store.vault.expenses.isEmpty {
-                        Section {
-                            Picker("Вид", selection: $mode.animation(.snappy)) {
-                                ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
-                            }
-                            .pickerStyle(.segmented)
-                        }
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
                     }
                 }
 
@@ -93,7 +87,15 @@ struct ExpensesView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { DisplayCurrencyMenu() }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if !store.vault.expenses.isEmpty {
+                        Button {
+                            withAnimation(.snappy) { mode = mode == .list ? .calendar : .list }
+                        } label: {
+                            Image(systemName: mode == .list ? "calendar" : "list.bullet")
+                        }
+                        .accessibilityLabel(mode == .list ? "Показать календарь" : "Показать списком")
+                    }
                     Button { store.isAddingExpense = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("Добавить трату")
                 }
@@ -186,10 +188,6 @@ private struct SummaryHeader: View {
                 TotalTile(title: RuDate.monthNominative(.now).capitalized, value: currency.format(month.rounded(scale: 2)))
             }
 
-            if let budget = store.budget {
-                BudgetCard(budget: budget, spent: store.spentThisMonth(in: budget.currency))
-            }
-
             Button { store.isAddingExpense = true } label: {
                 Label("Добавить трату", systemImage: "plus.circle.fill")
                     .font(.title3.weight(.semibold))
@@ -225,67 +223,31 @@ private struct TotalTile: View {
     }
 }
 
-/// «Осталось 420 $ · примерно 30 $ в день».
-private struct BudgetCard: View {
-    let budget: MonthlyBudget
-    let spent: Decimal
-
-    var body: some View {
-        let left = budget.amount - spent
-        let share = budget.amount > 0 ? min(1.2, (spent / budget.amount).doubleValue) : 0
-        let calendar = Calendar.current
-        let daysLeft = max(1, (calendar.range(of: .day, in: .month, for: .now)?.count ?? 30)
-            - calendar.component(.day, from: .now) + 1)
-        let color: Color = share < 0.8 ? .green : share < 1 ? .orange : .red
-
-        VStack(alignment: .leading, spacing: 8) {
-            AdaptiveRow(spacing: 8) {
-                Text("Бюджет")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 0)
-                Text("\(budget.currency.format(spent.rounded(scale: 0))) из \(budget.currency.format(budget.amount))")
-                    .font(.subheadline)
-                    .monospacedDigit()
-            }
-            ProgressView(value: min(1, share))
-                .tint(color)
-            Text(left >= 0
-                 ? "Осталось \(budget.currency.format(left.rounded(scale: 0))) · ~\(budget.currency.format((left / Decimal(daysLeft)).rounded(scale: 0))) в день"
-                 : "Перерасход \(budget.currency.format((-left).rounded(scale: 0)))")
-                .font(.headline)
-                .foregroundStyle(left >= 0 ? Color.primary : Color.red)
-        }
-        .padding(14)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 14))
-    }
-}
-
-/// «Пора оплатить: Аренда 650 $» — записать или пропустить.
+/// «Пора оплатить: Аренда 650 $» — одна строка: записать или убрать до следующего месяца.
 private struct RecurringCard: View {
     @Environment(AppStore.self) private var store
     let payment: RecurringPayment
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                CategoryIcon(category: store.category(for: payment.categoryID))
+        HStack(spacing: 12) {
+            CategoryIcon(category: store.category(for: payment.categoryID))
+            AdaptiveRow(spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Пора оплатить")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Text("\(payment.note) · \(payment.currency.format(payment.amount))")
-                        .font(.headline)
                 }
-            }
-            AdaptiveRow(spacing: 10) {
+                Spacer(minLength: 0)
                 Button("Записать") { withAnimation(.snappy) { store.pay(payment) } }
                     .buttonStyle(.borderedProminent)
-                Button("Пропустить") { withAnimation(.snappy) { store.skip(payment) } }
-                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
             }
         }
-        .padding(.vertical, 4)
+        .swipeActions {
+            Button("Пропустить") { withAnimation(.snappy) { store.skip(payment) } }
+                .tint(.gray)
+        }
     }
 }
 

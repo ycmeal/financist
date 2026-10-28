@@ -44,6 +44,7 @@ final class AppStore {
         do {
             try store.save(vault)
             saveError = nil
+            refreshReminders()
         } catch {
             saveError = error.localizedDescription
         }
@@ -191,13 +192,6 @@ final class AppStore {
         vault.expenses.filter { $0.categoryID == categoryID }.count
     }
 
-    // MARK: Бюджет
-
-    var budget: MonthlyBudget? {
-        get { vault.budget }
-        set { vault.budget = newValue; persist() }
-    }
-
     /// Сколько потрачено в этом месяце в валюте бюджета.
     func spentThisMonth(in currency: Currency) -> Decimal {
         vault.expenses
@@ -257,7 +251,24 @@ final class AppStore {
 
     var eveningReminder: Bool {
         get { vault.eveningReminder }
-        set { vault.eveningReminder = newValue; persist(); Reminders.scheduleEvening(newValue) }
+        set { vault.eveningReminder = newValue; persist() }
+    }
+
+    /// Время напоминания; позже 21:00 поставить нельзя.
+    var eveningTime: Date {
+        get { Calendar.current.date(bySettingHour: vault.eveningMinutes / 60, minute: vault.eveningMinutes % 60, second: 0, of: .now) ?? .now }
+        set {
+            let c = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+            vault.eveningMinutes = min(21 * 60, (c.hour ?? 20) * 60 + (c.minute ?? 30))
+            persist()
+        }
+    }
+
+    /// Пересобирает вечерние напоминания на неделю вперёд. Текст на сегодня зависит
+    /// от того, записаны ли уже траты, поэтому вызывается после каждого изменения.
+    func refreshReminders() {
+        let hasToday = vault.expenses.contains { Calendar.current.isDateInToday($0.date) }
+        Reminders.scheduleEvening(vault.eveningReminder, minutes: vault.eveningMinutes, hasExpensesToday: hasToday)
     }
 
     // MARK: Курсы

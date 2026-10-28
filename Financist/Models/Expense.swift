@@ -57,12 +57,6 @@ struct RecurringPayment: Identifiable, Codable, Hashable {
     var day: Int
 }
 
-/// Бюджет на месяц в выбранной валюте.
-struct MonthlyBudget: Codable, Hashable {
-    var amount: Decimal
-    var currency: Currency
-}
-
 /// Всё, что хранит приложение. Целиком шифруется и пишется в один файл.
 struct Vault: Codable {
     var expenses: [Expense] = []
@@ -75,11 +69,12 @@ struct Vault: Codable {
     var displayCurrency: Currency = .usd
     var lockEnabled = false
     var autoUpdateRates = true
-    var budget: MonthlyBudget?
     var recurring: [RecurringPayment] = []
     /// Пропущенные в этом месяце регулярные платежи: "<id>|<год>-<месяц>".
     var skippedRecurring: [String] = []
     var eveningReminder = false
+    /// Время вечернего напоминания в минутах от полуночи, не позже 21:00.
+    var eveningMinutes = 20 * 60 + 30
 
     init() {}
 
@@ -94,9 +89,9 @@ struct Vault: Codable {
         displayCurrency = try c.decodeIfPresent(Currency.self, forKey: .displayCurrency) ?? .usd
         lockEnabled = try c.decodeIfPresent(Bool.self, forKey: .lockEnabled) ?? false
         autoUpdateRates = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateRates) ?? true
-        budget = try c.decodeIfPresent(MonthlyBudget.self, forKey: .budget)
         recurring = try c.decodeIfPresent([RecurringPayment].self, forKey: .recurring) ?? []
         skippedRecurring = try c.decodeIfPresent([String].self, forKey: .skippedRecurring) ?? []
         eveningReminder = try c.decodeIfPresent(Bool.self, forKey: .eveningReminder) ?? false
+        eveningMinutes = try min(21 * 60, c.decodeIfPresent(Int.self, forKey: .eveningMinutes) ?? 20 * 60 + 30)
     }
 }

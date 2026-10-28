@@ -28,30 +28,28 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    NavigationLink { BudgetView() } label: {
-                        SettingsLabel("Бюджет на месяц", symbol: "gauge.with.needle.fill", color: "green")
-                    }
                     NavigationLink { RecurringListView() } label: {
                         SettingsLabel("Регулярные платежи", symbol: "repeat", color: "indigo")
                     }
                     Toggle(isOn: reminderBinding) {
                         SettingsLabel("Напомнить вечером", symbol: "bell.fill", color: "red")
                     }
-                    NavigationLink { SiriGuideView() } label: {
-                        SettingsLabel("Siri и кнопка действия", symbol: "mic.fill", color: "pink")
+                    if store.eveningReminder {
+                        DatePicker("Во сколько", selection: $store.eveningTime,
+                                   in: reminderRange, displayedComponents: .hourAndMinute)
                     }
                 } header: {
                     Text("Помощники")
                 } footer: {
-                    Text("В 21:00 iPhone спросит, записали ли вы траты. Напоминания создаёт сам телефон.")
+                    Text("Вечером iPhone пошутит и спросит, всё ли записано. Не позже 21:00, без сумм в тексте.")
                 }
 
                 Section {
                     NavigationLink { TransferView() } label: {
                         SettingsLabel("Перенос на новый iPhone", symbol: "iphone.and.arrow.forward", color: "teal")
                     }
-                    NavigationLink { WidgetGuideView() } label: {
-                        SettingsLabel("Виджет на экран блокировки", symbol: "lock.rectangle.on.rectangle.fill", color: "purple")
+                    NavigationLink { QuickInputView() } label: {
+                        SettingsLabel("Быстрый ввод", symbol: "bolt.fill", color: "purple")
                     }
                 }
 
@@ -83,6 +81,14 @@ struct SettingsView: View {
                 Text("Вернуть их можно будет только из файла переноса.")
             }
         }
+    }
+
+    /// С 17:00 до 21:00 — позже напоминать не будем.
+    private var reminderRange: ClosedRange<Date> {
+        let calendar = Calendar.current
+        let from = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: .now) ?? .now
+        let to = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: .now) ?? .now
+        return from...to
     }
 
     private var reminderBinding: Binding<Bool> {
