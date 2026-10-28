@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ExpenseFormView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
 
     let original: Expense?
@@ -164,8 +165,7 @@ struct ExpenseFormView: View {
                         Image(systemName: "doc.text.viewfinder")
                             .font(.title3)
                     }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.circle)
+                    .buttonStyle(.borderless)
                     .accessibilityLabel("Сканировать чек")
                 }
                 currencyMenu
@@ -207,9 +207,6 @@ struct ExpenseFormView: View {
                     ForEach(Array(templates.prefix(5))) { expense in
                         Button { fill(from: expense) } label: {
                             HStack(spacing: 7) {
-                                Circle()
-                                    .fill(store.category(for: expense.categoryID).color)
-                                    .frame(width: 8, height: 8)
                                 Text(expense.note)
                                 Text(expense.currency.format(expense.amount))
                                     .foregroundStyle(.secondary)
@@ -282,7 +279,7 @@ struct ExpenseFormView: View {
                 Text("1 USD = \(Fmt.rate(Decimal.parse(rateText) ?? 0)) \(currency.symbol) · ")
                     .foregroundStyle(.secondary)
                 + Text("изменить")
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(palette.accent)
             }
             .font(.footnote)
         }
@@ -453,6 +450,7 @@ struct ExpenseFormView: View {
 
 /// Плитки категорий: значок и название. Растут вместе со шрифтом.
 struct CategoryGrid: View {
+    @Environment(\.palette) private var palette
     let categories: [ExpenseCategory]
     let selection: UUID?
     let onSelect: (ExpenseCategory) -> Void
@@ -490,11 +488,7 @@ struct CategoryGrid: View {
         }
         .frame(maxWidth: .infinity, minHeight: tileWidth * 0.85)
         .padding(.vertical, 6)
-        .background(selected ? Color.accentColor.opacity(0.15) : Color(.tertiarySystemFill),
-                    in: .rect(cornerRadius: 12))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 2)
-        }
+        .fontWeight(selected ? .semibold : .regular)
+        .background(selected ? palette.accent.opacity(0.15) : Color.clear, in: .rect(cornerRadius: 12))
     }
 }

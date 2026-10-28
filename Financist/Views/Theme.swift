@@ -1,20 +1,24 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-extension Color {
-    /// Тёплый кремовый фон (в тёмной теме — тёплый тёмный).
-    static let cozyBackground = Color("WarmBackground")
-}
-
 extension UTType {
     static let financistBackup = UTType(exportedAs: "com.ycmeal.financist.backup")
 }
 
 extension View {
-    /// Тёплый фон вместо серого для списков и форм.
+    /// Фон палитры вместо серого для списков и форм.
     func warmListBackground() -> some View {
-        scrollContentBackground(.hidden)
-            .background(Color.cozyBackground.ignoresSafeArea())
+        modifier(PaletteListBackground())
+    }
+}
+
+private struct PaletteListBackground: ViewModifier {
+    @Environment(\.palette) private var palette
+
+    func body(content: Content) -> some View {
+        content
+            .scrollContentBackground(.hidden)
+            .background(palette.background.ignoresSafeArea())
     }
 }
 
@@ -29,7 +33,7 @@ struct CategoryIcon: View {
             .font(.system(size: size * 0.5, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(category.color.gradient, in: .rect(cornerRadius: size * 0.26))
+            .background(category.color, in: .rect(cornerRadius: size * 0.26))
             .accessibilityHidden(true)
     }
 }

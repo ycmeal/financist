@@ -11,6 +11,7 @@ struct FinancistApp: App {
         WindowGroup {
             RootView()
                 .environment(store)
+                .palette(store.palette)
                 .fontDesign(.rounded)
                 .onOpenURL { store.handle(url: $0) }
         }

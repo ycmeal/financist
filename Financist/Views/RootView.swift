@@ -57,10 +57,10 @@ struct RootView: View {
     /// включая открытые формы, — иначе они бы выглядывали из-под замка.
     private func updateCover() {
         if store.isLocked {
-            CoverWindow.shared.show(LockView { authenticate() })
+            CoverWindow.shared.show(LockView { authenticate() }.palette(store.palette))
         } else if scenePhase == .background {
             // Скрывает суммы в переключателе приложений.
-            CoverWindow.shared.show(PrivacyCover())
+            CoverWindow.shared.show(PrivacyCover().palette(store.palette))
         } else {
             CoverWindow.shared.hide()
         }
@@ -97,9 +97,11 @@ final class CoverWindow {
 }
 
 struct PrivacyCover: View {
+    @Environment(\.palette) private var palette
+
     var body: some View {
         ZStack {
-            Color.cozyBackground.ignoresSafeArea()
+            palette.background.ignoresSafeArea()
             Image(systemName: "lock.fill")
                 .font(.largeTitle)
                 .foregroundStyle(.tint)
@@ -108,11 +110,12 @@ struct PrivacyCover: View {
 }
 
 struct LockView: View {
+    @Environment(\.palette) private var palette
     let onUnlockTap: () -> Void
 
     var body: some View {
         ZStack {
-            Color.cozyBackground.ignoresSafeArea()
+            palette.background.ignoresSafeArea()
             VStack(spacing: 20) {
                 Image(systemName: "lock.fill")
                     .font(.largeTitle)

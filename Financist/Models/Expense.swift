@@ -75,6 +75,7 @@ struct Vault: Codable {
     var eveningReminder = false
     /// Время вечернего напоминания в минутах от полуночи, не позже 21:00.
     var eveningMinutes = 20 * 60 + 30
+    var palette: Palette = .sage
 
     init() {}
 
@@ -92,6 +93,7 @@ struct Vault: Codable {
         recurring = try c.decodeIfPresent([RecurringPayment].self, forKey: .recurring) ?? []
         skippedRecurring = try c.decodeIfPresent([String].self, forKey: .skippedRecurring) ?? []
         eveningReminder = try c.decodeIfPresent(Bool.self, forKey: .eveningReminder) ?? false
+        palette = try c.decodeIfPresent(Palette.self, forKey: .palette) ?? .sage
         eveningMinutes = try min(21 * 60, c.decodeIfPresent(Int.self, forKey: .eveningMinutes) ?? 20 * 60 + 30)
     }
 }

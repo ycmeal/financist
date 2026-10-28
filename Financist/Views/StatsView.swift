@@ -15,6 +15,7 @@ struct StatsView: View {
 
 /// Итоги месяца или года. Всё считается на устройстве.
 struct StatsContent: View {
+    @Environment(\.palette) private var palette
     @Environment(AppStore.self) private var store
     @State private var period: StatsPeriod
     @State private var anchor: Date
@@ -91,7 +92,7 @@ struct StatsContent: View {
                             ShareRow(icon: Text(item.currency.flag).font(.title2),
                                      title: item.currency.placeName,
                                      value: report.currency.format(item.total.rounded(scale: 0)),
-                                     share: item.share, color: .accentColor)
+                                     share: item.share, color: palette.accent)
                         }
                     }
                 }
@@ -286,13 +287,14 @@ private struct DonutChart: View {
 }
 
 private struct TimelineChart: View {
+    @Environment(\.palette) private var palette
     let report: StatsReport
 
     var body: some View {
         Chart(report.buckets) { bucket in
             BarMark(x: .value("Дата", bucket.date, unit: report.bucketUnit),
                     y: .value("Сумма", bucket.total))
-                .foregroundStyle(Color.accentColor.gradient)
+                .foregroundStyle(palette.accent)
                 .cornerRadius(3)
         }
         .chartXAxis {
@@ -319,13 +321,14 @@ private struct TimelineChart: View {
 }
 
 private struct WeekdayChart: View {
+    @Environment(\.palette) private var palette
     let report: StatsReport
 
     var body: some View {
         let maxDay = report.weekdays.max { $0.total < $1.total }?.weekday
         Chart(report.weekdays) { day in
             BarMark(x: .value("День", day.title), y: .value("Сумма", day.total))
-                .foregroundStyle(day.weekday == maxDay ? Color.accentColor : Color.accentColor.opacity(0.4))
+                .foregroundStyle(day.weekday == maxDay ? palette.accent : palette.accent.opacity(0.4))
                 .cornerRadius(4)
         }
         .chartYAxis { amountAxis() }

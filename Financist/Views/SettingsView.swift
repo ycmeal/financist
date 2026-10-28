@@ -9,6 +9,16 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
+                    NavigationLink { PaletteView() } label: {
+                        LabeledContent {
+                            Text(store.palette.title)
+                        } label: {
+                            SettingsLabel("Оформление", symbol: "paintpalette.fill", color: "orange")
+                        }
+                    }
+                }
+
+                Section {
                     Picker(selection: $store.displayCurrency) {
                         ForEach(Currency.allCases) { Text("\($0.flag) \($0.code)").tag($0) }
                     } label: {
@@ -153,5 +163,51 @@ struct StepRow: View {
                 .foregroundStyle(.tint)
         }
         .padding(.vertical, 2)
+    }
+}
+
+/// Выбор палитры: кружки светлого и тёмного варианта, название, галочка.
+struct PaletteView: View {
+    @Environment(AppStore.self) private var store
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(Palette.allCases) { palette in
+                    Button {
+                        withAnimation(.snappy) { store.palette = palette }
+                    } label: {
+                        HStack(spacing: 12) {
+                            HStack(spacing: -8) {
+                                Circle().fill(palette.accent)
+                                Circle().fill(palette.background)
+                                    .environment(\.colorScheme, .light)
+                            }
+                            .frame(width: 44, height: 26)
+                            .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(palette.title)
+                                Text(palette.subtitle)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 0)
+                            if palette == store.palette {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.tint)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                    }
+                    .tint(Color.primary)
+                    .accessibilityAddTraits(palette == store.palette ? .isSelected : [])
+                }
+            } footer: {
+                Text("Тёмная тема включается вместе с системной.")
+            }
+        }
+        .warmListBackground()
+        .navigationTitle("Оформление")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

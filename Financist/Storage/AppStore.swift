@@ -79,6 +79,11 @@ final class AppStore {
         set { vault.displayCurrency = newValue; persist() }
     }
 
+    var palette: Palette {
+        get { vault.palette }
+        set { vault.palette = newValue; persist() }
+    }
+
     var lockEnabled: Bool {
         get { vault.lockEnabled }
         set { vault.lockEnabled = newValue; persist() }

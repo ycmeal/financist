@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ExpensesView: View {
     @Environment(AppStore.self) private var store
+    @Environment(\.palette) private var palette
     @State private var editing: Expense?
     @State private var repeating: Expense?
     @State private var addingOn: PresetDay?
@@ -116,7 +117,7 @@ struct ExpensesView: View {
             .tint(Color.primary)
             .swipeActions(edge: .leading) {
                 Button { repeating = expense } label: { Label("Повторить", systemImage: "arrow.clockwise") }
-                    .tint(.accentColor)
+                    .tint(palette.accent)
             }
             .swipeActions(edge: .trailing) {
                 Button(role: .destructive) { store.deleteExpenses(ids: [expense.id]) } label: {

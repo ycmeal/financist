@@ -95,6 +95,7 @@ struct SpendingCalendar: View {
 }
 
 private struct DayCell: View {
+    @Environment(\.palette) private var palette
     let day: Date
     let level: Double
     let isSelected: Bool
@@ -108,17 +109,11 @@ private struct DayCell: View {
             .font(.body.weight(isSelected || isToday ? .bold : .regular))
             .monospacedDigit()
             .minimumScaleFactor(0.6)
-            .foregroundStyle(isSelected ? Color.white : isFuture ? Color.secondary.opacity(0.5) : Color.primary)
+            .foregroundStyle(isSelected ? Color.white : isFuture ? Color.secondary.opacity(0.5) : isToday ? palette.accent : Color.primary)
             .frame(maxWidth: .infinity, minHeight: size)
             .background {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? Color.accentColor : Color.accentColor.opacity(level > 0 ? 0.12 + level * 0.5 : 0))
-            }
-            .overlay {
-                if isToday && !isSelected {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(Color.accentColor, lineWidth: 2)
-                }
+                    .fill(isSelected ? palette.accent : palette.accent.opacity(level > 0 ? 0.12 + level * 0.5 : 0))
             }
             .contentShape(Rectangle())
             .accessibilityElement()
