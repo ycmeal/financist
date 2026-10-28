@@ -66,6 +66,7 @@ struct RootView: View {
                 .tabItem { Label("Настройки", systemImage: "gearshape") }
                 .tag(AppTab.settings)
         }
+        .glassTabBar()
     }
 
     /// Запуск после того, как данные открыты: замок, отложенный ввод траты, курсы.

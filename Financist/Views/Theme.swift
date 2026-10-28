@@ -68,3 +68,21 @@ struct DisplayCurrencyMenu: View {
         .accessibilityLabel("Валюта итогов: \(store.displayCurrency.code)")
     }
 }
+
+extension View {
+    /// В iOS 26 системная панель вкладок стеклянная (Liquid Glass) сама по себе — достаточно собрать
+    /// приложение в Xcode 26. Здесь только сворачиваем её при прокрутке вниз, как в стандартных приложениях.
+    /// В старых Xcode этой функции нет, поэтому код спрятан за проверкой версии компилятора.
+    @ViewBuilder
+    func glassTabBar() -> some View {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) {
+            self.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+}
