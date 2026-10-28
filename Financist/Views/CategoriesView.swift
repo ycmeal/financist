@@ -31,7 +31,7 @@ struct CategoriesView: View {
                 Text("Если удалить категорию, её траты перейдут в «\(ExpenseCategory.otherName)».")
             }
         }
-        .warmBackground()
+        .warmListBackground()
         .navigationTitle("Категории")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -105,7 +105,7 @@ struct CategoryEditView: View {
                     .padding(.vertical, 4)
                 }
             }
-            .warmBackground()
+            .warmListBackground()
             .navigationTitle(isNew ? "Новая категория" : "Категория")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

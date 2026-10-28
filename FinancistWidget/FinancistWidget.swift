@@ -2,9 +2,6 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// Ссылка, по которой приложение сразу открывает ввод новой траты.
-private let addExpenseURL = URL(string: "financist://add")!
-
 /// Виджет — просто кнопка. Он не читает и не показывает траты,
 /// поэтому на экране блокировки никто не увидит сумм.
 struct AddExpenseEntry: TimelineEntry {
@@ -28,7 +25,7 @@ struct AddExpenseWidgetView: View {
 
     var body: some View {
         content
-            .widgetURL(addExpenseURL)
+            .widgetURL(financistAddExpenseURL)
             .containerBackground(for: .widget) {
                 if family == .systemSmall { Color("WidgetBackground") } else { Color.clear }
             }
@@ -86,18 +83,6 @@ struct AddExpenseWidget: Widget {
 }
 
 // MARK: - Кнопка на экране блокировки (вместо фонарика) и в Пункте управления, iOS 18+
-
-@available(iOS 18.0, *)
-struct OpenAddExpenseIntent: AppIntent {
-    static var title: LocalizedStringResource = "Новая трата"
-    static var description = IntentDescription("Открывает Financist сразу на вводе траты.")
-    static var openAppWhenRun = true
-    static var isDiscoverable = false
-
-    func perform() async throws -> some IntentResult & OpensIntent {
-        .result(opensIntent: OpenURLIntent(addExpenseURL))
-    }
-}
 
 @available(iOS 18.0, *)
 struct AddExpenseControl: ControlWidget {

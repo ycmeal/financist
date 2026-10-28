@@ -54,7 +54,7 @@ struct ExpensesView: View {
                     }
                 }
             }
-            .warmBackground()
+            .warmListBackground()
             .navigationTitle("Траты")
             .searchable(text: $search, prompt: "Поиск")
             .overlay {
@@ -207,7 +207,7 @@ struct ExpenseListView: View {
             Button { editing = expense } label: { ExpenseRow(expense: expense, showDate: true) }
                 .tint(Color.primary)
         }
-        .warmBackground()
+        .warmListBackground()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editing) { ExpenseFormView(expense: $0) }

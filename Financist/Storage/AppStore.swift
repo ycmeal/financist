@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 
 /// Файл резервной копии, который нужно восстановить (выбран в «Файлах» или пришёл по AirDrop).
 struct PendingRestore: Identifiable {

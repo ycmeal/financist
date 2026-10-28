@@ -54,6 +54,16 @@
 			);
 			target = F1A000000000000000000013 /* FinancistWidgetExtension */;
 		};
+		F1A000000000000000000020 /* Exceptions for "FinancistWidget" folder in "Financist" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				FinancistWidget.swift,
+				Info.plist,
+				PrivacyInfo.xcprivacy,
+			);
+			target = F1A000000000000000000006 /* Financist */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +79,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F1A00000000000000000001F /* Exceptions for "FinancistWidget" folder in "FinancistWidgetExtension" target */,
+				F1A000000000000000000020 /* Exceptions for "FinancistWidget" folder in "Financist" target */,
 			);
 			path = FinancistWidget;
 			sourceTree = "<group>";
@@ -130,6 +141,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				F1A000000000000000000002 /* Financist */,
+				F1A000000000000000000012 /* FinancistWidget */,
 			);
 			name = Financist;
 			packageProductDependencies = (

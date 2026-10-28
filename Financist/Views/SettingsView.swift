@@ -56,7 +56,7 @@ struct SettingsView: View {
                     Text("Financist \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
                 }
             }
-            .warmBackground()
+            .warmListBackground()
             .navigationTitle("Настройки")
             .confirmationDialog("Удалить все траты и категории?", isPresented: $confirmWipe, titleVisibility: .visible) {
                 Button("Удалить всё", role: .destructive) { store.resetAll() }

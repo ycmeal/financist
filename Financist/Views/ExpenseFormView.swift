@@ -86,7 +86,7 @@ struct ExpenseFormView: View {
                     }
                 }
             }
-            .warmBackground()
+            .warmListBackground()
             .navigationTitle(original == nil ? "Новая трата" : "Трата")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 extension Color {
     /// Тёплый кремовый фон (в тёмной теме — тёплый тёмный).
-    static let warmBackground = Color("Background")
+    static let warmBackground = Color("WarmBackground")
 }
 
 extension UTType {
@@ -12,7 +12,7 @@ extension UTType {
 
 extension View {
     /// Тёплый фон вместо серого для списков и форм.
-    func warmBackground() -> some View {
+    func warmListBackground() -> some View {
         scrollContentBackground(.hidden)
             .background(Color.warmBackground.ignoresSafeArea())
     }

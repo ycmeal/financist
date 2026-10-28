@@ -28,7 +28,7 @@ struct StatsContent: View {
 
     var body: some View {
         let report = StatsReport(all: store.vault.expenses, period: period, anchor: anchor,
-                                 currency: store.displayCurrency, category: store.category(for:))
+                                 currency: store.displayCurrency, category: { store.category(for: $0) })
         List {
             if showsPicker {
                 Section {
@@ -128,7 +128,7 @@ struct StatsContent: View {
                 }
             }
         }
-        .warmBackground()
+        .warmListBackground()
         .onChange(of: period) { anchor = .now }
     }
 
@@ -362,7 +362,7 @@ struct MonthsHistoryView: View {
                 .padding(.vertical, 4)
             }
         }
-        .warmBackground()
+        .warmListBackground()
         .overlay {
             if months.isEmpty {
                 ContentUnavailableView("Пока нет итогов", systemImage: "calendar")

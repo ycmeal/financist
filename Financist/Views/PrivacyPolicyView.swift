@@ -45,7 +45,7 @@ struct PrivacyPolicyView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .warmBackground()
+        .warmListBackground()
         .navigationTitle("Конфиденциальность")
         .navigationBarTitleDisplayMode(.inline)
     }

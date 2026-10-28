@@ -68,7 +68,7 @@ struct TransferView: View {
                 Text("Таблица не зашифрована — делитесь ей осторожно.")
             }
         }
-        .warmBackground()
+        .warmListBackground()
         .navigationTitle("Перенос")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Пароль для файла", isPresented: $askPassword) {
@@ -204,7 +204,7 @@ struct RestoreView: View {
                     }
                 }
             }
-            .warmBackground()
+            .warmListBackground()
             .navigationTitle("Загрузка трат")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

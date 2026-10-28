@@ -38,7 +38,7 @@ struct WidgetGuideView: View {
                 }
             }
         }
-        .warmBackground()
+        .warmListBackground()
         .navigationTitle("Виджет")
         .navigationBarTitleDisplayMode(.inline)
     }

@@ -85,7 +85,7 @@ struct RatesView: View {
                 }
             }
         }
-        .warmBackground()
+        .warmListBackground()
         .navigationTitle("Курсы валют")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -136,7 +136,7 @@ struct RateEditView: View {
                     }
                 }
             }
-            .warmBackground()
+            .warmListBackground()
             .navigationTitle("\(currency.flag) \(currency.code)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
