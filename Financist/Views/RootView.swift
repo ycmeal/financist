@@ -97,7 +97,7 @@ final class CoverWindow {
 struct PrivacyCover: View {
     var body: some View {
         ZStack {
-            Color.warmBackground.ignoresSafeArea()
+            Color.cozyBackground.ignoresSafeArea()
             Image(systemName: "lock.fill")
                 .font(.largeTitle)
                 .foregroundStyle(.tint)
@@ -110,7 +110,7 @@ struct LockView: View {
 
     var body: some View {
         ZStack {
-            Color.warmBackground.ignoresSafeArea()
+            Color.cozyBackground.ignoresSafeArea()
             VStack(spacing: 20) {
                 Image(systemName: "lock.fill")
                     .font(.largeTitle)
