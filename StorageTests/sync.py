@@ -20,6 +20,7 @@ copy('Models/VaultMerge.swift')
 copy('Models/Formatting.swift')
 copy('Models/Suggestions.swift')
 copy('Models/ExpenseCategory.swift', no_ui)
+copy('Services/BuildAge.swift')
 
 def store(s):
     s = s.replace('import CommonCrypto\n', '').replace('import Security\n', '')

@@ -10,6 +10,7 @@ struct ExpensesView: View {
     @State private var mode: Mode = .list
     @State private var calendarMonth = Date.now
     @State private var selectedDay = Calendar.current.startOfDay(for: .now)
+    @State private var buildWarningHidden = false
 
     private enum Mode: String, CaseIterable, Identifiable {
         case list = "Список"
@@ -35,6 +36,15 @@ struct ExpensesView: View {
 
         NavigationStack {
             List {
+                if search.isEmpty && !buildWarningHidden && BuildAge.shouldWarn() {
+                    Section {
+                        BuildExpiryNotice {
+                            BuildAge.snooze()
+                            withAnimation(.snappy) { buildWarningHidden = true }
+                        }
+                    }
+                }
+
                 if search.isEmpty {
                     Section { SummaryHeader() }
                         .listRowBackground(Color.clear)
@@ -161,6 +171,28 @@ struct ExpensesView: View {
               store.vault.expenses.contains(where: { calendar.isDate($0.date, equalTo: previous, toGranularity: .month) })
         else { return nil }
         return previous
+    }
+}
+
+/// Тихая плашка: сборка из TestFlight скоро истечёт.
+private struct BuildExpiryNotice: View {
+    let onDismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label {
+                Text("Эта версия скоро перестанет открываться — попроси сына обновить. Траты не пропадут.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } icon: {
+                Image(systemName: "arrow.down.app")
+                    .foregroundStyle(.tint)
+            }
+            Button("Понятно", action: onDismiss)
+                .font(.subheadline)
+                .buttonStyle(.borderless)
+        }
+        .padding(.vertical, 2)
     }
 }
 

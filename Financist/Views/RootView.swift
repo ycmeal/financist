@@ -100,6 +100,7 @@ struct RootView: View {
         if store.isLocked { authenticate() }
         store.consumeAddRequest()
         ShareFile.cleanUp()
+        BuildAge.recordLaunch()
         Task { await store.refreshRates(force: false) }
     }
 
