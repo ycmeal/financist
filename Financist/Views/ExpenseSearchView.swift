@@ -8,35 +8,52 @@ struct ExpenseSearchView: View {
     @State private var isSearching = false
     @State private var editing: Expense?
     @State private var keys = NoteKeys()
+    /// Известные места с их написаниями — для «карфур» → Carrefour. Считаются один раз при открытии.
+    @State private var places: [Suggestion] = []
 
     private var trimmed: String { query.trimmingCharacters(in: .whitespaces) }
 
+    /// Как подсказки «На что?»: по-русски и латиницей, по известным написаниям и по категории.
     private var results: [Expense] {
-        guard !trimmed.isEmpty else { return [] }
-        let sound = SuggestionEngine.key(trimmed)
+        let search = SearchQuery(trimmed, places: places)
+        guard !search.isEmpty else { return [] }
         return store.vault.expenses
-            .filter {
-                $0.note.localizedCaseInsensitiveContains(trimmed)
-                    || store.category(for: $0.categoryID).name.localizedCaseInsensitiveContains(trimmed)
-                    // По звучанию: «мигрос» находит Migros, «apteka» — «Аптека».
-                    || (!sound.isEmpty && keys[$0.note].contains(sound))
+            .filter { expense in
+                let category = store.category(for: expense.categoryID).name
+                return search.matches(note: expense.note, noteKey: keys[expense.note],
+                                      category: category, categoryKey: keys[category])
             }
             .sorted { $0.date > $1.date }
     }
 
     var body: some View {
+        let found = results
+        let display = store.displayCurrency
         NavigationStack {
-            List(results) { expense in
-                Button { editing = expense } label: { ExpenseRow(expense: expense, showDate: true) }
-                    .tint(Color.primary)
+            List {
+                if !found.isEmpty {
+                    Section {
+                        ForEach(found) { expense in
+                            Button { editing = expense } label: { ExpenseRow(expense: expense, showDate: true) }
+                                .tint(Color.primary)
+                        }
+                    } header: {
+                        // Сколько всего: «22 траты · 3 450 ₺».
+                        Text("\(Fmt.count(found.count, "трата", "траты", "трат")) · \(display.format(found.total(in: display).rounded(scale: 2)))")
+                            .monospacedDigit()
+                    }
+                }
             }
             .overlay {
                 if trimmed.isEmpty {
                     ContentUnavailableView("Поиск по тратам", systemImage: "magnifyingglass",
-                                           description: Text("Место или категория: Migros, аптека, такси. Можно по-русски: «мигрос» найдёт Migros."))
-                } else if results.isEmpty {
+                                           description: Text("Место или категория: Migros, аптека, такси. Можно по-русски: «мигрос» найдёт Migros, «карфур» — Carrefour."))
+                } else if found.isEmpty {
                     ContentUnavailableView.search(text: trimmed)
                 }
+            }
+            .onAppear {
+                if places.isEmpty { places = store.suggestions }
             }
             .warmListBackground()
             .navigationTitle("Поиск")

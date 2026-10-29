@@ -600,3 +600,38 @@ enum SuggestionEngine {
         return table.flatMap { name, stems in stems.map { (key($0), name) } }.filter { $0.0.count >= 3 }
     }()
 }
+
+/// Запрос поиска по тратам. Находит так же, как подсказки «На что?»: по-русски и латиницей
+/// («мигрос» — Migros, «apteka» — «Аптека»), по известным написаниям («карфур» — Carrefour и CarrefourSA)
+/// и по категории («продукты», «produkty»).
+struct SearchQuery {
+    let text: String
+    let sound: String
+    /// Ключи известных мест, которые запрос называет не так, как они пишутся: «старбакс» — Starbucks.
+    let placeKeys: Set<String>
+
+    init(_ query: String, places: [Suggestion]) {
+        text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sound = SuggestionEngine.key(text)
+        self.sound = sound
+        guard !sound.isEmpty else {
+            placeKeys = []
+            return
+        }
+        placeKeys = Set(places.filter { place in
+            place.keys.dropFirst().contains { $0.hasPrefix(sound) || $0.split(separator: " ").contains { $0.hasPrefix(sound) } }
+        }.flatMap(\.keys))
+    }
+
+    var isEmpty: Bool { text.isEmpty }
+
+    /// Ключи (`SuggestionEngine.key`) названия и категории считаются заранее — один раз на название.
+    func matches(note: String, noteKey: String, category: String, categoryKey: String) -> Bool {
+        guard !text.isEmpty else { return false }
+        if note.localizedCaseInsensitiveContains(text) || category.localizedCaseInsensitiveContains(text) { return true }
+        guard !sound.isEmpty else { return false }
+        if noteKey.contains(sound) || categoryKey.contains(sound) { return true }
+        let words = " \(noteKey) "
+        return placeKeys.contains { words.contains(" \($0) ") }
+    }
+}

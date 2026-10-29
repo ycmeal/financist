@@ -115,6 +115,33 @@ final class SuggestionsTests: XCTestCase {
         XCTAssertNil(SuggestionEngine.place(onReceipt: "KAHVECİ DÜNYASI LTD", in: fresh), "No «du» inside other words")
     }
 
+    func testSearchFindsExpensesTheSameWay() {
+        let history = [expense("Migros", "Продукты"), expense("CarrefourSA", "Продукты", daysAgo: 2),
+                       expense("Starbucks", "Кафе", daysAgo: 3), expense("Аптека", "Здоровье", daysAgo: 4),
+                       expense("Kasap Ali", "Продукты", daysAgo: 5), expense("Fatura", "Жильё", daysAgo: 6)]
+        let places = SuggestionEngine.build(expenses: history, categories: categories)
+        func found(_ query: String) -> [String] {
+            let search = SearchQuery(query, places: places)
+            return history.filter { e in
+                let name = categories.first { $0.id == e.categoryID }!.name
+                return search.matches(note: e.note, noteKey: SuggestionEngine.key(e.note),
+                                      category: name, categoryKey: SuggestionEngine.key(name))
+            }.map(\.note)
+        }
+        XCTAssertEqual(found("мигрос"), ["Migros"])
+        XCTAssertEqual(found("миг"), ["Migros"])
+        XCTAssertEqual(found("migros"), ["Migros"])
+        XCTAssertEqual(found("карфур"), ["CarrefourSA"], "Known other spelling")
+        XCTAssertEqual(found("старбакс"), ["Starbucks"])
+        XCTAssertEqual(found("apteka"), ["Аптека"])
+        XCTAssertEqual(found("касап"), ["Kasap Ali"])
+        XCTAssertEqual(found("фатура"), ["Fatura"])
+        XCTAssertEqual(found("продукты"), ["Migros", "CarrefourSA", "Kasap Ali"], "By category")
+        XCTAssertEqual(found("produkty"), ["Migros", "CarrefourSA", "Kasap Ali"], "Category by sound")
+        XCTAssertEqual(found("  "), [])
+        XCTAssertEqual(found("Netflix"), [])
+    }
+
     func testSeedsAreValid() {
         let names = Set(categories.map(\.name))
         var seen: [String: String] = [:]
