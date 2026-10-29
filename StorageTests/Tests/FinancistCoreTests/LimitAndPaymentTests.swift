@@ -141,6 +141,35 @@ final class LimitAndPaymentTests: XCTestCase {
         XCTAssertEqual(progress.spent, 5500, "100 $ = 5 000 ₺ by its own rate, plus 500 ₺; the old month is not counted")
     }
 
+    // MARK: Недавние
+
+    @MainActor
+    func testHiddenRecentStaysHiddenUntilANewExpenseThere() async throws {
+        let store = launch()
+        let groceries = try XCTUnwrap(store.vault.categories.first { $0.name == "Продукты" })
+        store.addExpense(amount: 10, currency: .lira, categoryID: groceries.id, note: "Pazar", date: .now.addingTimeInterval(-3600), payment: .cash)
+        store.addExpense(amount: 20, currency: .lira, categoryID: groceries.id, note: "Migros", date: .now.addingTimeInterval(-60), payment: .card)
+        XCTAssertEqual(store.recentTemplates.map(\.note), ["Migros", "Pazar"])
+
+        let pazar = try XCTUnwrap(store.recentTemplates.last)
+        store.hideRecent(pazar)
+        XCTAssertEqual(store.recentTemplates.map(\.note), ["Migros"])
+        XCTAssertEqual(store.vault.expenses.count, 2, "The expense itself stays")
+        XCTAssertEqual(launch().recentTemplates.map(\.note), ["Migros"], "Remembered after relaunch")
+
+        store.addExpense(amount: 15, currency: .lira, categoryID: groceries.id, note: "pazar", date: .now, payment: .cash)
+        XCTAssertEqual(store.recentTemplates.map(\.note), ["pazar", "Migros"], "A new expense there brings it back")
+    }
+
+    func testHiddenRecentsTravelWithTheTransferFile() {
+        var here = Vault()
+        here.hiddenRecents = ["a|1": Date(timeIntervalSince1970: 100)]
+        var other = Vault()
+        other.hiddenRecents = ["a|1": Date(timeIntervalSince1970: 200), "b|2": Date(timeIntervalSince1970: 50)]
+        _ = here.merge(other)
+        XCTAssertEqual(here.hiddenRecents, ["a|1": Date(timeIntervalSince1970: 200), "b|2": Date(timeIntervalSince1970: 50)])
+    }
+
     // MARK: Картой или наличными
 
     func testTotalsByPaymentSkipUnknown() {

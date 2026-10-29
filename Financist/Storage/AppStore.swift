@@ -408,15 +408,28 @@ final class AppStore {
     }
 
     /// Недавние разные траты (по месту и категории) — чтобы повторить одним касанием.
+    /// Убранные долгим нажатием не показываются, пока там же не появится новая трата.
     var recentTemplates: [Expense] {
         var seen = Set<String>()
         var result: [Expense] = []
         for e in vault.expenses.sorted(by: { $0.date > $1.date }) where !e.note.isEmpty {
-            let key = SuggestionEngine.key(e.note) + "|" + e.categoryID.uuidString
-            if seen.insert(key).inserted { result.append(e) }
+            let key = Self.recentKey(e)
+            guard seen.insert(key).inserted else { continue }
+            if let hiddenAt = vault.hiddenRecents[key], e.date <= hiddenAt { continue }
+            result.append(e)
             if result.count == 6 { break }
         }
         return result
+    }
+
+    /// Убрать трату из «Недавних». Сама трата остаётся в списке.
+    func hideRecent(_ expense: Expense) {
+        vault.hiddenRecents[Self.recentKey(expense)] = expense.date
+        persist()
+    }
+
+    private static func recentKey(_ e: Expense) -> String {
+        SuggestionEngine.key(e.note) + "|" + e.categoryID.uuidString
     }
 
     func upsert(_ category: ExpenseCategory) {

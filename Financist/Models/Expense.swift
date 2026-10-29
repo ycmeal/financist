@@ -236,6 +236,9 @@ struct Vault: Codable {
     var monthlyLimit: MonthlyLimit?
     /// Чем платили в последний раз — подставляется в новую трату.
     var lastPayment: PaymentMethod = .card
+    /// Убранные из «Недавних»: ключ места и категории → дата траты, которую убрали.
+    /// Новая трата там же (позже этой даты) снова появится в «Недавних».
+    var hiddenRecents: [String: Date] = [:]
 
     init() {}
 
@@ -270,5 +273,6 @@ struct Vault: Codable {
         monthlyLimit = (try? c.decodeIfPresent(MonthlyLimit.self, forKey: .monthlyLimit)).flatMap { $0 }
             .flatMap { $0.amount > 0 ? $0 : nil }
         lastPayment = (try? c.decodeIfPresent(PaymentMethod.self, forKey: .lastPayment)).flatMap { $0 } ?? .card
+        hiddenRecents = (try? c.decodeIfPresent([String: Date].self, forKey: .hiddenRecents)).flatMap { $0 } ?? [:]
     }
 }

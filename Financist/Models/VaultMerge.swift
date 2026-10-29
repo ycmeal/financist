@@ -61,6 +61,8 @@ extension Vault {
         }
         // Лимит с другого телефона берём, только если здесь его нет.
         if monthlyLimit == nil { monthlyLimit = incoming.monthlyLimit }
+        // Убранное из «Недавних» на любом из телефонов остаётся убранным.
+        hiddenRecents.merge(incoming.hiddenRecents) { max($0, $1) }
         // Пробные подписки: новые добавляем; решение, принятое на другом телефоне, переносим сюда,
         // а принятое здесь не отменяется.
         for trial in incoming.trials {

@@ -196,20 +196,20 @@ struct AddExpenseView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 6)
             }
-            // Листок дня рисуется поверх кнопки оплаты: купюры и карта выглядывают из-за неё, но не налезают на день.
-            DaySwitch(date: date, onPick: { date = Self.keepingTime($0) }, onCalendar: { pickingDay = true })
-                .padding(.horizontal)
-                .padding(.top, 14)
-                .zIndex(1)
-            PaymentFlip(selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true }))
-                .padding(.horizontal)
-                .padding(.top, 12)
             Spacer(minLength: 12)
 
+            // Снизу вверх, ближе к пальцу — то, что меняют чаще: день, под ним клавиши; выше — чем платили и недавние.
             if !templates.isEmpty {
                 recentStrip
                     .padding(.bottom, 12)
+                    .transition(.opacity)
             }
+            PaymentSwitch(selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true }))
+                .padding(.horizontal)
+                .padding(.bottom, 10)
+            DaySwitch(date: date, onPick: { date = Self.keepingTime($0) }, onCalendar: { pickingDay = true })
+                .padding(.horizontal)
+                .padding(.bottom, 12)
             Keypad(commaEnabled: currency.fractionDigits > 0) { press($0) }
                 .padding(.horizontal)
             mainButton("Далее", enabled: input.value != nil) { go(.details) }
@@ -310,10 +310,17 @@ struct AddExpenseView: View {
     /// Недавние разные траты: нажали — подставились место и категория (и сумма, если её ещё нет).
     private var recentStrip: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Недавние")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
+            HStack(alignment: .firstTextBaseline) {
+                Text("Недавние")
+                    .font(.footnote.weight(.semibold))
+                Spacer(minLength: 8)
+                Text("подержите, чтобы убрать")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(Array(templates.prefix(5))) { recentChip($0) }
@@ -343,7 +350,17 @@ struct AddExpenseView: View {
             .background(Color(.secondarySystemBackground), in: .capsule)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button("Убрать из недавних", systemImage: "eye.slash", role: .destructive) { hideRecent(expense) }
+        }
         .accessibilityHint(input.isEmpty ? "Заполнить, как в прошлый раз" : "Подставить место и категорию")
+        .accessibilityAction(named: "Убрать из недавних") { hideRecent(expense) }
+    }
+
+    /// Сама трата остаётся; снова появится в «Недавних», когда там же будет новая.
+    private func hideRecent(_ expense: Expense) {
+        store.hideRecent(expense)
+        withAnimation(.snappy) { templates = store.recentTemplates }
     }
 
     // MARK: 2. На что
@@ -945,144 +962,240 @@ private struct CategoryChip: View {
     }
 }
 
-/// Плашка, которая переворачивается вокруг оси: спереди одно, сзади другое. Сторона видна ровно до середины поворота.
-private struct FlipCard<Front: View, Back: View>: View, Animatable {
-    var angle: Double
-    var horizontalAxis = true
-    let front: Front
-    let back: Back
-
-    var animatableData: Double {
-        get { angle }
-        set { angle = newValue }
-    }
-
-    var body: some View {
-        let axis: (x: CGFloat, y: CGFloat, z: CGFloat) = horizontalAxis ? (1, 0, 0) : (0, 1, 0)
-        ZStack {
-            front.opacity(angle < 90 ? 1 : 0)
-            back
-                .rotation3DEffect(.degrees(180), axis: axis)
-                .opacity(angle < 90 ? 0 : 1)
-        }
-        .rotation3DEffect(.degrees(angle), axis: axis, perspective: 0.6)
+/// Нажатие без прозрачности: плашка чуть проседает, как настоящая кнопка, и ничего не просвечивает.
+private struct PressDown: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .brightness(configuration.isPressed ? -0.04 : 0)
+            .animation(.spring(duration: 0.25, bounce: 0.45), value: configuration.isPressed)
     }
 }
 
-/// «Картой ⇄ Наличными» — одна широкая кнопка-карточка: нажал — перевернулась.
-/// На наличные из-за плашки выглядывают и мнутся купюры; на карту — выезжает карта и «прикладывается».
-/// С «Уменьшением движения» — просто смена стороны.
-private struct PaymentFlip: View {
+/// «Картой ⇄ Наличными» — одна широкая плашка. Нажали — цвет перетекает, значок и слово меняются,
+/// по плашке пробегает блик. На наличные из купюры выпрыгивают монетки, на карту — от неё расходятся
+/// круги, как от бесконтактной оплаты. Всё внутри плашки. С «Уменьшением движения» — только цвет и слово.
+private struct PaymentSwitch: View {
     @Binding var selection: PaymentMethod
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 54
+    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 56
+    @ScaledMetric(relativeTo: .body) private var iconBox: CGFloat = 30
+    @State private var cashTick = 0
+    @State private var cardTick = 0
 
     var body: some View {
         let cash = selection == .cash
         Button { selection = cash ? .card : .cash } label: {
-            ZStack {
-                if !reduceMotion { peek }
-                FlipCard(angle: cash ? 180 : 0, front: face(.card), back: face(.cash))
+            HStack(spacing: 12) {
+                Image(systemName: cash ? "banknote.fill" : "creditcard.fill")
+                    .font(.title3)
+                    .contentTransition(.symbolEffect(.replace.downUp))
+                    .frame(width: iconBox)
+                Text(selection.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .id(selection)
+                    .transition(.asymmetric(insertion: .offset(y: height * 0.55).combined(with: .opacity),
+                                            removal: .offset(y: -height * 0.55).combined(with: .opacity)))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.footnote.weight(.semibold))
+                    .opacity(0.55)
             }
+            .foregroundStyle(cash ? Self.cashInk : palette.background)
+            .padding(.horizontal, 18)
             .frame(height: height)
             .frame(maxWidth: .infinity)
-            .contentShape(.rect)
+            .background(cash ? Self.cashPaper : palette.accent)
+            .overlay(alignment: .leading) {
+                if !reduceMotion { effects.allowsHitTesting(false) }
+            }
+            .overlay { if !reduceMotion { shine.allowsHitTesting(false) } }
+            .clipShape(.rect(cornerRadius: 16))
+            .contentShape(.rect(cornerRadius: 16))
         }
-        .buttonStyle(.plain)
-        .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.6, bounce: 0.28), value: selection)
+        .buttonStyle(PressDown())
+        .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.5, bounce: 0.3), value: selection)
+        .onChange(of: selection) { _, now in
+            if now == .cash { cashTick += 1 } else { cardTick += 1 }
+        }
         .sensoryFeedback(.impact(weight: .light), trigger: selection)
         .accessibilityLabel("Чем платили: \(selection.phrase)")
         .accessibilityHint("Нажмите, чтобы сменить")
     }
 
-    private func face(_ method: PaymentMethod) -> some View {
-        let isCard = method == .card
-        return HStack(spacing: 10) {
-            Image(systemName: isCard ? "creditcard.fill" : "banknote.fill")
-                .font(.title3)
-            Text(method.title)
-                .font(.headline)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Spacer(minLength: 4)
-            Image(systemName: "arrow.left.arrow.right")
-                .font(.footnote.weight(.semibold))
-                .opacity(0.6)
-        }
-        .foregroundStyle(isCard ? Color.white : Self.cashInk)
-        .padding(.horizontal, 18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(isCard ? AnyShapeStyle(palette.accent) : AnyShapeStyle(Self.cashPaper), in: .rect(cornerRadius: 16))
-    }
-
-    /// То, что выглядывает из-за плашки при смене: две купюры или карта. Поднимается, мнётся и прячется обратно.
-    private var peek: some View {
-        let cash = selection == .cash
+    /// Монетки и круги — из центра значка.
+    private var effects: some View {
+        let coin = height * 0.26
         return ZStack {
-            if cash {
-                banknote.rotationEffect(.degrees(-9)).offset(x: -height * 0.5)
-                banknote.rotationEffect(.degrees(7)).offset(x: height * 0.45)
-            } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(palette.accent.opacity(0.85))
-                    .overlay(alignment: .topTrailing) {
-                        Image(systemName: "wave.3.right")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white)
-                            .padding(6)
+            ForEach(Self.coins.indices, id: \.self) { i in
+                let toss = Self.coins[i]
+                Circle()
+                    .fill(Self.gold)
+                    .overlay { Circle().strokeBorder(Self.goldEdge, lineWidth: 1.5).padding(coin * 0.16) }
+                    .frame(width: coin, height: coin)
+                    .phaseAnimator([0.0, 1.0], trigger: cashTick) { content, p in
+                        content.modifier(CoinToss(progress: p, dx: toss.dx * height, rise: toss.rise * height,
+                                                  fall: height * 0.8, spin: toss.spin))
+                    } animation: { p in
+                        p == 1 ? .linear(duration: 0.8).delay(Double(i) * 0.06) : nil
                     }
-                    .frame(width: height * 1.5, height: height * 0.85)
+            }
+            ForEach(0..<2, id: \.self) { i in
+                Circle()
+                    .strokeBorder(palette.background.opacity(0.7), lineWidth: 2)
+                    .frame(width: iconBox, height: iconBox)
+                    .phaseAnimator([0.0, 1.0], trigger: cardTick) { content, p in
+                        content.modifier(Ripple(progress: p))
+                    } animation: { p in
+                        p == 1 ? .easeOut(duration: 0.7).delay(0.12 + Double(i) * 0.16) : nil
+                    }
             }
         }
-        .phaseAnimator([0.0, 1.0, 0.7, 0.0], trigger: selection) { content, rise in
-            content
-                .offset(y: -height * 0.42 * rise)
-                .scaleEffect(x: 1, y: cash ? 1 - 0.14 * rise : 1 + 0.05 * rise)
-                .rotationEffect(.degrees(cash ? -4 * rise : 0))
-        } animation: { _ in
-            .spring(duration: 0.26, bounce: 0.45)
+        .frame(width: iconBox, height: iconBox)
+        .offset(x: 18)
+    }
+
+    /// Блик, который один раз пробегает по плашке слева направо.
+    private var shine: some View {
+        GeometryReader { geo in
+            LinearGradient(colors: [.clear, .white.opacity(0.32), .clear], startPoint: .leading, endPoint: .trailing)
+                .frame(width: geo.size.height * 1.4)
+                .rotationEffect(.degrees(18))
+                .phaseAnimator([0.0, 1.0], trigger: selection) { content, p in
+                    content.modifier(Sweep(progress: p, distance: geo.size.width + geo.size.height * 2))
+                } animation: { p in
+                    p == 1 ? .easeInOut(duration: 0.65).delay(0.08) : nil
+                }
+                .frame(maxHeight: .infinity)
         }
     }
 
-    private var banknote: some View {
-        RoundedRectangle(cornerRadius: 4)
-            .fill(Self.banknoteGreen)
-            .overlay { Circle().strokeBorder(Self.cashInk.opacity(0.35), lineWidth: 1.5).padding(height * 0.14) }
-            .frame(width: height * 1.6, height: height * 0.75)
-    }
-
+    /// Куда летит каждая монетка: вбок и вверх (в высотах плашки), как крутится. Подпрыгивает в пределах
+    /// плашки и падает за её нижний край.
+    private static let coins: [(dx: CGFloat, rise: CGFloat, spin: Double)] = [
+        (0.4, 0.32, 200), (1.1, 0.42, -260), (1.8, 0.34, 320), (2.6, 0.4, -180), (3.4, 0.3, 240),
+    ]
     private static let cashPaper = Color(light: 0xE9E2C6, dark: 0x4A4632)
     private static let cashInk = Color(light: 0x3D4A2E, dark: 0xEDE6C8)
-    private static let banknoteGreen = Color(light: 0xB9D7A6, dark: 0x5E7A4E)
+    private static let gold = Color(light: 0xE8B94A, dark: 0xF2C55C)
+    private static let goldEdge = Color(light: 0xB8862A, dark: 0xB98D33)
 }
 
-/// День — листок календаря, который переворачивается: «Сегодня ⇄ Вчера». Рядом — календарь для любого дня.
+/// Монетка: подпрыгивает и падает по дуге, крутясь. Видна только в полёте.
+private struct CoinToss: ViewModifier, Animatable {
+    var progress: Double
+    let dx: CGFloat
+    let rise: CGFloat
+    let fall: CGFloat
+    let spin: Double
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let p = CGFloat(progress)
+        // Парабола: в начале 0, потом вверх на rise, в конце вниз на fall.
+        let y = (fall + 4 * rise) * p * p - 4 * rise * p
+        return content
+            .rotation3DEffect(.degrees(spin * progress), axis: (x: 0, y: 1, z: 0))
+            .offset(x: dx * p, y: y)
+            .opacity(progress > 0.001 && progress < 0.999 ? 1 : 0)
+    }
+}
+
+/// Круг от бесконтактной оплаты: расходится и тает.
+private struct Ripple: ViewModifier, Animatable {
+    var progress: Double
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(0.5 + 2.4 * progress)
+            .opacity(progress > 0.001 && progress < 0.999 ? (1 - progress) * 0.9 : 0)
+    }
+}
+
+/// Блик проходит из-за левого края за правый.
+private struct Sweep: ViewModifier, Animatable {
+    var progress: Double
+    let distance: CGFloat
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: -distance * 0.25 + distance * CGFloat(progress))
+            .opacity(progress > 0.001 && progress < 0.999 ? 1 : 0)
+    }
+}
+
+/// День: отрывной календарь. Нажали — «Сегодня» ⇄ «Вчера»: к сегодняшнему вчерашний листок отрывается,
+/// ко вчерашнему — листок ложится сверху. Рядом — календарь для любого дня.
 /// Если выбран другой день, листок показывает его, а нажатие возвращает «Сегодня».
 private struct DaySwitch: View {
     let date: Date
     let onPick: (Date) -> Void
     let onCalendar: () -> Void
-    @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 54
+    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 56
+    /// Какой листок сейчас лежит сверху — отстаёт от date на время перелистывания.
+    @State private var settled: Date?
+    @State private var turn: PageTurn?
+
+    private struct PageTurn: Equatable {
+        let top: Date
+        let bottom: Date
+        let forward: Bool
+        let id = UUID()
+    }
 
     var body: some View {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
-        let isYesterday = calendar.isDateInYesterday(date)
+        let shown = calendar.startOfDay(for: date)
         let isToday = calendar.isDateInToday(date)
+        let title = isToday ? "Сегодня" : calendar.isDateInYesterday(date) ? "Вчера" : RuDate.dayTitle(date)
         HStack(spacing: 10) {
             Button { onPick(isToday ? yesterday : today) } label: {
-                FlipCard(angle: isYesterday ? 180 : 0, horizontalAxis: false,
-                         front: leaf(isToday ? today : date, title: isToday ? "Сегодня" : RuDate.dayTitle(date),
-                                     hint: isToday ? "нажмите — вчера" : "нажмите — сегодня"),
-                         back: leaf(yesterday, title: "Вчера", hint: "нажмите — сегодня"))
-                    .frame(height: height)
-                    .contentShape(.rect)
+                HStack(spacing: 12) {
+                    pages(settled ?? shown)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(title)
+                            .font(.headline)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .id(title)
+                            .transition(.asymmetric(insertion: .offset(y: height * 0.5).combined(with: .opacity),
+                                                    removal: .offset(y: -height * 0.5).combined(with: .opacity)))
+                        Text(isToday ? "нажмите — вчера" : "нажмите — сегодня")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .contentTransition(.opacity)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                    .clipped()
+                }
+                .padding(.horizontal, 8)
+                .frame(height: height)
+                .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
+                .contentShape(.rect(cornerRadius: 16))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressDown())
             .accessibilityLabel("День: \(RuDate.dayTitle(date))")
             .accessibilityHint(isToday ? "Нажмите — вчера" : "Нажмите — сегодня")
 
@@ -1092,45 +1205,109 @@ private struct DaySwitch: View {
                     .frame(width: height, height: height)
                     .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PressDown())
             .accessibilityLabel("Другой день")
         }
-        .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.25), value: date)
-        .sensoryFeedback(.selection, trigger: date)
+        .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.25), value: shown)
+        .onAppear { settled = shown }
+        .onChange(of: shown) { old, new in
+            settled = new
+            guard !reduceMotion else { return }
+            turn = new > old ? PageTurn(top: old, bottom: new, forward: true) : PageTurn(top: new, bottom: old, forward: false)
+        }
+        .sensoryFeedback(.selection, trigger: shown)
     }
 
-    private func leaf(_ day: Date, title: String, hint: String) -> some View {
-        HStack(spacing: 12) {
-            VStack(spacing: 0) {
-                Text(RuDate.monthGenitive(day).prefix(3).uppercased())
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 1)
-                    .background(Color.red)
-                Text("\(Calendar.current.component(.day, from: day))")
-                    .font(.headline)
-                    .monospacedDigit()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    /// Листок сверху и тот, что под ним, пока один отрывается или ложится.
+    private func pages(_ day: Date) -> some View {
+        let size = CGSize(width: height * 0.72, height: height * 0.78)
+        return ZStack {
+            // Листки меняются сами, без общего затухания.
+            if let turn {
+                CalendarPage(day: turn.bottom, size: size)
+                    .transition(.identity)
+                TearingPage(day: turn.top, forward: turn.forward, size: size) {
+                    if self.turn == turn { self.turn = nil }
+                }
+                .id(turn.id)
+                .transition(.identity)
+            } else {
+                CalendarPage(day: day, size: size)
+                    .transition(.identity)
             }
-            .frame(width: height * 0.72, height: height * 0.78)
-            .background(Color(.systemBackground), in: .rect(cornerRadius: 8))
-            .clipShape(.rect(cornerRadius: 8))
-            VStack(alignment: .leading, spacing: 0) {
-                Text(title)
-                    .font(.headline)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text(hint)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
+        .frame(width: size.width, height: size.height)
+    }
+}
+
+/// Листок отрывного календаря: красная полоска с месяцем и число.
+private struct CalendarPage: View {
+    let day: Date
+    let size: CGSize
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(RuDate.monthGenitive(day).prefix(3).uppercased())
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 1)
+                .background(Color.red)
+            Text("\(Calendar.current.component(.day, from: day))")
+                .font(.headline)
+                .monospacedDigit()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(width: size.width, height: size.height)
+        .background(Color(.systemBackground))
+        .clipShape(.rect(cornerRadius: 8))
+        .shadow(color: .black.opacity(0.18), radius: 1.5, y: 1)
+    }
+}
+
+/// Листок, который отрывается вверх (вперёд по дням) или ложится сверху (назад).
+private struct TearingPage: View {
+    let day: Date
+    let forward: Bool
+    let size: CGSize
+    let onDone: () -> Void
+    @State private var progress: Double
+
+    init(day: Date, forward: Bool, size: CGSize, onDone: @escaping () -> Void) {
+        self.day = day
+        self.forward = forward
+        self.size = size
+        self.onDone = onDone
+        _progress = State(initialValue: forward ? 0 : 1)
+    }
+
+    var body: some View {
+        CalendarPage(day: day, size: size)
+            .modifier(PageTear(progress: progress))
+            .onAppear {
+                withAnimation(forward ? .easeIn(duration: 0.45) : .spring(duration: 0.5, bounce: 0.35)) {
+                    progress = forward ? 1 : 0
+                } completion: {
+                    onDone()
+                }
+            }
+    }
+}
+
+/// 0 — листок лежит; 1 — оторван: поднялся за верхний край, повернулся и растаял.
+private struct PageTear: ViewModifier, Animatable {
+    var progress: Double
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .rotation3DEffect(.degrees(-105 * progress), axis: (x: 1, y: 0, z: 0), anchor: .top, perspective: 0.45)
+            .rotationEffect(.degrees(-9 * progress), anchor: .topLeading)
+            .offset(y: -4 * progress)
+            .opacity(progress < 0.75 ? 1 : max(0, (1 - progress) / 0.25))
     }
 }
