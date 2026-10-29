@@ -19,7 +19,7 @@ struct ExpenseCategory: Identifiable, Codable, Hashable {
     static let defaults: [ExpenseCategory] = [
         .init(name: "Продукты", symbol: "cart.fill", colorName: "green"),
         .init(name: "Кафе", symbol: "cup.and.saucer.fill", colorName: "orange"),
-        .init(name: "Доставка", symbol: "takeout.bag.and.cup.and.straw.fill", colorName: "red"),
+        .init(name: "Доставка", symbol: "takeoutbag.and.cup.and.straw.fill", colorName: "red"),
         .init(name: "Транспорт", symbol: "car.fill", colorName: "indigo"),
         .init(name: "Жильё", symbol: "house.fill", colorName: "brown"),
         .init(name: "Связь", symbol: "antenna.radiowaves.left.and.right", colorName: "blue"),
@@ -37,6 +37,16 @@ struct ExpenseCategory: Identifiable, Codable, Hashable {
     /// Новая категория «Подписка» (каждый раз со своим id).
     static var subscription: ExpenseCategory {
         .init(name: "Подписка", symbol: "arrow.triangle.2.circlepath", colorName: "purple", kind: .subscription)
+    }
+
+    /// Значки, имена которых были написаны с ошибкой: такого символа нет, и на iPhone был пустой цветной квадрат.
+    /// Старые файлы и файлы переноса читаются с исправленным именем.
+    static let renamedSymbols = ["takeout.bag.and.cup.and.straw.fill": "takeoutbag.and.cup.and.straw.fill"]
+
+    func fixingRenamedSymbol() -> ExpenseCategory {
+        var copy = self
+        copy.symbol = Self.renamedSymbols[symbol] ?? symbol
+        return copy
     }
 
     static let otherName = "Другое"
@@ -65,7 +75,7 @@ enum CategoryPalette {
     }
 
     static let symbols = [
-        "cart.fill", "basket.fill", "fork.knife", "cup.and.saucer.fill", "takeout.bag.and.cup.and.straw.fill",
+        "cart.fill", "basket.fill", "fork.knife", "cup.and.saucer.fill", "takeoutbag.and.cup.and.straw.fill",
         "wineglass.fill", "birthday.cake.fill", "carrot.fill", "fish.fill", "leaf.fill",
         "car.fill", "bus.fill", "tram.fill", "airplane", "fuelpump.fill", "parkingsign.circle.fill",
         "house.fill", "sofa.fill", "bolt.fill", "drop.fill", "flame.fill", "wifi", "phone.fill",

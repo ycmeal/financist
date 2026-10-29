@@ -177,6 +177,17 @@ final class LimitAndPaymentTests: XCTestCase {
         XCTAssertEqual(store.recentTemplates.map(\.note), ["Place 2"])
     }
 
+    func testMisspelledDeliverySymbolIsFixedWhenReading() throws {
+        var old = Vault()
+        let index = try XCTUnwrap(old.categories.firstIndex { $0.name == "Доставка" })
+        old.categories[index].symbol = "takeout.bag.and.cup.and.straw.fill"
+        let read = try JSONDecoder().decode(Vault.self, from: JSONEncoder().encode(old))
+        XCTAssertEqual(read.categories[index].symbol, "takeoutbag.and.cup.and.straw.fill")
+        XCTAssertEqual(read.categories[index].id, old.categories[index].id, "Same category, only the icon name changes")
+        XCTAssertFalse(ExpenseCategory.defaults.contains { $0.symbol.hasPrefix("takeout.bag") })
+        XCTAssertFalse(CategoryPalette.symbols.contains { $0.hasPrefix("takeout.bag") })
+    }
+
     func testHiddenRecentsTravelWithTheTransferFile() {
         var here = Vault()
         here.hiddenRecents = ["a|1": Date(timeIntervalSince1970: 100)]

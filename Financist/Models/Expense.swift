@@ -253,7 +253,8 @@ struct Vault: Codable {
         // (он останется нетронутым), чем молча потерять траты.
         expenses = try c.decodeIfPresent([Expense].self, forKey: .expenses) ?? []
         trash = try c.decodeIfPresent([DeletedExpense].self, forKey: .trash) ?? []
-        categories = try c.decodeIfPresent([ExpenseCategory].self, forKey: .categories) ?? ExpenseCategory.defaults
+        categories = (try c.decodeIfPresent([ExpenseCategory].self, forKey: .categories) ?? ExpenseCategory.defaults)
+            .map { $0.fixingRenamedSymbol() }
         rates = try c.decodeIfPresent(RateTable.self, forKey: .rates) ?? RateTable()
         // Курсы — не траты: если архив почему-то не читается, просто загрузим заново.
         rateHistory = (try? c.decodeRateHistory(forKey: .rateHistory)) ?? [:]
