@@ -11,6 +11,7 @@ struct ExpensesView: View {
     @State private var calendarMonth = Date.now
     @State private var selectedDay = Calendar.current.startOfDay(for: .now)
     @State private var buildWarningHidden = false
+    @State private var openedTrial: Trial?
 
     private enum Mode: String, CaseIterable, Identifiable {
         case list = "Список"
@@ -49,6 +50,15 @@ struct ExpensesView: View {
                     Section { SummaryHeader() }
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+
+                    // Пробные подписки — одной свёрнутой строкой; «Пора решить» видно и в ней.
+                    let trials = store.openTrials
+                    let upcoming = store.upcomingCharges
+                    if !trials.isEmpty || !upcoming.isEmpty {
+                        Section {
+                            SubscriptionsDisclosure(open: trials, upcoming: upcoming) { openedTrial = $0 }
+                        }
+                    }
 
                     let due = store.dueRecurring
                     if !due.isEmpty {
@@ -115,6 +125,13 @@ struct ExpensesView: View {
             .sheet(item: $editing) { ExpenseFormView(expense: $0) }
             .sheet(item: $repeating) { ExpenseFormView(expense: nil, template: $0) }
             .sheet(item: $addingOn) { ExpenseFormView(expense: nil, presetDate: $0.date) }
+            .sheet(item: $openedTrial) { TrialEditView(trial: $0) }
+            // Нажали на напоминание о пробной подписке — сразу спрашиваем про неё.
+            .onChange(of: store.trialToOpen, initial: true) {
+                guard let id = store.trialToOpen else { return }
+                store.trialToOpen = nil
+                openedTrial = store.vault.trials.first { $0.id == id }
+            }
             // Лёгкая вибрация: «готово» при добавлении, мягкий щелчок при удалении.
             .sensoryFeedback(trigger: store.vault.expenses.count) { old, new in
                 new > old ? .success : .impact(weight: .light)

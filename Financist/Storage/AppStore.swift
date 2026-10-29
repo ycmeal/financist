@@ -49,6 +49,8 @@ final class AppStore {
     var selectedTab: AppTab = .expenses
     var isAddingExpense = false
     var pendingRestore: PendingRestore?
+    /// Пробная подписка, вопрос о которой надо открыть (нажали на напоминание).
+    var trialToOpen: UUID?
     /// Открыть «Итоги» на нужном месяце (из карточки «месяц закрыт»).
     var statsJump: Date?
     /// Приложение закрыто замком Face ID.
@@ -162,10 +164,9 @@ final class AppStore {
             guard let other = (try? store.read(file))?.vault else { continue }
             var merged = vault
             let count = merged.merge(other)
-            if count > 0 {
-                do { try commit(merged) } catch { continue }
-                added += count
-            }
+            // Сохраняем всё, что пришло (не только траты, но и подписки, платежи), и только потом убираем файл.
+            do { try commit(merged) } catch { continue }
+            added += count
             store.remove(file)
         }
         if added > 0 { recoveredExpenses = added }
@@ -184,7 +185,11 @@ final class AppStore {
     private func finishLoading() {
         loadState = .ready
         canSave = true
-        if vault.purgeOldTrash() { persist() }
+        var changed = vault.purgeOldTrash()
+        // Старым данным — категория «Подписка»; оставленным подпискам, у которых настал день, — трата.
+        if vault.ensureSubscriptionCategory() { changed = true }
+        if recordDueCharges() { changed = true }
+        if changed { persist() }
         refreshReminders()
     }
 
@@ -228,7 +233,9 @@ final class AppStore {
         guard loadState == .ready else { return }
         retryUnsavedChanges()
         if !hasUnsavedChanges { store.refreshRoutineCopies() }
-        if vault.purgeOldTrash() { persist() }
+        var changed = vault.purgeOldTrash()
+        if recordDueCharges() { changed = true }
+        if changed { persist() }
         refreshReminders()
     }
 
@@ -239,6 +246,13 @@ final class AppStore {
         AddRequest.pending = false
         selectedTab = .expenses
         isAddingExpense = true
+    }
+
+    func consumeTrialRequest() {
+        guard loadState == .ready, let id = TrialRequest.pending else { return }
+        TrialRequest.pending = nil
+        selectedTab = .expenses
+        trialToOpen = id
     }
 
     func handle(url: URL) {
@@ -362,9 +376,11 @@ final class AppStore {
         persist()
     }
 
-    /// Траты удалённой категории переезжают в «Другое».
+    /// Траты удалённой категории переезжают в «Другое». «Подписку» удалить нельзя: на ней держатся
+    /// пробные подписки.
     func deleteCategories(ids: [UUID]) {
-        let removing = Set(ids)
+        let removing = Set(ids).subtracting(vault.categories.filter(\.isSubscription).map(\.id))
+        guard !removing.isEmpty else { return }
         guard vault.categories.count > removing.count else { return }
         vault.categories.removeAll { removing.contains($0.id) }
         if vault.expenses.contains(where: { removing.contains($0.categoryID) }) {
@@ -442,6 +458,81 @@ final class AppStore {
         persist()
     }
 
+    // MARK: Пробные подписки
+
+    /// Особая категория «Подписка» — она есть всегда.
+    var subscriptionCategory: ExpenseCategory? {
+        vault.categories.first(where: \.isSubscription)
+    }
+
+    /// Подписки, по которым ещё не решили, — ближайшее списание первым.
+    var openTrials: [Trial] {
+        vault.trials.filter { $0.decision == nil }.sorted { $0.chargeDate < $1.chargeDate }
+    }
+
+    /// Оставленные подписки, которые ещё не списались: «спишут 28 ноября».
+    var upcomingCharges: [Trial] {
+        vault.trials.filter { $0.decision == .keep && !$0.chargeRecorded }.sorted { $0.chargeDate < $1.chargeDate }
+    }
+
+    func upsert(_ trial: Trial) {
+        if let index = vault.trials.firstIndex(where: { $0.id == trial.id }) {
+            vault.trials[index] = trial
+        } else {
+            vault.trials.append(trial)
+        }
+        recordDueCharges()
+        persist()
+    }
+
+    /// Убрать подписку совсем — например, если записали по ошибке.
+    func deleteTrial(id: UUID) {
+        vault.trials.removeAll { $0.id == id }
+        persist()
+    }
+
+    /// «Я решил оплатить» / «Я отменил». Карточка уходит с главного экрана; оставленная подписка
+    /// в день списания сама запишется в траты.
+    func decide(_ decision: Trial.Decision, for id: UUID, now: Date = .now) {
+        guard let index = vault.trials.firstIndex(where: { $0.id == id }) else { return }
+        vault.trials[index].decision = decision
+        vault.trials[index].decidedAt = now
+        recordDueCharges(now: now)
+        persist()
+    }
+
+    /// Оставленная подписка, у которой настал день списания, записывается в траты — один раз.
+    /// У траты тот же id, что у подписки: с другого iPhone она не задвоится, удалённая не вернётся.
+    /// true — если что-то поменялось (сохранять должен вызывающий).
+    @discardableResult
+    func recordDueCharges(now: Date = .now) -> Bool {
+        let calendar = Calendar.current
+        var changed = false
+        for index in vault.trials.indices {
+            let trial = vault.trials[index]
+            guard trial.decision == .keep, !trial.chargeRecorded,
+                  calendar.startOfDay(for: trial.chargeDate) <= now
+            else { continue }
+            vault.trials[index].chargeRecorded = true
+            changed = true
+            guard !vault.expenses.contains(where: { $0.id == trial.id }),
+                  !vault.trash.contains(where: { $0.id == trial.id })
+            else { continue }
+            // Сегодня — текущее время; прошедший день — полдень того дня.
+            let date = calendar.isDate(trial.chargeDate, inSameDayAs: now)
+                ? now
+                : calendar.date(bySettingHour: 12, minute: 0, second: 0, of: trial.chargeDate) ?? trial.chargeDate
+            let categoryID = vault.categories.contains { $0.id == trial.categoryID }
+                ? trial.categoryID
+                : subscriptionCategory?.id ?? trial.categoryID
+            let day = ratesForDay(date, currency: trial.currency)
+            vault.expenses.append(Expense(id: trial.id, date: date, amount: trial.amount, currency: trial.currency,
+                                          categoryID: categoryID, note: trial.note,
+                                          rates: day.rates, ratesPending: !day.exact))
+        }
+        return changed
+    }
+
     // MARK: Напоминания
 
     var eveningReminder: Bool {
@@ -466,6 +557,7 @@ final class AppStore {
         guard loadState == .ready else { return }
         let hasToday = vault.expenses.contains { Calendar.current.isDateInToday($0.date) }
         Reminders.scheduleEvening(vault.eveningReminder, minutes: vault.eveningMinutes, hasExpensesToday: hasToday)
+        Reminders.scheduleTrials(vault.trials)
     }
 
     // MARK: Курсы
@@ -584,6 +676,7 @@ final class AppStore {
             var merged = vault
             let added = merged.merge(incoming)
             try commit(merged)
+            if recordDueCharges() { persist() }
             refreshReminders()
             return added
         case .failed(.unreadable):
@@ -647,7 +740,10 @@ final class AppStore {
         let other = try store.read(copy.url).vault
         var merged = vault
         let added = merged.merge(other)
-        if added > 0 { try commit(merged) }
+        if added > 0 {
+            try commit(merged)
+            if recordDueCharges() { persist() }
+        }
         return added
     }
 

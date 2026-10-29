@@ -17,6 +17,7 @@ def no_ui(s):
 copy('Models/Currency.swift')
 copy('Models/Expense.swift')
 copy('Models/VaultMerge.swift')
+copy('Models/Trial.swift')
 copy('Models/Formatting.swift')
 copy('Models/Suggestions.swift')
 copy('Models/ExpenseCategory.swift', no_ui)

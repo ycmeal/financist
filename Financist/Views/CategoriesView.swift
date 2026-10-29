@@ -11,7 +11,17 @@ struct CategoriesView: View {
                     Button { editing = category } label: {
                         HStack(spacing: 12) {
                             CategoryIcon(category: category)
-                            Text(category.name)
+                                .overlay(alignment: .topTrailing) {
+                                    if category.isSubscription { SubscriptionBadge() }
+                                }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(category.name)
+                                if category.isSubscription {
+                                    Text("Пробные подписки с напоминанием")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                             Spacer(minLength: 0)
                             let count = store.expenseCount(in: category.id)
                             if count > 0 {
@@ -22,13 +32,14 @@ struct CategoriesView: View {
                         }
                     }
                     .tint(Color.primary)
+                    .deleteDisabled(category.isSubscription)
                 }
                 .onMove { store.moveCategories(from: $0, to: $1) }
                 .onDelete { offsets in
                     store.deleteCategories(ids: offsets.map { store.vault.categories[$0].id })
                 }
             } footer: {
-                Text("Если удалить категорию, её траты перейдут в «\(ExpenseCategory.otherName)».")
+                Text("Если удалить категорию, её траты перейдут в «\(ExpenseCategory.otherName)». «Подписку» удалить нельзя: с ней приходят напоминания о пробных подписках.")
             }
         }
         .warmListBackground()

@@ -35,6 +35,9 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: AddRequest.notification)) { _ in
             store.consumeAddRequest()
         }
+        .onReceive(NotificationCenter.default.publisher(for: TrialRequest.notification)) { _ in
+            store.consumeTrialRequest()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background && store.lockEnabled { store.isLocked = true }
             updateCover()
@@ -106,6 +109,7 @@ struct RootView: View {
         updateCover()
         if store.isLocked { authenticate() }
         store.consumeAddRequest()
+        store.consumeTrialRequest()
         ShareFile.cleanUp()
         BuildAge.recordLaunch()
         Task { await store.refreshRates(force: false) }

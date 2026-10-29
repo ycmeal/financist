@@ -1,12 +1,19 @@
 import SwiftUI
 
 struct ExpenseCategory: Identifiable, Codable, Hashable {
+    /// Особые категории. Пока одна — «Подписка»: в ней можно записать пробную подписку с напоминанием.
+    enum Kind: String, Codable {
+        case subscription
+    }
+
     var id = UUID()
     var name: String
     var symbol: String
     var colorName: String
+    var kind: Kind?
 
     var color: Color { CategoryPalette.color(named: colorName) }
+    var isSubscription: Bool { kind == .subscription }
 
     /// Короткие названия — чтобы помещались даже при крупном шрифте.
     static let defaults: [ExpenseCategory] = [
@@ -23,8 +30,14 @@ struct ExpenseCategory: Identifiable, Codable, Hashable {
         .init(name: "Досуг", symbol: "party.popper.fill", colorName: "yellow"),
         .init(name: "Подарки", symbol: "gift.fill", colorName: "red"),
         .init(name: "Поездки", symbol: "airplane", colorName: "cyan"),
+        .subscription,
         .init(name: "Другое", symbol: "ellipsis.circle.fill", colorName: "gray"),
     ]
+
+    /// Новая категория «Подписка» (каждый раз со своим id).
+    static var subscription: ExpenseCategory {
+        .init(name: "Подписка", symbol: "arrow.triangle.2.circlepath", colorName: "purple", kind: .subscription)
+    }
 
     static let otherName = "Другое"
     static let unknown = ExpenseCategory(name: "Без категории", symbol: "questionmark.circle.fill", colorName: "gray")
@@ -60,7 +73,7 @@ enum CategoryPalette {
         "bag.fill", "tshirt.fill", "shoe.fill", "gift.fill", "party.popper.fill", "film.fill",
         "book.fill", "newspaper.fill", "graduationcap.fill", "pawprint.fill", "figure.walk",
         "dumbbell.fill", "scissors", "comb.fill", "wrench.and.screwdriver.fill", "hammer.fill",
-        "creditcard.fill", "banknote.fill", "building.columns.fill", "hands.and.sparkles.fill",
+        "creditcard.fill", "banknote.fill", "building.columns.fill", "arrow.triangle.2.circlepath", "hands.and.sparkles.fill",
         "sparkles", "star.fill", "ellipsis.circle.fill",
     ]
 }

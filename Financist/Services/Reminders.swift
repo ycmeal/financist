@@ -5,7 +5,9 @@ import UserNotifications
 /// В тексте нет сумм и названий трат: уведомление видно на экране блокировки.
 enum Reminders {
     static let addAction = "add"
+    static let trialAction = "trial"
     private static let daysAhead = 7
+    private static let trialPrefix = "trial-"
 
     /// Если за день ничего не записано.
     static let quietDay: [(title: String, body: String)] = [
@@ -76,6 +78,46 @@ enum Reminders {
             center.add(UNNotificationRequest(identifier: "recurring-\(day)", content: content,
                                              trigger: UNCalendarNotificationTrigger(dateMatching: time, repeats: true)))
         }
+    }
+
+    /// Пробные подписки: одно напоминание в 10:00 за выбранное число дней до списания.
+    /// Названия и суммы в тексте нет — уведомление видно на экране блокировки; подробности — в приложении.
+    static func scheduleTrials(_ trials: [Trial]) {
+        let center = UNUserNotificationCenter.current()
+        let open = trials.filter { $0.decision == nil }
+        Task {
+            // Убираем все прежние, в том числе удалённых подписок, и ставим заново.
+            let old = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(trialPrefix) }
+            center.removePendingNotificationRequests(withIdentifiers: old)
+            let calendar = Calendar.current
+            for trial in open {
+                guard let fire = trial.reminderDate, fire > .now else { continue }
+                let days = trial.remindDaysBefore
+                let content = UNMutableNotificationContent()
+                content.title = "Скоро конец пробного периода ⏳"
+                content.body = days == 1
+                    ? "Завтра спишут деньги за подписку. Оставляем или отменяем?"
+                    : "Через \(Fmt.count(days, "день", "дня", "дней")) спишут деньги за подписку. Оставляем или отменяем?"
+                content.sound = .default
+                content.userInfo = ["action": trialAction, "trial": trial.id.uuidString]
+                let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
+                try? await center.add(UNNotificationRequest(identifier: trialPrefix + trial.id.uuidString, content: content,
+                                                            trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)))
+            }
+        }
+    }
+}
+
+/// Нажали на напоминание о пробной подписке: открыть вопрос «оставить или отменить» по ней.
+/// Флаг нужен, когда приложение запускается с нуля и данные ещё не открыты.
+@MainActor
+enum TrialRequest {
+    static let notification = Notification.Name("financist.trial-request")
+    static var pending: UUID?
+
+    static func send(_ id: UUID) {
+        pending = id
+        NotificationCenter.default.post(name: notification, object: nil)
     }
 }
 

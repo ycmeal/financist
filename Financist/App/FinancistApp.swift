@@ -32,13 +32,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         extensionPointIdentifier != .keyboard
     }
 
-    /// Нажатие на вечернее напоминание сразу открывает ввод траты.
-    /// Напоминание о регулярном платеже просто открывает приложение — там ждёт карточка.
+    /// Нажатие на вечернее напоминание сразу открывает ввод траты, на напоминание о пробной
+    /// подписке — вопрос «оставить или отменить». Напоминание о регулярном платеже просто открывает приложение.
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse) async {
-        let action = response.notification.request.content.userInfo["action"] as? String
-        guard action == Reminders.addAction else { return }
-        await MainActor.run { AddRequest.send() }
+        let info = response.notification.request.content.userInfo
+        switch info["action"] as? String {
+        case Reminders.addAction:
+            await MainActor.run { AddRequest.send() }
+        case Reminders.trialAction:
+            guard let id = (info["trial"] as? String).flatMap(UUID.init(uuidString:)) else { return }
+            await MainActor.run { TrialRequest.send(id) }
+        default:
+            break
+        }
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,

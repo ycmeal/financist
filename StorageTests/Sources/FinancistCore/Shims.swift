@@ -148,15 +148,26 @@ extension Array {
 
 enum Reminders {
     static let addAction = "add"
+    static let trialAction = "trial"
     nonisolated(unsafe) static var eveningSchedules = 0
+    /// Trials that would get a notification, as of the last scheduling (the real code skips decided ones).
+    nonisolated(unsafe) static var remindedTrials: [UUID] = []
     static func scheduleEvening(_ enabled: Bool, minutes: Int, hasExpensesToday: Bool) { eveningSchedules += 1 }
     static func scheduleRecurring(_ payments: [RecurringPayment]) {}
+    static func scheduleTrials(_ trials: [Trial]) {
+        remindedTrials = trials.filter { $0.decision == nil && ($0.reminderDate ?? .distantPast) > .now }.map(\.id)
+    }
     static func requestPermission() async -> Bool { true }
 }
 
 @MainActor
 enum AddRequest {
     static var pending = false
+}
+
+@MainActor
+enum TrialRequest {
+    static var pending: UUID?
 }
 
 /// Controllable rates source: latest rates, rates by day, and an on/off switch for the network.

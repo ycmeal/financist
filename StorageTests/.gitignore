@@ -11,3 +11,4 @@ Sources/FinancistCore/ExpenseCategory.swift
 Sources/FinancistCore/Formatting.swift
 Sources/FinancistCore/Suggestions.swift
 Sources/FinancistCore/VaultMerge.swift
+Sources/FinancistCore/Trial.swift

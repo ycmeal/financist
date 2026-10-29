@@ -8,19 +8,24 @@ extension Vault {
     mutating func merge(_ incoming: Vault) -> Int {
         // Новый телефон: своих трат нет — берём всё из файла целиком (с категориями и настройками),
         // оставляя только местную настройку блокировки.
-        if expenses.isEmpty && trash.isEmpty && recurring.isEmpty {
+        if expenses.isEmpty && trash.isEmpty && recurring.isEmpty && trials.isEmpty {
             let lock = lockEnabled
             self = incoming
             lockEnabled = lock
             schemaVersion = Vault.currentSchema
+            _ = ensureSubscriptionCategory()
             return incoming.expenses.count
         }
 
-        // Категории: тот же id — та же; то же название — сливаем в существующую; иначе добавляем.
+        // Категории: тот же id — та же; «Подписка» — в свою «Подписку»; то же название — сливаем
+        // в существующую; иначе добавляем.
         var categoryMap: [UUID: UUID] = [:]
+        let localSubscription = categories.first(where: \.isSubscription)
         for category in incoming.categories {
             if categories.contains(where: { $0.id == category.id }) {
                 categoryMap[category.id] = category.id
+            } else if category.isSubscription, let localSubscription {
+                categoryMap[category.id] = localSubscription.id
             } else if let same = categories.first(where: { Self.sameName($0.name, category.name) }) {
                 categoryMap[category.id] = same.id
             } else {
@@ -54,10 +59,26 @@ extension Vault {
             copy.categoryID = categoryMap[payment.categoryID] ?? payment.categoryID
             recurring.append(copy)
         }
+        // Пробные подписки: новые добавляем; решение, принятое на другом телефоне, переносим сюда,
+        // а принятое здесь не отменяется.
+        for trial in incoming.trials {
+            if let index = trials.firstIndex(where: { $0.id == trial.id }) {
+                if trials[index].decision == nil, trial.decision != nil {
+                    trials[index].decision = trial.decision
+                    trials[index].decidedAt = trial.decidedAt
+                }
+                trials[index].chargeRecorded = trials[index].chargeRecorded || trial.chargeRecorded
+            } else {
+                var copy = trial
+                copy.categoryID = categoryMap[trial.categoryID] ?? trial.categoryID
+                trials.append(copy)
+            }
+        }
+        _ = ensureSubscriptionCategory()
         return added
     }
 
-    private static func sameName(_ a: String, _ b: String) -> Bool {
+    static func sameName(_ a: String, _ b: String) -> Bool {
         a.trimmingCharacters(in: .whitespaces).lowercased() == b.trimmingCharacters(in: .whitespaces).lowercased()
     }
 

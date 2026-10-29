@@ -130,8 +130,9 @@ struct RecurringPayment: Identifiable, Codable, Hashable {
 ///   старые коды переводить в новые (см. `Currency(code:)`).
 struct Vault: Codable {
     /// Версия формата, которую понимает эта сборка.
-    /// 1 — первая; 2 — архив курсов по дням и отметка «курс примерный» у трат.
-    static let currentSchema = 2
+    /// 1 — первая; 2 — архив курсов по дням и отметка «курс примерный» у трат;
+    /// 3 — пробные подписки и особая категория «Подписка».
+    static let currentSchema = 3
 
     var schemaVersion = Vault.currentSchema
     var expenses: [Expense] = []
@@ -150,6 +151,8 @@ struct Vault: Codable {
     /// Больше не используется: курсы обновляются всегда. Поле оставлено, чтобы читались старые файлы.
     var autoUpdateRates = true
     var recurring: [RecurringPayment] = []
+    /// Пробные подписки вместе с решениями по ним: отменённая не вернётся из старого файла переноса.
+    var trials: [Trial] = []
     /// Пропущенные в этом месяце регулярные платежи: "<id>|<год>-<месяц>".
     var skippedRecurring: [String] = []
     var eveningReminder = false
@@ -182,6 +185,7 @@ struct Vault: Codable {
         lockEnabled = try c.decodeIfPresent(Bool.self, forKey: .lockEnabled) ?? false
         autoUpdateRates = try c.decodeIfPresent(Bool.self, forKey: .autoUpdateRates) ?? true
         recurring = try c.decodeIfPresent([RecurringPayment].self, forKey: .recurring) ?? []
+        trials = try c.decodeIfPresent([Trial].self, forKey: .trials) ?? []
         skippedRecurring = try c.decodeIfPresent([String].self, forKey: .skippedRecurring) ?? []
         eveningReminder = try c.decodeIfPresent(Bool.self, forKey: .eveningReminder) ?? false
         palette = (try? c.decodeIfPresent(Palette.self, forKey: .palette)) ?? .sage
