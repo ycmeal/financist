@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body { margin: 0; background: #F2F4EC; font-family: -apple-system, system-ui, sans-serif; }
+.grid { display: grid; grid-template-columns: repeat(4, 384px); gap: 10px; padding: 10px; }
+.cell { position: relative; }
+canvas { width: 384px; height: 336px; image-rendering: pixelated; display: block; }
+.cap { font-size: 12px; color: #555; }
+.zone { position: absolute; border: 1px dashed rgba(255,0,0,.55); pointer-events: none; }
+</style></head><body><div class="grid" id="g"></div>
+<script src="data.js"></script>
+<script src="runtime.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const scenes = (q.get('scenes') || PixelCity.scenes.join(',')).split(',');
+const guides = q.has('guides');
+const parts = [['dawn', 0.1], ['day', 0.5], ['dusk', 0.88], ['night', null]];
+const g = document.getElementById('g');
+for (const scene of scenes) for (const [part, sun] of parts) {
+  const code = q.get('flag') || Object.keys(PIXEL_DATA.PLACES).find(c => PIXEL_DATA.PLACES[c].includes(scene)) || 'TR';
+  const wrap = document.createElement('div'); wrap.className = 'cell';
+  const cv = document.createElement('canvas');
+  PixelCity.draw(cv, { scene, part, sun, flag: PixelCity.flagPixels(code), t: +(q.get('t') || 3), seed: 20261029 });
+  wrap.appendChild(cv);
+  if (guides) for (const [x0, y0, x1, y1] of [[0, 24, 58, 47], [68, 15, 92, 25], [0, 74.6, 96, 84]]) {
+    const z = document.createElement('div'); z.className = 'zone';
+    Object.assign(z.style, { left: x0 * 4 + 'px', top: y0 * 4 + 'px', width: (x1 - x0) * 4 + 'px', height: (y1 - y0) * 4 + 'px' });
+    wrap.appendChild(z);
+  }
+  const cap = document.createElement('div'); cap.className = 'cap'; cap.textContent = `${scene} ${part} ${sun} ${code}`;
+  wrap.appendChild(cap); g.appendChild(wrap);
+}
+</script></body></html>

@@ -308,14 +308,57 @@ final class AppStore {
         persist()
     }
 
-    /// Удаление не навсегда: трата 30 дней лежит в «Недавно удалённых».
-    func deleteExpenses(ids: [UUID]) {
+    /// Удаление не навсегда: трата 30 дней лежит в «Недавно удалённых», а пока внизу плашка —
+    /// её можно вернуть одним касанием.
+    func deleteExpenses(ids: [UUID], now: Date = .now) {
         let set = Set(ids)
-        let now = Date.now
         let removed = vault.expenses.filter { set.contains($0.id) }
         vault.expenses.removeAll { set.contains($0.id) }
         vault.trash.append(contentsOf: removed.map { DeletedExpense(expense: $0, deletedAt: now) })
         persist()
+        offerUndo(removed, now: now)
+    }
+
+    // MARK: Отмена удаления
+
+    /// Только что удалённые траты — для плашки «Вернуть» внизу экрана.
+    struct Deletion: Identifiable, Equatable {
+        let id = UUID()
+        let expenseIDs: [UUID]
+        let title: String
+        let date: Date
+    }
+
+    /// Сколько секунд висит плашка «Вернуть».
+    static let undoSeconds: Double = 6
+    var lastDeletion: Deletion?
+
+    /// Удаления подряд, пока плашка ещё видна, собираются в одну: «Удалено: 2 траты».
+    private func offerUndo(_ removed: [Expense], now: Date) {
+        guard !removed.isEmpty else { return }
+        var ids = removed.map(\.id)
+        if let previous = lastDeletion, now.timeIntervalSince(previous.date) < Self.undoSeconds {
+            ids = previous.expenseIDs + ids
+        }
+        let title: String
+        if ids.count == 1, let one = removed.first {
+            title = "Удалено: \(one.note.isEmpty ? category(for: one.categoryID).name : one.note)"
+        } else {
+            title = "Удалено: \(Fmt.count(ids.count, "трата", "траты", "трат"))"
+        }
+        lastDeletion = Deletion(expenseIDs: ids, title: title, date: now)
+    }
+
+    /// «Вернуть» на плашке: траты возвращаются из «Недавно удалённых».
+    func undoLastDeletion() {
+        guard let deletion = lastDeletion else { return }
+        lastDeletion = nil
+        restoreFromTrash(ids: deletion.expenseIDs)
+    }
+
+    /// Время вышло — плашка уходит (траты остаются в «Недавно удалённых»).
+    func hideDeletion(_ id: UUID) {
+        if lastDeletion?.id == id { lastDeletion = nil }
     }
 
     func restoreFromTrash(ids: [UUID]) {
@@ -456,6 +499,13 @@ final class AppStore {
         // Старые отметки больше не нужны — храним только последние.
         vault.skippedRecurring = Array(vault.skippedRecurring.suffix(100))
         persist()
+    }
+
+    // MARK: Шапка
+
+    /// Страна для шапки «Трат»: где тратили в последний раз (по валюте), иначе — по часовому поясу iPhone.
+    var headerPlace: Place? {
+        Place.lastSpent(in: vault.expenses) ?? Place.from(timeZone: .autoupdatingCurrent)
     }
 
     // MARK: Пробные подписки

@@ -52,16 +52,29 @@ final class PlaceTests: XCTestCase {
             calendar.date(from: DateComponents(year: 2026, month: 10, day: 29, hour: hour, minute: minute))!
         }
         XCTAssertEqual(DayPart(at(4, 59), calendar: calendar), .night)
-        XCTAssertEqual(DayPart(at(5), calendar: calendar), .morning)
-        XCTAssertEqual(DayPart(at(11), calendar: calendar), .day)
-        XCTAssertEqual(DayPart(at(17), calendar: calendar), .evening)
-        XCTAssertEqual(DayPart(at(22), calendar: calendar), .night)
+        XCTAssertEqual(DayPart(at(5), calendar: calendar), .dawn)
+        XCTAssertEqual(DayPart(at(8), calendar: calendar), .day)
+        XCTAssertEqual(DayPart(at(17), calendar: calendar), .dusk)
+        XCTAssertEqual(DayPart(at(21), calendar: calendar), .night)
 
         XCTAssertNil(DayPart.sunProgress(at(5, 59), calendar: calendar))
         XCTAssertEqual(DayPart.sunProgress(at(6), calendar: calendar), 0)
         XCTAssertEqual(DayPart.sunProgress(at(13), calendar: calendar), 0.5)
         XCTAssertEqual(DayPart.sunProgress(at(20), calendar: calendar), 1)
         XCTAssertNil(DayPart.sunProgress(at(20, 1), calendar: calendar))
+    }
+
+    func testCountryOfTheLastSpending() {
+        func expense(_ currency: Currency, daysAgo: Double) -> Expense {
+            Expense(date: Date.now.addingTimeInterval(-daysAgo * 86_400), amount: 1, currency: currency,
+                    categoryID: UUID(), note: "", rates: [:])
+        }
+        XCTAssertNil(Place.lastSpent(in: []))
+        XCTAssertNil(Place.lastSpent(in: [expense(.usd, daysAgo: 0)]), "Dollars are spent everywhere")
+        XCTAssertEqual(Place.lastSpent(in: [expense(.lira, daysAgo: 5), expense(.uzs, daysAgo: 1), expense(.usd, daysAgo: 0)]),
+                       Place(country: "Узбекистан", code: "UZ", currency: .uzs))
+        XCTAssertEqual(Place.lastSpent(in: [expense(.eur, daysAgo: 2), expense(.rub, daysAgo: 3)])?.code, "EU")
+        XCTAssertEqual(Place.flag("EU"), "🇪🇺")
     }
 
     func testWeekdayAndDay() {

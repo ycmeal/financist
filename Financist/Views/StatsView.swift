@@ -10,6 +10,7 @@ struct StatsView: View {
                     ToolbarItem(placement: .topBarTrailing) { DisplayCurrencyMenu() }
                 }
         }
+        .undoToast()
     }
 }
 

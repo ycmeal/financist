@@ -1,7 +1,7 @@
 import Foundation
 
-/// Страна для шапки «Трат» — по часовому поясу iPhone. В поездке iOS сам переводит часы,
-/// поэтому приложению не нужны ни геолокация, ни интернет.
+/// Страна для шапки «Трат»: где тратили в последний раз (по валюте), иначе — по часовому поясу iPhone.
+/// Ни геолокация, ни интернет для этого не нужны.
 struct Place: Equatable {
     let country: String
     /// Двухбуквенный код страны: «TR».
@@ -13,6 +13,23 @@ struct Place: Equatable {
 
     static func from(timeZone: TimeZone) -> Place? {
         byZone[timeZone.identifier]
+    }
+
+    /// Страна по валюте траты. Доллар — не страна: им платят везде.
+    static func spent(in currency: Currency) -> Place? {
+        switch currency {
+        case .lira: Place(country: "Турция", code: "TR", currency: .lira)
+        case .uzs: Place(country: "Узбекистан", code: "UZ", currency: .uzs)
+        case .aed: Place(country: "ОАЭ", code: "AE", currency: .aed)
+        case .rub: Place(country: "Россия", code: "RU", currency: .rub)
+        case .eur: Place(country: "Европа", code: "EU", currency: .eur)
+        case .usd: nil
+        }
+    }
+
+    /// Где тратили в последний раз — по самой поздней трате не в долларах.
+    static func lastSpent(in expenses: [Expense]) -> Place? {
+        expenses.filter { $0.currency != .usd }.max { $0.date < $1.date }.flatMap { spent(in: $0.currency) }
     }
 
     /// Если страны нет в списке — город из названия пояса: «America/Sao_Paulo» → «Sao Paulo».
@@ -118,15 +135,15 @@ struct Place: Equatable {
     ]
 }
 
-/// Время суток — для неба в шапке «Трат».
+/// Время суток — для неба в шапке «Трат»: рассвет, день, закат, ночь.
 enum DayPart: Equatable {
-    case night, morning, day, evening
+    case dawn, day, dusk, night
 
     init(_ date: Date, calendar: Calendar = .current) {
         switch calendar.component(.hour, from: date) {
-        case 5..<11: self = .morning
-        case 11..<17: self = .day
-        case 17..<22: self = .evening
+        case 5..<8: self = .dawn
+        case 8..<17: self = .day
+        case 17..<21: self = .dusk
         default: self = .night
         }
     }

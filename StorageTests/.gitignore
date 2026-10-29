@@ -13,3 +13,5 @@ Sources/FinancistCore/Suggestions.swift
 Sources/FinancistCore/VaultMerge.swift
 Sources/FinancistCore/Trial.swift
 Sources/FinancistCore/Place.swift
+Sources/FinancistCore/PixelCity.swift
+Sources/FinancistCore/PixelData.swift

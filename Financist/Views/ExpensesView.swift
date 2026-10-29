@@ -6,7 +6,7 @@ struct ExpensesView: View {
     @State private var editing: Expense?
     @State private var repeating: Expense?
     @State private var addingOn: PresetDay?
-    @State private var search = ""
+    @State private var isSearching = false
     @State private var mode: Mode = .list
     @State private var calendarMonth = Date.now
     @State private var selectedDay = Calendar.current.startOfDay(for: .now)
@@ -28,28 +28,33 @@ struct ExpensesView: View {
 
     var body: some View {
         @Bindable var store = store
-        let filtered = search.isEmpty ? store.vault.expenses : store.vault.expenses.filter {
-            $0.note.localizedCaseInsensitiveContains(search)
-                || store.category(for: $0.categoryID).name.localizedCaseInsensitiveContains(search)
-        }
         // Группировка считается один раз за отрисовку — список не подтормаживает.
-        let days = groupedDays(filtered)
+        let days = groupedDays(store.vault.expenses)
+        let place = store.headerPlace
 
         NavigationStack {
-            List {
-                if search.isEmpty && !buildWarningHidden && BuildAge.shouldWarn() {
+            GeometryReader { geo in
+                List {
+                    // Наверху — пиксельный город (фоном списка), поверх неба — приветствие.
                     Section {
-                        BuildExpiryNotice {
-                            BuildAge.snooze()
-                            withAnimation(.snappy) { buildWarningHidden = true }
-                        }
+                        CityGreeting(place: place)
+                            .frame(minHeight: greetingHeight(geo), alignment: .top)
                     }
-                }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 0, trailing: 20))
 
-                if search.isEmpty {
                     Section { SummaryHeader() }
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+
+                    if !buildWarningHidden && BuildAge.shouldWarn() {
+                        Section {
+                            BuildExpiryNotice {
+                                BuildAge.snooze()
+                                withAnimation(.snappy) { buildWarningHidden = true }
+                            }
+                        }
+                    }
 
                     // Пробные подписки — одной свёрнутой строкой; «Пора решить» видно и в ней.
                     let trials = store.openTrials
@@ -72,44 +77,50 @@ struct ExpensesView: View {
                     if let closed = closedMonth {
                         Section { MonthClosedCard(month: closed) }
                     }
-                }
 
-                if store.vault.expenses.isEmpty {
-                    ContentUnavailableView {
-                        Label("Пока пусто", systemImage: "leaf")
-                    } description: {
-                        Text("Нажмите «Добавить трату», и она появится здесь.")
-                    }
-                    .listRowBackground(Color.clear)
-                } else if mode == .calendar && search.isEmpty {
-                    Section {
-                        SpendingCalendar(month: $calendarMonth, selectedDay: $selectedDay)
-                    }
-                    dayDetails(days.first { Calendar.current.isDate($0.day, inSameDayAs: selectedDay) }?.items ?? [])
-                } else {
-                    ForEach(days, id: \.day) { group in
+                    if store.vault.expenses.isEmpty {
+                        ContentUnavailableView {
+                            Label("Пока пусто", systemImage: "leaf")
+                        } description: {
+                            Text("Нажмите «Добавить трату», и она появится здесь.")
+                        }
+                        .listRowBackground(Color.clear)
+                    } else if mode == .calendar {
                         Section {
-                            ForEach(group.items) { expenseButton($0) }
-                                .onDelete { offsets in
-                                    store.deleteExpenses(ids: offsets.map { group.items[$0].id })
-                                }
-                        } header: {
-                            DayHeader(day: group.day, items: group.items)
+                            SpendingCalendar(month: $calendarMonth, selectedDay: $selectedDay)
+                        }
+                        dayDetails(days.first { Calendar.current.isDate($0.day, inSameDayAs: selectedDay) }?.items ?? [])
+                    } else {
+                        ForEach(days, id: \.day) { group in
+                            Section {
+                                ForEach(group.items) { expenseButton($0) }
+                                    .onDelete { offsets in
+                                        store.deleteExpenses(ids: offsets.map { group.items[$0].id })
+                                    }
+                            } header: {
+                                DayHeader(day: group.day, items: group.items)
+                            }
                         }
                     }
                 }
+                .contentMargins(.top, 0, for: .scrollContent)
+                .background(alignment: .top) {
+                    CityBackdrop(place: place)
+                        .ignoresSafeArea(edges: .top)
+                }
+                .warmListBackground()
             }
-            .warmListBackground()
             .animation(.snappy, value: store.vault.expenses)
             .navigationTitle("Траты")
-            .searchable(text: $search, prompt: "Поиск")
-            .overlay {
-                if !search.isEmpty && days.isEmpty { ContentUnavailableView.search(text: search) }
-            }
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Заголовок не пишем: верх экрана — картинка; «Траты» и так на вкладке.
+                ToolbarItem(placement: .principal) { Text("") }
                 ToolbarItem(placement: .topBarLeading) { DisplayCurrencyMenu() }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if !store.vault.expenses.isEmpty {
+                        Button { isSearching = true } label: { Image(systemName: "magnifyingglass") }
+                            .accessibilityLabel("Поиск")
                         Button {
                             withAnimation(.snappy) { mode = mode == .list ? .calendar : .list }
                         } label: {
@@ -117,11 +128,10 @@ struct ExpensesView: View {
                         }
                         .accessibilityLabel(mode == .list ? "Показать календарь" : "Показать списком")
                     }
-                    Button { store.isAddingExpense = true } label: { Image(systemName: "plus") }
-                        .accessibilityLabel("Добавить трату")
                 }
             }
             .sheet(isPresented: $store.isAddingExpense) { ExpenseFormView(expense: nil) }
+            .sheet(isPresented: $isSearching) { ExpenseSearchView() }
             .sheet(item: $editing) { ExpenseFormView(expense: $0) }
             .sheet(item: $repeating) { ExpenseFormView(expense: nil, template: $0) }
             .sheet(item: $addingOn) { ExpenseFormView(expense: nil, presetDate: $0.date) }
@@ -136,7 +146,15 @@ struct ExpensesView: View {
             .sensoryFeedback(trigger: store.vault.expenses.count) { old, new in
                 new > old ? .success : .impact(weight: .light)
             }
+            .undoToast()
         }
+    }
+
+    /// Высота строки с приветствием: итоги начинаются там, где город уходит в фон.
+    /// Город — 56/64 ширины экрана от самого верха; сверху его закрывают строка состояния и панель.
+    private func greetingHeight(_ geo: GeometryProxy) -> CGFloat {
+        let city = geo.size.width * CGFloat(PixelCity.rows) / CGFloat(PixelCity.cols)
+        return max(110, city - geo.safeAreaInsets.top - 34)
     }
 
     private func expenseButton(_ expense: Expense, showDate: Bool = false) -> some View {
@@ -218,7 +236,7 @@ private struct PresetDay: Identifiable {
     var id: Date { date }
 }
 
-/// Шапка со страной и временем, итоги дня и месяца и большая кнопка «Добавить трату».
+/// Итоги дня и месяца и большая кнопка «Добавить трату».
 private struct SummaryHeader: View {
     @Environment(AppStore.self) private var store
 
@@ -229,8 +247,6 @@ private struct SummaryHeader: View {
         let month = store.spentThisMonth(in: currency)
 
         VStack(alignment: .leading, spacing: 14) {
-            PlaceHeader()
-
             AdaptiveRow(spacing: 12) {
                 TotalTile(title: "Сегодня", value: currency.format(today.rounded(scale: 2)))
                 TotalTile(title: RuDate.monthNominative(.now).capitalized, value: currency.format(month.rounded(scale: 2)))
