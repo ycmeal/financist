@@ -122,7 +122,8 @@ struct StatsReport {
             }
             .sorted { $0.total > $1.total }
 
-        topPlaces = Dictionary(grouping: items.filter { !$0.note.isEmpty }) { SuggestionEngine.normalize($0.note) }
+        // «мигрос» и «Migros» — одно место.
+        topPlaces = Dictionary(grouping: items.filter { !SuggestionEngine.key($0.note).isEmpty }) { SuggestionEngine.key($0.note) }
             .values
             .map { group in
                 PlaceTotal(note: group[0].note, count: group.count, total: group.total(in: currency),

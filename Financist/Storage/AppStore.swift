@@ -410,7 +410,7 @@ final class AppStore {
         var seen = Set<String>()
         var result: [Expense] = []
         for e in vault.expenses.sorted(by: { $0.date > $1.date }) where !e.note.isEmpty {
-            let key = SuggestionEngine.normalize(e.note) + "|" + e.categoryID.uuidString
+            let key = SuggestionEngine.key(e.note) + "|" + e.categoryID.uuidString
             if seen.insert(key).inserted { result.append(e) }
             if result.count == 6 { break }
         }

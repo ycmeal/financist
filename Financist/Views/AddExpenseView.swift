@@ -69,6 +69,9 @@ struct AddExpenseView: View {
 
     private var trimmedNote: String { note.trimmingCharacters(in: .whitespacesAndNewlines) }
 
+    /// Как запишется: знакомое место — привычным написанием («мигрос» → «Migros»).
+    private var savedNote: String { SuggestionEngine.canonical(note, in: suggestions) }
+
     var body: some View {
         // Шаги стоят в ряд и листаются целиком, а подсветка остаётся на месте.
         GeometryReader { geo in
@@ -97,10 +100,13 @@ struct AddExpenseView: View {
             }
         }
         .onChange(of: note) { _, newValue in
-            // Знакомое место — сразу его категория, если её не выбирали вручную.
+            // Знакомое место (как его ни напиши) — сразу его категория, если её не выбирали вручную.
+            // Незнакомое — по словам в названии: «Kasap Ali» — «Продукты», «Nur Eczanesi» — «Здоровье».
             guard !categoryTouched else { return }
             if let known = SuggestionEngine.exact(newValue, in: suggestions) {
                 pickAutomatically(known.categoryID)
+            } else if let guessed = SuggestionEngine.guessCategory(newValue, in: orderedCategories) {
+                pickAutomatically(guessed.id)
             } else if autoPicked && newValue.trimmingCharacters(in: .whitespaces).isEmpty {
                 categoryID = nil
                 autoPicked = false
@@ -331,6 +337,12 @@ struct AddExpenseView: View {
                         .font(.largeTitle.bold())
                         .accessibilityAddTraits(.isHeader)
                     noteField
+                    if !trimmedNote.isEmpty && savedNote != trimmedNote {
+                        Text("Запишу как «\(savedNote)»")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 4)
+                    }
                     if let categoryID, autoPicked {
                         pickedHint(store.category(for: categoryID))
                     }
@@ -395,7 +407,7 @@ struct AddExpenseView: View {
     /// Пока пусто — частые места; по мере ввода — похожие. Нажали — подставилась и категория.
     @ViewBuilder
     private var suggestionList: some View {
-        let items = SuggestionEngine.match(note, in: suggestions)
+        let items = SuggestionEngine.match(note, in: suggestions, near: currency)
         if !items.isEmpty {
             VStack(spacing: 0) {
                 ForEach(items) { suggestion in
@@ -469,7 +481,7 @@ struct AddExpenseView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(trimmedNote.isEmpty ? "Подписка" : trimmedNote)
+                        Text(trimmedNote.isEmpty ? "Подписка" : savedNote)
                             .font(.largeTitle.bold())
                             .accessibilityAddTraits(.isHeader)
                         Text("Уже платите или пока пробный период?")
@@ -694,8 +706,7 @@ struct AddExpenseView: View {
             }
             if let merchant = result.merchant, note.isEmpty {
                 // Знакомый магазин — берём привычное название и категорию.
-                let key = SuggestionEngine.normalize(merchant)
-                if let known = suggestions.first(where: { key.contains($0.id) }) {
+                if let known = SuggestionEngine.place(onReceipt: merchant, in: suggestions) {
                     note = known.note
                     if !categoryTouched { pickAutomatically(known.categoryID) }
                 } else {
@@ -711,14 +722,14 @@ struct AddExpenseView: View {
     private func save() {
         guard let amount = input.value, let categoryID else { return }
         if subscriptionSelected && isTrial {
-            store.upsert(Trial(note: trimmedNote, amount: amount, currency: currency, categoryID: categoryID,
+            store.upsert(Trial(note: savedNote, amount: amount, currency: currency, categoryID: categoryID,
                                chargeDate: Calendar.current.startOfDay(for: chargeDate), remindDaysBefore: remindDays))
             // Напоминание придёт, только если уведомления разрешены.
             Task { @MainActor in
                 if await Reminders.requestPermission() { store.refreshReminders() }
             }
         } else {
-            store.addExpense(amount: amount, currency: currency, categoryID: categoryID, note: note, date: date)
+            store.addExpense(amount: amount, currency: currency, categoryID: categoryID, note: savedNote, date: date)
         }
         dismiss()
     }

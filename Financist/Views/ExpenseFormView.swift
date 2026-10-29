@@ -63,13 +63,13 @@ struct ExpenseFormView: View {
             pending = false
         }
         return Expense(id: original.id, date: date, amount: amount, currency: currency,
-                       categoryID: categoryID, note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+                       categoryID: categoryID, note: SuggestionEngine.canonical(note, in: suggestions),
                        rates: rates, recurringID: original.recurringID, ratesPending: pending)
     }
 
     private var matches: [Suggestion] {
         guard focus == .note else { return [] }
-        return SuggestionEngine.match(note, in: suggestions)
+        return SuggestionEngine.match(note, in: suggestions, near: currency)
     }
 
     var body: some View {
