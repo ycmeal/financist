@@ -1,54 +1,68 @@
 import SwiftUI
 
-/// Свёрнутая строка «Подписки» на «Тратах»: одна строка, раскрывается касанием. Когда пора решать,
-/// это написано прямо в ней — и так, пока не нажмут «Я решил оплатить» или «Я отменил».
-struct SubscriptionsDisclosure: View {
+/// Все пробные подписки — по кнопке «Подписки» вверху «Трат». На самих «Тратах» подписка появляется
+/// только за 5 дней до списания или когда пришло напоминание.
+struct SubscriptionsView: View {
     @Environment(AppStore.self) private var store
-    @Environment(\.palette) private var palette
-    let open: [Trial]
-    let upcoming: [Trial]
-    let onOpen: (Trial) -> Void
-    @State private var expanded = false
+    @Environment(\.dismiss) private var dismiss
+    @State private var opened: Trial?
 
     var body: some View {
-        let due = open.filter { $0.needsDecision() }
-        DisclosureGroup(isExpanded: $expanded) {
-            ForEach(open) { trial in
-                let decide = trial.needsDecision()
-                Button { onOpen(trial) } label: {
-                    TrialRow(trial: trial, subtitle: decide ? "Пора решить · \(trial.chargeText())" : trial.chargeText(),
-                             highlighted: decide)
+        let open = store.openTrials
+        let upcoming = store.upcomingCharges
+        NavigationStack {
+            List {
+                if !open.isEmpty {
+                    Section {
+                        ForEach(open) { trial in
+                            let decide = trial.needsDecision()
+                            Button { opened = trial } label: {
+                                TrialRow(trial: trial, subtitle: decide ? "Пора решить · \(trial.chargeText())" : trial.chargeText(),
+                                         highlighted: decide)
+                            }
+                            .tint(Color.primary)
+                        }
+                    } header: {
+                        Text("Пробный период")
+                    } footer: {
+                        Text("На «Тратах» подписка появится сама за \(Fmt.count(Trial.shownDaysBefore, "день", "дня", "дней")) до списания.")
+                    }
                 }
-                .buttonStyle(.plain)
-            }
-            ForEach(upcoming) { trial in
-                Button { onOpen(trial) } label: {
-                    TrialRow(trial: trial, subtitle: "Оставили · в траты запишется \(RuDate.day(trial.chargeDate))")
-                }
-                .buttonStyle(.plain)
-            }
-        } label: {
-            HStack(spacing: 12) {
-                CategoryIcon(category: store.subscriptionCategory ?? .subscription)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Подписки")
-                    Text(summary(due: due))
-                        .font(.subheadline)
-                        .foregroundStyle(due.isEmpty ? Color.secondary : palette.accent)
+                if !upcoming.isEmpty {
+                    Section("Оставили") {
+                        ForEach(upcoming) { trial in
+                            Button { opened = trial } label: {
+                                TrialRow(trial: trial, subtitle: "В траты запишется \(RuDate.day(trial.chargeDate))")
+                            }
+                            .tint(Color.primary)
+                        }
+                    }
                 }
             }
+            .warmListBackground()
+            .overlay {
+                if open.isEmpty && upcoming.isEmpty {
+                    ContentUnavailableView {
+                        Label("Подписок нет", systemImage: "arrow.triangle.2.circlepath")
+                    } description: {
+                        Text("Пробную подписку записывают так: «Добавить трату» → категория «Подписка».")
+                    }
+                }
+            }
+            .navigationTitle("Подписки")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Готово") { dismiss() }
+                }
+            }
+            .sheet(item: $opened) { TrialEditView(trial: $0) }
         }
-    }
-
-    private func summary(due: [Trial]) -> String {
-        if due.count == 1 { return "Пора решить: \(due[0].title)" }
-        if due.count > 1 { return "Пора решить: \(Fmt.count(due.count, "подписка", "подписки", "подписок"))" }
-        guard let next = (open + upcoming).min(by: { $0.chargeDate < $1.chargeDate }) else { return "" }
-        return "Ближайшее списание — \(RuDate.day(next.chargeDate))"
     }
 }
 
-private struct TrialRow: View {
+/// Строка подписки: значок, название, когда спишут, сумма.
+struct TrialRow: View {
     @Environment(AppStore.self) private var store
     @Environment(\.palette) private var palette
     let trial: Trial

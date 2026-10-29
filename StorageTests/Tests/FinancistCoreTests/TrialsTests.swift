@@ -183,6 +183,27 @@ final class TrialsTests: XCTestCase {
     }
 
     @MainActor
+    func testMainScreenShowsATrialFiveDaysBeforeTheCharge() async throws {
+        let store = launch()
+        addTrial(store, "Netflix", chargeIn: 12)
+        let youtube = addTrial(store, "YouTube", chargeIn: 5)
+        addTrial(store, "Okko", chargeIn: 6, remind: 2)
+        addTrial(store, "Disney+", chargeIn: 6, remind: 7)
+        XCTAssertEqual(store.trialsDueSoon.map(\.note), ["YouTube", "Disney+"],
+                       "Five days before the charge, or earlier if the chosen reminder has already come")
+        XCTAssertEqual(store.openTrials.count, 4, "The rest wait in the «Подписки» button")
+
+        let netflix = try XCTUnwrap(store.openTrials.first { $0.note == "Netflix" })
+        XCTAssertFalse(netflix.isDueSoon(now: startOfDay(in: 6)))
+        XCTAssertTrue(netflix.isDueSoon(now: startOfDay(in: 7)))
+        XCTAssertTrue(netflix.isDueSoon(now: startOfDay(in: 20)), "Stays while undecided, even after the charge day")
+
+        store.decide(.keep, for: youtube.id)
+        XCTAssertEqual(store.trialsDueSoon.map(\.note), ["Disney+"], "A decided trial leaves the main screen")
+        XCTAssertEqual(store.upcomingCharges.map(\.note), ["YouTube"])
+    }
+
+    @MainActor
     func testCancelRemovesCardAndReminderAndRecordsNothing() async throws {
         let store = launch()
         let trial = addTrial(store, chargeIn: 1)

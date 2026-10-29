@@ -21,6 +21,10 @@ struct StatsContent: View {
     @State private var period: StatsPeriod
     @State private var anchor: Date
     @State private var keepAnchor = false
+    /// День, нажатый в календаре месяца: его траты — сразу под календарём.
+    @State private var selectedDay: Date?
+    @State private var editing: Expense?
+    @State private var addingOn: PresetDay?
     private let showsPicker: Bool
 
     init(period: StatsPeriod, anchor: Date, showsPicker: Bool = true) {
@@ -58,6 +62,10 @@ struct StatsContent: View {
             } else {
                 Section {
                     HeroTotal(report: report)
+                }
+
+                if period == .month {
+                    calendarSection(report)
                 }
 
                 if !report.insights.isEmpty {
@@ -134,10 +142,44 @@ struct StatsContent: View {
         .warmListBackground()
         .animation(.snappy, value: anchor)
         .onChange(of: period) {
+            selectedDay = nil
             if keepAnchor { keepAnchor = false } else { anchor = .now }
         }
+        .onChange(of: anchor) { selectedDay = nil }
+        .sheet(item: $editing) { ExpenseFormView(expense: $0) }
+        .fullScreenCover(item: $addingOn) { AddExpenseView(presetDate: $0.date) }
         .onAppear(perform: applyJump)
         .onChange(of: store.statsJump) { applyJump() }
+    }
+
+    /// Календарь месяца: нажали на день — ниже его траты и «Добавить на этот день».
+    private func calendarSection(_ report: StatsReport) -> some View {
+        Section {
+            SpendingCalendar(month: anchor, selectedDay: $selectedDay)
+            if let day = selectedDay {
+                let items = report.expenses.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }
+                    .sorted { $0.date > $1.date }
+                DayHeader(day: day, items: items)
+                ForEach(items) { expense in
+                    Button { editing = expense } label: { ExpenseRow(expense: expense) }
+                        .tint(Color.primary)
+                }
+                .onDelete { offsets in store.deleteExpenses(ids: offsets.map { items[$0].id }) }
+                if items.isEmpty {
+                    Text("В этот день трат нет.")
+                        .foregroundStyle(.secondary)
+                }
+                Button { addingOn = PresetDay(date: day) } label: {
+                    Label("Добавить на этот день", systemImage: "plus.circle")
+                }
+            }
+        } header: {
+            Text("Календарь")
+        } footer: {
+            if selectedDay == nil {
+                Text("Чем ярче день, тем больше в нём потрачено. Нажмите на день — покажу его траты.")
+            }
+        }
     }
 
     /// Переход из карточки «месяц закрыт» на вкладке «Траты».

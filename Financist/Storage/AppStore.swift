@@ -542,6 +542,11 @@ final class AppStore {
         vault.trials.filter { $0.decision == nil }.sorted { $0.chargeDate < $1.chargeDate }
     }
 
+    /// Пробные подписки для главного экрана: только те, что скоро спишут (за 5 дней) или по которым пора решить.
+    var trialsDueSoon: [Trial] {
+        openTrials.filter { $0.isDueSoon() }
+    }
+
     /// Оставленные подписки, которые ещё не списались: «спишут 28 ноября».
     var upcomingCharges: [Trial] {
         vault.trials.filter { $0.decision == .keep && !$0.chargeRecorded }.sorted { $0.chargeDate < $1.chargeDate }

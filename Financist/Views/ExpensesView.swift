@@ -5,19 +5,10 @@ struct ExpensesView: View {
     @Environment(\.palette) private var palette
     @State private var editing: Expense?
     @State private var repeating: Expense?
-    @State private var addingOn: PresetDay?
     @State private var isSearching = false
-    @State private var mode: Mode = .list
-    @State private var calendarMonth = Date.now
-    @State private var selectedDay = Calendar.current.startOfDay(for: .now)
+    @State private var showingSubscriptions = false
     @State private var buildWarningHidden = false
     @State private var openedTrial: Trial?
-
-    private enum Mode: String, CaseIterable, Identifiable {
-        case list = "Список"
-        case calendar = "Календарь"
-        var id: Self { self }
-    }
 
     private func groupedDays(_ expenses: [Expense]) -> [(day: Date, items: [Expense])] {
         let groups = Dictionary(grouping: expenses) { Calendar.current.startOfDay(for: $0.date) }
@@ -56,12 +47,20 @@ struct ExpensesView: View {
                         }
                     }
 
-                    // Пробные подписки — одной свёрнутой строкой; «Пора решить» видно и в ней.
-                    let trials = store.openTrials
-                    let upcoming = store.upcomingCharges
-                    if !trials.isEmpty || !upcoming.isEmpty {
+                    // Пробная подписка видна здесь только за 5 дней до списания; все подписки — в кнопке вверху.
+                    let soon = store.trialsDueSoon
+                    if !soon.isEmpty {
                         Section {
-                            SubscriptionsDisclosure(open: trials, upcoming: upcoming) { openedTrial = $0 }
+                            ForEach(soon) { trial in
+                                Button { openedTrial = trial } label: {
+                                    TrialRow(trial: trial, subtitle: trial.needsDecision()
+                                             ? "Пора решить · \(trial.chargeText())" : trial.chargeText(),
+                                             highlighted: true)
+                                }
+                                .tint(Color.primary)
+                            }
+                        } header: {
+                            Text("Подписки")
                         }
                     }
 
@@ -85,11 +84,6 @@ struct ExpensesView: View {
                             Text("Нажмите «Добавить трату», и она появится здесь.")
                         }
                         .listRowBackground(Color.clear)
-                    } else if mode == .calendar {
-                        Section {
-                            SpendingCalendar(month: $calendarMonth, selectedDay: $selectedDay)
-                        }
-                        dayDetails(days.first { Calendar.current.isDate($0.day, inSameDayAs: selectedDay) }?.items ?? [])
                     } else {
                         ForEach(days, id: \.day) { group in
                             Section {
@@ -118,23 +112,20 @@ struct ExpensesView: View {
                 ToolbarItem(placement: .principal) { Text("") }
                 ToolbarItem(placement: .topBarLeading) { DisplayCurrencyMenu() }
                 ToolbarItemGroup(placement: .topBarTrailing) {
+                    if !store.openTrials.isEmpty || !store.upcomingCharges.isEmpty {
+                        Button("Подписки") { showingSubscriptions = true }
+                    }
                     if !store.vault.expenses.isEmpty {
                         Button { isSearching = true } label: { Image(systemName: "magnifyingglass") }
                             .accessibilityLabel("Поиск")
-                        Button {
-                            withAnimation(.snappy) { mode = mode == .list ? .calendar : .list }
-                        } label: {
-                            Image(systemName: mode == .list ? "calendar" : "list.bullet")
-                        }
-                        .accessibilityLabel(mode == .list ? "Показать календарь" : "Показать списком")
                     }
                 }
             }
             // Новая трата — на весь экран: сумма, потом «На что?». Правка — обычной формой.
             .fullScreenCover(isPresented: $store.isAddingExpense) { AddExpenseView() }
             .fullScreenCover(item: $repeating) { AddExpenseView(template: $0) }
-            .fullScreenCover(item: $addingOn) { AddExpenseView(presetDate: $0.date) }
             .sheet(isPresented: $isSearching) { ExpenseSearchView() }
+            .sheet(isPresented: $showingSubscriptions) { SubscriptionsView() }
             .sheet(item: $editing) { ExpenseFormView(expense: $0) }
             .sheet(item: $openedTrial) { TrialEditView(trial: $0) }
             // Нажали на напоминание о пробной подписке — сразу спрашиваем про неё.
@@ -158,8 +149,8 @@ struct ExpensesView: View {
         return max(110, city - geo.safeAreaInsets.top - 34)
     }
 
-    private func expenseButton(_ expense: Expense, showDate: Bool = false) -> some View {
-        Button { editing = expense } label: { ExpenseRow(expense: expense, showDate: showDate) }
+    private func expenseButton(_ expense: Expense) -> some View {
+        Button { editing = expense } label: { ExpenseRow(expense: expense) }
             .tint(Color.primary)
             .swipeActions(edge: .leading) {
                 Button { repeating = expense } label: { Label("Повторить", systemImage: "arrow.clockwise") }
@@ -177,26 +168,6 @@ struct ExpensesView: View {
                     Label("Удалить", systemImage: "trash")
                 }
             }
-    }
-
-    @ViewBuilder
-    private func dayDetails(_ items: [Expense]) -> some View {
-        Section {
-            if items.isEmpty {
-                Text("В этот день трат нет.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(items) { expenseButton($0) }
-                    .onDelete { offsets in store.deleteExpenses(ids: offsets.map { items[$0].id }) }
-            }
-            Button {
-                addingOn = PresetDay(date: selectedDay)
-            } label: {
-                Label("Добавить на этот день", systemImage: "plus.circle")
-            }
-        } header: {
-            DayHeader(day: selectedDay, items: items)
-        }
     }
 
     /// В первые 5 дней месяца показываем итог прошлого.
@@ -230,11 +201,6 @@ private struct BuildExpiryNotice: View {
         }
         .padding(.vertical, 2)
     }
-}
-
-private struct PresetDay: Identifiable {
-    let date: Date
-    var id: Date { date }
 }
 
 /// Итоги дня и месяца и большая кнопка «Добавить трату».
@@ -349,7 +315,7 @@ private struct MonthClosedCard: View {
     }
 }
 
-private struct DayHeader: View {
+struct DayHeader: View {
     @Environment(AppStore.self) private var store
     let day: Date
     let items: [Expense]

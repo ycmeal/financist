@@ -53,6 +53,15 @@ struct Trial: Identifiable, Codable, Hashable {
         decision == nil && now >= remindDay
     }
 
+    /// За сколько дней до списания пробная подписка появляется на главном экране «Трат».
+    static let shownDaysBefore = 5
+
+    /// Пора показать на «Тратах»: до списания 5 дней или меньше — или уже пришло напоминание
+    /// (его можно поставить и раньше, за 7 дней). В остальное время подписка — только в кнопке «Подписки».
+    func isDueSoon(now: Date = .now) -> Bool {
+        decision == nil && (daysUntilCharge(now: now) <= Self.shownDaysBefore || needsDecision(now: now))
+    }
+
     /// Сколько дней до списания: 0 — сегодня, отрицательное — день уже прошёл.
     func daysUntilCharge(now: Date = .now) -> Int {
         let calendar = Calendar.current
