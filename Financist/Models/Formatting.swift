@@ -84,6 +84,7 @@ enum RuDate {
                                  "июля", "августа", "сентября", "октября", "ноября", "декабря"]
     /// Индекс как у Calendar.weekday: 1 — воскресенье.
     static let weekdaysShort = ["", "Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+    static let weekdays = ["", "воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"]
     static let weekdaysDative = ["", "воскресеньям", "понедельникам", "вторникам", "средам",
                                  "четвергам", "пятницам", "субботам"]
 
@@ -118,6 +119,11 @@ enum RuDate {
             return "\(weekdaysShort[calendar.component(.weekday, from: date)]), \(day(date))"
         }
         return "\(day(date)) \(calendar.component(.year, from: date))"
+    }
+
+    /// «Среда, 29 октября»
+    static func weekdayAndDay(_ date: Date) -> String {
+        "\(weekdays[calendar.component(.weekday, from: date)].capitalized), \(day(date))"
     }
 
     static func time(_ date: Date) -> String {

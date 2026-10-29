@@ -12,3 +12,4 @@ Sources/FinancistCore/Formatting.swift
 Sources/FinancistCore/Suggestions.swift
 Sources/FinancistCore/VaultMerge.swift
 Sources/FinancistCore/Trial.swift
+Sources/FinancistCore/Place.swift

@@ -218,7 +218,7 @@ private struct PresetDay: Identifiable {
     var id: Date { date }
 }
 
-/// Приветствие, итоги дня и месяца, бюджет и большая кнопка «Добавить трату».
+/// Шапка со страной и временем, итоги дня и месяца и большая кнопка «Добавить трату».
 private struct SummaryHeader: View {
     @Environment(AppStore.self) private var store
 
@@ -229,9 +229,7 @@ private struct SummaryHeader: View {
         let month = store.spentThisMonth(in: currency)
 
         VStack(alignment: .leading, spacing: 14) {
-            Text(RuDate.greeting())
-                .font(.title3)
-                .foregroundStyle(.secondary)
+            PlaceHeader()
 
             AdaptiveRow(spacing: 12) {
                 TotalTile(title: "Сегодня", value: currency.format(today.rounded(scale: 2)))
