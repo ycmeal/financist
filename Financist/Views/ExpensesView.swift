@@ -130,11 +130,12 @@ struct ExpensesView: View {
                     }
                 }
             }
-            .sheet(isPresented: $store.isAddingExpense) { ExpenseFormView(expense: nil) }
+            // Новая трата — на весь экран: сумма, потом «На что?». Правка — обычной формой.
+            .fullScreenCover(isPresented: $store.isAddingExpense) { AddExpenseView() }
+            .fullScreenCover(item: $repeating) { AddExpenseView(template: $0) }
+            .fullScreenCover(item: $addingOn) { AddExpenseView(presetDate: $0.date) }
             .sheet(isPresented: $isSearching) { ExpenseSearchView() }
             .sheet(item: $editing) { ExpenseFormView(expense: $0) }
-            .sheet(item: $repeating) { ExpenseFormView(expense: nil, template: $0) }
-            .sheet(item: $addingOn) { ExpenseFormView(expense: nil, presetDate: $0.date) }
             .sheet(item: $openedTrial) { TrialEditView(trial: $0) }
             // Нажали на напоминание о пробной подписке — сразу спрашиваем про неё.
             .onChange(of: store.trialToOpen, initial: true) {

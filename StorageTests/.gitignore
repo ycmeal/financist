@@ -15,3 +15,4 @@ Sources/FinancistCore/Trial.swift
 Sources/FinancistCore/Place.swift
 Sources/FinancistCore/PixelCity.swift
 Sources/FinancistCore/PixelData.swift
+Sources/FinancistCore/AmountInput.swift

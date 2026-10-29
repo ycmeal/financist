@@ -308,6 +308,18 @@ final class AppStore {
         persist()
     }
 
+    /// Новая трата из ввода: с курсами своего дня. Если их ещё нет, трата помечается «уточнится»
+    /// и пересчитается сама, когда курсы загрузятся.
+    @discardableResult
+    func addExpense(amount: Decimal, currency: Currency, categoryID: UUID, note: String, date: Date) -> Expense {
+        let day = ratesForDay(date, currency: currency)
+        let expense = Expense(date: date, amount: amount, currency: currency, categoryID: categoryID,
+                              note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+                              rates: day.rates, ratesPending: !day.exact)
+        upsert(expense)
+        return expense
+    }
+
     /// Удаление не навсегда: трата 30 дней лежит в «Недавно удалённых», а пока внизу плашка —
     /// её можно вернуть одним касанием.
     func deleteExpenses(ids: [UUID], now: Date = .now) {

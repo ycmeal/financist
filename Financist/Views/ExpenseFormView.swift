@@ -1,11 +1,12 @@
 import SwiftUI
 
+/// Правка записанной траты: сумма и курс, категория, комментарий, день. Новые траты — в AddExpenseView.
 struct ExpenseFormView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
 
-    let original: Expense?
+    let original: Expense
 
     @State private var amountText = ""
     @State private var currency: Currency = .lira
@@ -17,39 +18,24 @@ struct ExpenseFormView: View {
     @State private var categoryID: UUID?
     @State private var date = Date.now
     @State private var pickingOtherDay = false
-    @State private var categoryTouched = false
-    @State private var currencyTouched = false
     @State private var showAllCategories = false
     @State private var newCategory: ExpenseCategory?
     @State private var isSetUp = false
     @State private var suggestions: [Suggestion] = []
-    @State private var templates: [Expense] = []
     @State private var orderedCategories: [ExpenseCategory] = []
     @State private var confirmDelete = false
-    @State private var isScanning = false
-    @State private var scanStatus: String?
-    /// Пробная подписка (категория «Подписка»): спишут позже, iPhone напомнит заранее.
-    @State private var isTrial = true
-    @State private var chargeDate = Calendar.current.date(byAdding: .day, value: 7, to: Calendar.current.startOfDay(for: .now)) ?? .now
-    @State private var remindDays = Trial.defaultReminder
-    @State private var showCancelHelp = false
     @FocusState private var focus: Field?
-    private let template: Expense?
-    private let presetDate: Date?
 
     private enum Field { case amount, rate, note }
 
-    /// `template` — повтор прошлой траты: всё заполнено, дата — сейчас.
-    init(expense: Expense?, template: Expense? = nil, presetDate: Date? = nil) {
+    init(expense: Expense) {
         original = expense
-        self.template = template
-        self.presetDate = presetDate
     }
 
-    /// Курсы дня траты: у старой траты, если день не меняли, — её снимок; иначе — курсы выбранного дня.
+    /// Курсы дня траты: если день не меняли — её снимок; иначе — курсы выбранного дня.
     /// exact = false: курсы этого дня ещё не загружены, трата уточнится сама.
     private var dayRates: (rates: [Currency: Decimal], exact: Bool) {
-        if let original, Calendar.current.isDate(original.date, inSameDayAs: date) {
+        if Calendar.current.isDate(original.date, inSameDayAs: date) {
             return (original.rates, !original.ratesPending)
         }
         return store.ratesForDay(date, currency: currency)
@@ -76,24 +62,9 @@ struct ExpenseFormView: View {
             rates[currency] = rate
             pending = false
         }
-        return Expense(id: original?.id ?? UUID(), date: date, amount: amount, currency: currency,
+        return Expense(id: original.id, date: date, amount: amount, currency: currency,
                        categoryID: categoryID, note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-                       rates: rates, recurringID: original?.recurringID, ratesPending: pending)
-    }
-
-    private var subscriptionSelected: Bool {
-        guard let categoryID else { return false }
-        return store.category(for: categoryID).isSubscription
-    }
-
-    /// Новая запись в «Подписке» с включённым «Пробным периодом»: сохраняется не как трата,
-    /// а как напоминание о будущем списании.
-    private var trialMode: Bool {
-        original == nil && subscriptionSelected && isTrial
-    }
-
-    private var canSave: Bool {
-        trialMode ? amount != nil : draft != nil
+                       rates: rates, recurringID: original.recurringID, ratesPending: pending)
     }
 
     private var matches: [Suggestion] {
@@ -105,18 +76,10 @@ struct ExpenseFormView: View {
         NavigationStack {
             Form {
                 amountSection
-                if original == nil && amountText.isEmpty && !templates.isEmpty {
-                    recentSection
-                }
                 categorySection
-                if original == nil && subscriptionSelected {
-                    trialSection
-                }
                 noteSection
-                if !trialMode {
-                    whenSection
-                }
-                if let draft, original != nil {
+                whenSection
+                if let draft {
                     conversionSection(draft)
                 }
                 Section {
@@ -127,22 +90,20 @@ struct ExpenseFormView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
-                    .disabled(!canSave)
+                    .disabled(draft == nil)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
                 } footer: {
-                    if !canSave {
-                        Text(amount == nil ? (trialMode ? "Введите сумму, которую спишут." : "Введите сумму.") : "Выберите категорию.")
+                    if draft == nil {
+                        Text(amount == nil ? "Введите сумму." : "Выберите категорию.")
                     }
                 }
-                if original != nil {
-                    Section {
-                        Button("Удалить трату", role: .destructive) { confirmDelete = true }
-                    }
+                Section {
+                    Button("Удалить трату", role: .destructive) { confirmDelete = true }
                 }
             }
             .warmListBackground()
-            .navigationTitle(trialMode ? "Пробная подписка" : original == nil ? "Новая трата" : "Трата")
+            .navigationTitle("Трата")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -150,7 +111,7 @@ struct ExpenseFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Готово") { save() }
-                        .disabled(!canSave)
+                        .disabled(draft == nil)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -159,7 +120,7 @@ struct ExpenseFormView: View {
             }
             .confirmationDialog("Удалить эту трату?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Удалить", role: .destructive) {
-                    if let original { store.deleteExpenses(ids: [original.id]) }
+                    store.deleteExpenses(ids: [original.id])
                     dismiss()
                 }
             } message: {
@@ -169,16 +130,7 @@ struct ExpenseFormView: View {
                 CategoryEditView(category: category) { saved in
                     orderedCategories.insert(saved, at: 0)
                     categoryID = saved.id
-                    categoryTouched = true
                 }
-            }
-            .sheet(isPresented: $showCancelHelp) { CancelSubscriptionHelpView() }
-            .fullScreenCover(isPresented: $isScanning) {
-                CameraPicker { image in
-                    isScanning = false
-                    if let image { Task { await readReceipt(image) } }
-                }
-                .ignoresSafeArea()
             }
             .sensoryFeedback(.selection, trigger: categoryID)
             .sensoryFeedback(.selection, trigger: currency)
@@ -187,11 +139,6 @@ struct ExpenseFormView: View {
                 // Введённый вручную курс относился к прежней валюте.
                 rateTouched = false
                 isEditingRate = false
-            }
-            .onChange(of: note) { _, newValue in
-                // Знакомое место — сразу ставим его категорию, если её не выбирали вручную.
-                guard !categoryTouched, let known = SuggestionEngine.exact(newValue, in: suggestions) else { return }
-                pickAutomatically(known.categoryID)
             }
         }
     }
@@ -207,24 +154,10 @@ struct ExpenseFormView: View {
                     .monospacedDigit()
                     .focused($focus, equals: .amount)
                     .accessibilityLabel("Сумма")
-                if original == nil && !trialMode {
-                    Button { isScanning = true } label: {
-                        Image(systemName: "doc.text.viewfinder")
-                            .font(.title3)
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Сканировать чек")
-                }
                 currencyMenu
             }
 
-            if let scanStatus {
-                Label(scanStatus, systemImage: "doc.text.viewfinder")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            if currency != .base && isEditingRate && !trialMode {
+            if currency != .base && isEditingRate {
                 HStack {
                     Text("Курс: 1 USD =")
                         .foregroundStyle(.secondary)
@@ -244,35 +177,6 @@ struct ExpenseFormView: View {
                 HStack { conversionText; Spacer(); rateLink }
                 VStack(alignment: .leading, spacing: 4) { conversionText; rateLink }
             }
-        }
-    }
-
-    /// Недавние траты отдельным тихим блоком: одно касание — всё заполнено.
-    private var recentSection: some View {
-        Section {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(Array(templates.prefix(5))) { expense in
-                        Button { fill(from: expense) } label: {
-                            HStack(spacing: 7) {
-                                Text(expense.note)
-                                Text(expense.currency.format(expense.amount))
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
-                            }
-                            .font(.subheadline)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 12)
-                            .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 12))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets())
-        } header: {
-            Text("Недавние")
         }
     }
 
@@ -301,7 +205,10 @@ struct ExpenseFormView: View {
     }
 
     private func currencyItem(_ cur: Currency) -> some View {
-        Button { selectCurrency(cur) } label: {
+        Button {
+            currency = cur
+            isEditingRate = false
+        } label: {
             if cur == currency {
                 Label("\(cur.flag) \(cur.code) — \(cur.name)", systemImage: "checkmark")
             } else {
@@ -313,19 +220,14 @@ struct ExpenseFormView: View {
     @ViewBuilder
     private var conversionText: some View {
         let display = store.displayCurrency
-        if trialMode {
-            // Списание будет позже — считаем по нынешнему курсу.
-            if let amount, currency != display {
-                Text("≈ " + display.format(store.vault.rates.convert(amount, from: currency, to: display).rounded(scale: 2)))
-            }
-        } else if let draft, draft.currency != display {
+        if let draft, draft.currency != display {
             Text("≈ " + display.format(draft.amount(in: display).rounded(scale: 2)))
         }
     }
 
     @ViewBuilder
     private var rateLink: some View {
-        if currency != .base && !isEditingRate && !trialMode {
+        if currency != .base && !isEditingRate {
             let approximate = !dayRates.exact && !rateTouched
             Button {
                 rateText = currentRate.inputString
@@ -349,12 +251,6 @@ struct ExpenseFormView: View {
         return list
     }
 
-    private func selectCurrency(_ cur: Currency) {
-        currency = cur
-        currencyTouched = true
-        isEditingRate = false
-    }
-
     // MARK: Категория
 
     private var categorySection: some View {
@@ -364,16 +260,9 @@ struct ExpenseFormView: View {
            let selected = all.first(where: { $0.id == categoryID }) {
             visible.insert(selected, at: 0)
         }
-        // «Подписку» видно всегда: в ней записывают пробные подписки с напоминанием.
-        if !visible.contains(where: \.isSubscription), let subscription = all.first(where: \.isSubscription) {
-            visible.append(subscription)
-        }
         return Section {
             CategoryGrid(categories: visible, selection: categoryID) { picked in
                 categoryID = picked.id
-                categoryTouched = true
-                // Нажали «Подписку» сами — скорее всего, это пробный период.
-                if picked.isSubscription { isTrial = template == nil && presetDate == nil }
             } onAdd: {
                 newCategory = ExpenseCategory(name: "", symbol: "star.fill", colorName: "orange")
             }
@@ -391,7 +280,7 @@ struct ExpenseFormView: View {
 
     private var noteSection: some View {
         Section {
-            TextField(trialMode ? "Например: YouTube, Netflix" : "Например: Migros, аптека", text: $note)
+            TextField("Например: Migros, аптека", text: $note)
                 .focused($focus, equals: .note)
                 .submitLabel(.done)
             ForEach(matches) { suggestion in
@@ -415,45 +304,10 @@ struct ExpenseFormView: View {
         }
     }
 
-    // MARK: Пробная подписка
-
-    /// Только для «Подписки»: пробный период — сумма спишется позже, iPhone напомнит заранее.
-    private var trialSection: some View {
-        Section {
-            Toggle(isOn: $isTrial.animation(.snappy)) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Пробный период")
-                    Text(isTrial ? "Пока бесплатно — напомню до списания" : "Обычная трата: подписку уже оплатили")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            if isTrial {
-                DatePicker("Спишут", selection: $chargeDate, in: Calendar.current.startOfDay(for: .now)...,
-                           displayedComponents: .date)
-                Picker("Напомнить", selection: $remindDays) {
-                    ForEach(Trial.reminderChoices, id: \.self) { days in
-                        Text("за \(Fmt.count(days, "день", "дня", "дней"))").tag(days)
-                    }
-                }
-                Button { showCancelHelp = true } label: {
-                    Label("Как отменить подписку", systemImage: "questionmark.circle")
-                }
-            }
-        } header: {
-            Text("Подписка")
-        } footer: {
-            if isTrial {
-                Text(Trial.reminderNote(chargeDate: chargeDate, remindDaysBefore: remindDays))
-            }
-        }
-    }
-
     // MARK: Когда
 
     private enum Day: Hashable { case today, yesterday, other }
 
-    /// По умолчанию «Сегодня» — трогать не нужно. «Вчера» — одно касание, «Другой» открывает дату.
     private var whenSection: some View {
         Section {
             Picker("Когда", selection: dayBinding.animation(.snappy)) {
@@ -511,10 +365,8 @@ struct ExpenseFormView: View {
 
     private func apply(_ suggestion: Suggestion) {
         note = suggestion.note
-        pickAutomatically(suggestion.categoryID)
-        categoryTouched = true
-        if !currencyTouched, original == nil, let cur = suggestion.currency { currency = cur }
-        focus = amount == nil ? .amount : nil
+        categoryID = suggestion.categoryID
+        focus = nil
     }
 
     private func setUp() {
@@ -522,86 +374,15 @@ struct ExpenseFormView: View {
         isSetUp = true
         // Считаем один раз при открытии, чтобы ввод не подтормаживал.
         suggestions = store.suggestions
-        templates = store.recentTemplates
         orderedCategories = store.categoriesByUsage
-        // Повтор прошлой траты и запись на день из календаря — это уже оплаченное, не пробный период.
-        isTrial = template == nil && presetDate == nil
-        if let original {
-            amountText = original.amount.inputString
-            currency = original.currency
-            note = original.note
-            categoryID = original.categoryID
-            date = original.date
-            categoryTouched = true
-            currencyTouched = true
-        } else if let template {
-            fill(from: template)
-        } else {
-            currency = store.vault.inputCurrency
-            if let presetDate {
-                // День из календаря, время — текущее.
-                let time = Calendar.current.dateComponents([.hour, .minute], from: .now)
-                date = Calendar.current.date(bySettingHour: time.hour ?? 12, minute: time.minute ?? 0,
-                                             second: 0, of: presetDate) ?? presetDate
-            }
-            focus = .amount
-        }
-    }
-
-    /// Заполняет форму прошлой тратой: сумма, валюта, категория, комментарий. Дата — сейчас.
-    private func fill(from expense: Expense) {
-        withAnimation(.snappy) {
-            amountText = expense.amount.inputString
-            currency = expense.currency
-            note = expense.note
-            pickAutomatically(expense.categoryID)
-            date = .now
-        }
-        categoryTouched = true
-        currencyTouched = true
-    }
-
-    private func readReceipt(_ image: UIImage) async {
-        scanStatus = "Читаю чек…"
-        let result = await ReceiptScanner.scan(image)
-        withAnimation(.snappy) {
-            if let amount = result.amount { amountText = amount.inputString }
-            if let merchant = result.merchant, note.isEmpty {
-                // Знакомый магазин — берём привычное название и категорию.
-                let key = SuggestionEngine.normalize(merchant)
-                if let known = suggestions.first(where: { key.contains($0.id) }) {
-                    note = known.note
-                    if !categoryTouched { pickAutomatically(known.categoryID) }
-                } else {
-                    note = merchant.capitalized
-                }
-            }
-        }
-        scanStatus = result.amount == nil
-            ? "Сумму не нашёл — введите вручную"
-            : "Проверьте сумму · сканировать ещё раз"
-    }
-
-    /// Категория подставилась сама (знакомое место, повтор, чек) — значит, это уже оплаченная трата,
-    /// даже если категория «Подписка». Пробный период включают, только нажав на «Подписку» самим.
-    private func pickAutomatically(_ id: UUID) {
-        categoryID = id
-        if store.category(for: id).isSubscription { isTrial = false }
+        amountText = original.amount.inputString
+        currency = original.currency
+        note = original.note
+        categoryID = original.categoryID
+        date = original.date
     }
 
     private func save() {
-        if trialMode {
-            guard let amount, let categoryID else { return }
-            store.upsert(Trial(note: note.trimmingCharacters(in: .whitespacesAndNewlines), amount: amount,
-                               currency: currency, categoryID: categoryID,
-                               chargeDate: Calendar.current.startOfDay(for: chargeDate), remindDaysBefore: remindDays))
-            // Напоминание придёт, только если уведомления разрешены.
-            Task { @MainActor in
-                if await Reminders.requestPermission() { store.refreshReminders() }
-            }
-            dismiss()
-            return
-        }
         guard let draft else { return }
         store.upsert(draft)
         dismiss()
