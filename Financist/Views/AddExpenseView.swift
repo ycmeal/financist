@@ -196,12 +196,14 @@ struct AddExpenseView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 6)
             }
-            dayChips
-                .padding(.top, 16)
-            paymentPicker
-                .frame(maxWidth: 300)
+            // Листок дня рисуется поверх кнопки оплаты: купюры и карта выглядывают из-за неё, но не налезают на день.
+            DaySwitch(date: date, onPick: { date = Self.keepingTime($0) }, onCalendar: { pickingDay = true })
                 .padding(.horizontal)
-                .padding(.top, 10)
+                .padding(.top, 14)
+                .zIndex(1)
+            PaymentFlip(selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true }))
+                .padding(.horizontal)
+                .padding(.top, 12)
             Spacer(minLength: 12)
 
             if !templates.isEmpty {
@@ -304,25 +306,6 @@ struct AddExpenseView: View {
         return list
     }
 
-    /// «Сегодня» стоит сразу; «Вчера» — одно касание; календарь — для дня раньше.
-    private var dayChips: some View {
-        let calendar = Calendar.current
-        let today = calendar.isDateInToday(date)
-        let yesterday = calendar.isDateInYesterday(date)
-        let other = !today && !yesterday
-        let row = HStack(spacing: 8) {
-            Chip(title: "Сегодня", selected: today) { setDay(daysAgo: 0) }
-            Chip(title: "Вчера", selected: yesterday) { setDay(daysAgo: 1) }
-            Chip(title: other ? date.formatted(.dateTime.day().month(.abbreviated).locale(Locale(identifier: "ru_RU"))) : nil,
-                 systemImage: "calendar", selected: other) { pickingDay = true }
-                .accessibilityLabel(other ? "День: \(RuDate.day(date))" : "Другой день")
-        }
-        return ViewThatFits(in: .horizontal) {
-            row
-            ScrollView(.horizontal, showsIndicators: false) { row.padding(.horizontal) }
-        }
-    }
-
     /// Недавние разные траты: нажали — подставились место и категория (и сумма, если её ещё нет).
     private var recentStrip: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -396,11 +379,6 @@ struct AddExpenseView: View {
             }
             .padding(.top, 8)
         }
-    }
-
-    /// Картой или наличными — рядом с суммой и днём. Обычно уже стоит как надо.
-    private var paymentPicker: some View {
-        PaymentToggle(selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true }))
     }
 
     private var noteField: some View {
@@ -683,10 +661,6 @@ struct AddExpenseView: View {
         input.press(key, fractionDigits: currency.fractionDigits)
     }
 
-    private func setDay(daysAgo: Int) {
-        date = Self.keepingTime(Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now) ?? .now)
-    }
-
     /// Выбранный день, время — сейчас: трата «вчера» встаёт на нынешний час.
     private static func keepingTime(_ day: Date) -> Date {
         let calendar = Calendar.current
@@ -823,33 +797,6 @@ private struct KeyStyle: ButtonStyle {
             .opacity(isEnabled ? 1 : 0.35)
             .scaleEffect(configuration.isPressed ? 0.94 : 1)
             .animation(.snappy(duration: 0.15), value: configuration.isPressed)
-    }
-}
-
-/// Капсула выбора дня. Выбранная — залита, остальные — на стекле.
-private struct Chip: View {
-    var title: String?
-    var systemImage: String?
-    var selected = false
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                if let systemImage { Image(systemName: systemImage) }
-                if let title { Text(title) }
-            }
-            .font(.subheadline.weight(selected ? .semibold : .regular))
-            .lineLimit(1)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 14)
-            .foregroundStyle(selected ? Color(.systemBackground) : Color.primary)
-            .background {
-                Capsule().fill(selected ? AnyShapeStyle(Color.primary) : AnyShapeStyle(Color(.secondarySystemBackground)))
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
@@ -997,47 +944,192 @@ private struct CategoryChip: View {
     }
 }
 
-/// «Картой | Наличными»: подложка перетекает к выбранному с лёгкой пружинкой, его значок подпрыгивает.
-/// Так же она переезжает, когда способ подставился сам (знакомое место). С «Уменьшением движения» — просто смена.
-private struct PaymentToggle: View {
-    @Binding var selection: PaymentMethod
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Namespace private var pill
+/// Плашка, которая переворачивается вокруг оси: спереди одно, сзади другое. Сторона видна ровно до середины поворота.
+private struct FlipCard<Front: View, Back: View>: View, Animatable {
+    var angle: Double
+    var horizontalAxis = true
+    let front: Front
+    let back: Back
+
+    var animatableData: Double {
+        get { angle }
+        set { angle = newValue }
+    }
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(PaymentMethod.allCases) { method in
-                let on = method == selection
-                Button {
-                    selection = method
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: method.symbol)
-                            .scaleEffect(on && !reduceMotion ? 1.18 : 1)
-                        Text(method.title)
+        let axis: (x: CGFloat, y: CGFloat, z: CGFloat) = horizontalAxis ? (1, 0, 0) : (0, 1, 0)
+        ZStack {
+            front.opacity(angle < 90 ? 1 : 0)
+            back
+                .rotation3DEffect(.degrees(180), axis: axis)
+                .opacity(angle < 90 ? 0 : 1)
+        }
+        .rotation3DEffect(.degrees(angle), axis: axis, perspective: 0.6)
+    }
+}
+
+/// «Картой ⇄ Наличными» — одна широкая кнопка-карточка: нажал — перевернулась.
+/// На наличные из-за плашки выглядывают и мнутся купюры; на карту — выезжает карта и «прикладывается».
+/// С «Уменьшением движения» — просто смена стороны.
+private struct PaymentFlip: View {
+    @Binding var selection: PaymentMethod
+    @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 54
+
+    var body: some View {
+        let cash = selection == .cash
+        Button { selection = cash ? .card : .cash } label: {
+            ZStack {
+                if !reduceMotion { peek }
+                FlipCard(angle: cash ? 180 : 0, front: face(.card), back: face(.cash))
+            }
+            .frame(height: height)
+            .frame(maxWidth: .infinity)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.6, bounce: 0.28), value: selection)
+        .sensoryFeedback(.impact(weight: .light), trigger: selection)
+        .accessibilityLabel("Чем платили: \(selection.phrase)")
+        .accessibilityHint("Нажмите, чтобы сменить")
+    }
+
+    private func face(_ method: PaymentMethod) -> some View {
+        let isCard = method == .card
+        return HStack(spacing: 10) {
+            Image(systemName: isCard ? "creditcard.fill" : "banknote.fill")
+                .font(.title3)
+            Text(method.title)
+                .font(.headline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Spacer(minLength: 4)
+            Image(systemName: "arrow.left.arrow.right")
+                .font(.footnote.weight(.semibold))
+                .opacity(0.6)
+        }
+        .foregroundStyle(isCard ? Color.white : Self.cashInk)
+        .padding(.horizontal, 18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(isCard ? AnyShapeStyle(palette.accent) : AnyShapeStyle(Self.cashPaper), in: .rect(cornerRadius: 16))
+    }
+
+    /// То, что выглядывает из-за плашки при смене: две купюры или карта. Поднимается, мнётся и прячется обратно.
+    private var peek: some View {
+        let cash = selection == .cash
+        return ZStack {
+            if cash {
+                banknote.rotationEffect(.degrees(-9)).offset(x: -height * 0.5)
+                banknote.rotationEffect(.degrees(7)).offset(x: height * 0.45)
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(palette.accent.opacity(0.85))
+                    .overlay(alignment: .topTrailing) {
+                        Image(systemName: "wave.3.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(6)
                     }
-                    .font(.subheadline.weight(on ? .semibold : .regular))
-                    .foregroundStyle(on ? Color.primary : Color.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 36)
-                    .background {
-                        if on {
-                            Capsule()
-                                .fill(Color(.systemBackground))
-                                .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-                                .matchedGeometryEffect(id: "pill", in: pill)
-                        }
-                    }
-                    .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(on ? .isSelected : [])
+                    .frame(width: height * 1.5, height: height * 0.85)
             }
         }
-        .padding(3)
-        .background(Color(.tertiarySystemFill), in: .capsule)
-        .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.4, bounce: 0.3), value: selection)
-        .sensoryFeedback(.selection, trigger: selection)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Чем платили")
+        .phaseAnimator([0.0, 1.0, 0.7, 0.0], trigger: selection) { content, rise in
+            content
+                .offset(y: -height * 0.42 * rise)
+                .scaleEffect(x: 1, y: cash ? 1 - 0.14 * rise : 1 + 0.05 * rise)
+                .rotationEffect(.degrees(cash ? -4 * rise : 0))
+        } animation: { _ in
+            .spring(duration: 0.26, bounce: 0.45)
+        }
+    }
+
+    private var banknote: some View {
+        RoundedRectangle(cornerRadius: 4)
+            .fill(Self.banknoteGreen)
+            .overlay { Circle().strokeBorder(Self.cashInk.opacity(0.35), lineWidth: 1.5).padding(height * 0.14) }
+            .frame(width: height * 1.6, height: height * 0.75)
+    }
+
+    private static let cashPaper = Color(light: 0xE9E2C6, dark: 0x4A4632)
+    private static let cashInk = Color(light: 0x3D4A2E, dark: 0xEDE6C8)
+    private static let banknoteGreen = Color(light: 0xB9D7A6, dark: 0x5E7A4E)
+}
+
+/// День — листок календаря, который переворачивается: «Сегодня ⇄ Вчера». Рядом — календарь для любого дня.
+/// Если выбран другой день, листок показывает его, а нажатие возвращает «Сегодня».
+private struct DaySwitch: View {
+    let date: Date
+    let onPick: (Date) -> Void
+    let onCalendar: () -> Void
+    @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .body) private var height: CGFloat = 54
+
+    var body: some View {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        let isYesterday = calendar.isDateInYesterday(date)
+        let isToday = calendar.isDateInToday(date)
+        HStack(spacing: 10) {
+            Button { onPick(isToday ? yesterday : today) } label: {
+                FlipCard(angle: isYesterday ? 180 : 0, horizontalAxis: false,
+                         front: leaf(isToday ? today : date, title: isToday ? "Сегодня" : RuDate.dayTitle(date),
+                                     hint: isToday ? "нажмите — вчера" : "нажмите — сегодня"),
+                         back: leaf(yesterday, title: "Вчера", hint: "нажмите — сегодня"))
+                    .frame(height: height)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("День: \(RuDate.dayTitle(date))")
+            .accessibilityHint(isToday ? "Нажмите — вчера" : "Нажмите — сегодня")
+
+            Button(action: onCalendar) {
+                Image(systemName: "calendar")
+                    .font(.title3)
+                    .frame(width: height, height: height)
+                    .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Другой день")
+        }
+        .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.25), value: date)
+        .sensoryFeedback(.selection, trigger: date)
+    }
+
+    private func leaf(_ day: Date, title: String, hint: String) -> some View {
+        HStack(spacing: 12) {
+            VStack(spacing: 0) {
+                Text(RuDate.monthGenitive(day).prefix(3).uppercased())
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 1)
+                    .background(Color.red)
+                Text("\(Calendar.current.component(.day, from: day))")
+                    .font(.headline)
+                    .monospacedDigit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(width: height * 0.72, height: height * 0.78)
+            .background(Color(.systemBackground), in: .rect(cornerRadius: 8))
+            .clipShape(.rect(cornerRadius: 8))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text(hint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
     }
 }
