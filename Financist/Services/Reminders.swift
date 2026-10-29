@@ -27,6 +27,9 @@ enum Reminders {
         ("Минутка порядка ✨", "Сверь траты за сегодня — и можно отдыхать."),
     ]
 
+    /// Звон монеток (Financist/Sounds/coins.wav). Если файла вдруг нет, iPhone сыграет обычный звук.
+    static var coins: UNNotificationSound { UNNotificationSound(named: UNNotificationSoundName("coins.wav")) }
+
     static func requestPermission() async -> Bool {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
@@ -55,7 +58,7 @@ enum Reminders {
             let content = UNMutableNotificationContent()
             content.title = text.title
             content.body = text.body
-            content.sound = .default
+            content.sound = coins
             content.userInfo = ["action": addAction]
             let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
             center.add(UNNotificationRequest(identifier: "evening-\(offset)", content: content,
@@ -71,7 +74,7 @@ enum Reminders {
             let content = UNMutableNotificationContent()
             content.title = "Пора платить по счетам 🧾"
             content.body = "Сегодня регулярный платёж. Открой — запишем в одно касание."
-            content.sound = .default
+            content.sound = coins
             var time = DateComponents()
             time.day = day
             time.hour = 10
@@ -98,7 +101,7 @@ enum Reminders {
                 content.body = days == 1
                     ? "Завтра спишут деньги за подписку. Оставляем или отменяем?"
                     : "Через \(Fmt.count(days, "день", "дня", "дней")) спишут деньги за подписку. Оставляем или отменяем?"
-                content.sound = .default
+                content.sound = coins
                 content.userInfo = ["action": trialAction, "trial": trial.id.uuidString]
                 let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
                 try? await center.add(UNNotificationRequest(identifier: trialPrefix + trial.id.uuidString, content: content,

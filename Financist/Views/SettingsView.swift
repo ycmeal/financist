@@ -64,7 +64,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Помощники")
                 } footer: {
-                    Text("Вечером iPhone пошутит и спросит, всё ли записано. Не позже 21:00, без сумм в тексте.")
+                    Text("Вечером iPhone звякнет монетками, пошутит и спросит, всё ли записано. Не позже 21:00, без сумм в тексте.")
                 }
 
                 Section {
@@ -148,6 +148,7 @@ struct SettingsView: View {
                 Task { @MainActor in
                     if enable { guard await Reminders.requestPermission() else { return } }
                     store.eveningReminder = enable
+                    if enable { CoinSound.play() }
                 }
             }
         )

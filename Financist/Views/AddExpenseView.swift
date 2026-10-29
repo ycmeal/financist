@@ -215,15 +215,16 @@ struct AddExpenseView: View {
             mainButton("Далее", enabled: input.value != nil) { go(.details) }
                 .padding(.top, 12)
         }
-        // Клавиатура и сумма и так крупные; больше — уже не помещается на экран.
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        // Как плитки на «Тратах»: шрифт растёт до «очень крупного» и дальше нет — сумма, плашки и клавиши
+        // и так крупные, а иначе они разъезжаются и выталкивают «Далее» с экрана.
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
         .sensoryFeedback(.selection, trigger: input)
     }
 
     /// «1 250,5 ₺» — крупно; знак валюты помельче.
     private var amountDisplay: some View {
-        // Не крупнее, чем при самом большом обычном шрифте: дальше сумма не поместится над клавиатурой.
-        let size = min(amountSize, 76)
+        // Не крупнее, чем при шрифте «очень крупный» — как и всё на этом шаге (см. amountPage).
+        let size = min(amountSize, 68)
         return (Text(input.display)
             .foregroundStyle(input.isEmpty ? Color.secondary : Color.primary)
          + Text("\u{00A0}" + currency.symbol)
