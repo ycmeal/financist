@@ -400,11 +400,7 @@ struct AddExpenseView: View {
 
     /// Картой или наличными — рядом с суммой и днём. Обычно уже стоит как надо.
     private var paymentPicker: some View {
-        Picker("Чем платили", selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true })) {
-            ForEach(PaymentMethod.allCases) { Text($0.title).tag($0) }
-        }
-        .pickerStyle(.segmented)
-        .accessibilityLabel("Чем платили")
+        PaymentToggle(selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true }))
     }
 
     private var noteField: some View {
@@ -998,5 +994,50 @@ private struct CategoryChip: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// «Картой | Наличными»: подложка перетекает к выбранному с лёгкой пружинкой, его значок подпрыгивает.
+/// Так же она переезжает, когда способ подставился сам (знакомое место). С «Уменьшением движения» — просто смена.
+private struct PaymentToggle: View {
+    @Binding var selection: PaymentMethod
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var pill
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(PaymentMethod.allCases) { method in
+                let on = method == selection
+                Button {
+                    selection = method
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: method.symbol)
+                            .scaleEffect(on && !reduceMotion ? 1.18 : 1)
+                        Text(method.title)
+                    }
+                    .font(.subheadline.weight(on ? .semibold : .regular))
+                    .foregroundStyle(on ? Color.primary : Color.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .background {
+                        if on {
+                            Capsule()
+                                .fill(Color(.systemBackground))
+                                .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+                                .matchedGeometryEffect(id: "pill", in: pill)
+                        }
+                    }
+                    .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .background(Color(.tertiarySystemFill), in: .capsule)
+        .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.4, bounce: 0.3), value: selection)
+        .sensoryFeedback(.selection, trigger: selection)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Чем платили")
     }
 }
