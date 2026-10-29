@@ -9,6 +9,8 @@ struct ExpensesView: View {
     @State private var showingSubscriptions = false
     @State private var buildWarningHidden = false
     @State private var openedTrial: Trial?
+    /// Ввод траты «вырастает» из кнопки, правка — из строки траты (iOS 18).
+    @Namespace private var zoom
 
     private func groupedDays(_ expenses: [Expense]) -> [(day: Date, items: [Expense])] {
         let groups = Dictionary(grouping: expenses) { Calendar.current.startOfDay(for: $0.date) }
@@ -29,12 +31,13 @@ struct ExpensesView: View {
                     // Наверху — пиксельный город (фоном списка), поверх неба — приветствие.
                     Section {
                         CityGreeting(place: place)
+                            .dynamicTypeSize(...DynamicTypeSize.xLarge)
                             .frame(minHeight: greetingHeight(geo), alignment: .top)
                     }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 0, trailing: 20))
 
-                    Section { SummaryHeader() }
+                    Section { SummaryHeader(zoom: zoom) }
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
 
@@ -122,11 +125,11 @@ struct ExpensesView: View {
                 }
             }
             // Новая трата — на весь экран: сумма, потом «На что?». Правка — обычной формой.
-            .fullScreenCover(isPresented: $store.isAddingExpense) { AddExpenseView() }
-            .fullScreenCover(item: $repeating) { AddExpenseView(template: $0) }
+            .fullScreenCover(isPresented: $store.isAddingExpense) { AddExpenseView().zoomDestination("add", in: zoom) }
+            .fullScreenCover(item: $repeating) { AddExpenseView(template: $0).zoomDestination($0.id, in: zoom) }
             .sheet(isPresented: $isSearching) { ExpenseSearchView() }
             .sheet(isPresented: $showingSubscriptions) { SubscriptionsView() }
-            .sheet(item: $editing) { ExpenseFormView(expense: $0) }
+            .sheet(item: $editing) { ExpenseFormView(expense: $0).zoomDestination($0.id, in: zoom) }
             .sheet(item: $openedTrial) { TrialEditView(trial: $0) }
             // Нажали на напоминание о пробной подписке — сразу спрашиваем про неё.
             .onChange(of: store.trialToOpen, initial: true) {
@@ -152,6 +155,7 @@ struct ExpensesView: View {
     private func expenseButton(_ expense: Expense) -> some View {
         Button { editing = expense } label: { ExpenseRow(expense: expense) }
             .tint(Color.primary)
+            .zoomSource(expense.id, in: zoom)
             .swipeActions(edge: .leading) {
                 Button { repeating = expense } label: { Label("Повторить", systemImage: "arrow.clockwise") }
                     .tint(palette.accent)
@@ -206,6 +210,7 @@ private struct BuildExpiryNotice: View {
 /// Итоги дня и месяца и большая кнопка «Добавить трату».
 private struct SummaryHeader: View {
     @Environment(AppStore.self) private var store
+    let zoom: Namespace.ID
 
     var body: some View {
         let currency = store.displayCurrency
@@ -214,7 +219,8 @@ private struct SummaryHeader: View {
         let month = store.spentThisMonth(in: currency)
 
         VStack(alignment: .leading, spacing: 14) {
-            AdaptiveRow(spacing: 12) {
+            // Плитки всегда рядом: при крупном шрифте сумма уменьшается, а не ломает строку.
+            HStack(spacing: 12) {
                 TotalTile(title: "Сегодня", value: currency.format(today.rounded(scale: 2)))
                 TotalTile(title: RuDate.monthNominative(.now).capitalized, value: currency.format(month.rounded(scale: 2)))
             }
@@ -225,15 +231,19 @@ private struct SummaryHeader: View {
             }
 
             Button { store.isAddingExpense = true } label: {
-                Label("Добавить трату", systemImage: "plus.circle.fill")
+                // Простой «+» цвета текста — на цветной кнопке он виден всегда.
+                Label("Добавить трату", systemImage: "plus")
                     .font(.title3.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .zoomSource("add", in: zoom)
         }
         .padding(.horizontal, 4)
+        // Шрифт растёт вместе с настройками iPhone, но умеренно: иначе плитки и кнопка разъезжаются.
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 }
 
@@ -255,7 +265,7 @@ private struct TotalTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 14))
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
     }
 }
 
@@ -348,7 +358,8 @@ struct ExpenseRow: View {
 
     var body: some View {
         let category = store.category(for: expense.categoryID)
-        let display = store.displayCurrency
+        // Каждая трата — в двух валютах: вторая всегда доллары, а у трат в долларах — валюта итогов или ввода.
+        let second = [Currency.usd, store.displayCurrency, store.vault.inputCurrency].first { $0 != expense.currency }
         HStack(alignment: .top, spacing: 12) {
             CategoryIcon(category: category)
             AdaptiveRow(spacing: 8) {
@@ -363,8 +374,8 @@ struct ExpenseRow: View {
                     Text(expense.currency.format(expense.amount))
                         .fontWeight(.semibold)
                         .monospacedDigit()
-                    if expense.currency != display {
-                        Text("≈ " + display.format(expense.amount(in: display).rounded(scale: 2)))
+                    if let second {
+                        Text("≈ " + second.format(expense.amount(in: second).rounded(scale: second.fractionDigits)))
                             .font(.subheadline)
                             .monospacedDigit()
                             .foregroundStyle(.secondary)

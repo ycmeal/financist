@@ -36,7 +36,7 @@ struct LimitBar: View {
                 .foregroundStyle(progress.isOver ? Color.red : Color.secondary)
         }
         .padding(14)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 14))
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
         .animation(.snappy, value: progress)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)

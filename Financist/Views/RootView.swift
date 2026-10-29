@@ -108,6 +108,8 @@ struct RootView: View {
                 .tag(AppTab.settings)
         }
         .glassTabBar()
+        // Очень крупный шрифт ломает раскладку; самый крупный обычный размер iPhone ещё держит её.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     /// Запуск после того, как данные открыты: замок, отложенный ввод траты, курсы.

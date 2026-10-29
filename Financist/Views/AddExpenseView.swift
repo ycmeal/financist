@@ -37,7 +37,7 @@ struct AddExpenseView: View {
     @State private var suggestions: [Suggestion] = []
     @State private var templates: [Expense] = []
     @State private var orderedCategories: [ExpenseCategory] = []
-    @State private var showAllCategories = false
+    @State private var showingAllCategories = false
     @State private var isSetUp = false
     @State private var pickingDay = false
     @State private var isScanning = false
@@ -87,7 +87,7 @@ struct AddExpenseView: View {
                 }
             }
             .offset(x: -CGFloat(step.rawValue) * geo.size.width)
-            .animation(reduceMotion ? nil : .snappy(duration: 0.35), value: step)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: step)
         }
         // Шрифт растёт вместе с настройками iPhone, но до разумного предела: кнопки и плитки должны помещаться.
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
@@ -129,6 +129,31 @@ struct AddExpenseView: View {
             }
         }
         .sheet(isPresented: $showCancelHelp) { CancelSubscriptionHelpView() }
+        .sheet(isPresented: $showingAllCategories) {
+            NavigationStack {
+                ScrollView {
+                    CategoryGrid(categories: orderedCategories, selection: categoryID) { category in
+                        pick(category)
+                        showingAllCategories = false
+                    } onAdd: {
+                        showingAllCategories = false
+                        // Новый лист — когда этот уже закрылся.
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                            newCategory = ExpenseCategory(name: "", symbol: "star.fill", colorName: "orange")
+                        }
+                    }
+                    .padding()
+                }
+                .navigationTitle("Категория")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Отмена") { showingAllCategories = false }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
         .fullScreenCover(isPresented: $isScanning) {
             CameraPicker { image in
                 isScanning = false
@@ -173,6 +198,10 @@ struct AddExpenseView: View {
             }
             dayChips
                 .padding(.top, 16)
+            paymentPicker
+                .frame(maxWidth: 300)
+                .padding(.horizontal)
+                .padding(.top, 10)
             Spacer(minLength: 12)
 
             if !templates.isEmpty {
@@ -206,7 +235,7 @@ struct AddExpenseView: View {
             .animation(.snappy(duration: 0.2), value: input)
             .padding(.horizontal, 12)
             .padding(.vertical, 2)
-            .background(amountPrefilled ? palette.accent.opacity(0.2) : Color.clear, in: .rect(cornerRadius: 14))
+            .background(amountPrefilled ? palette.accent.opacity(0.2) : Color.clear, in: .rect(cornerRadius: 16))
             .padding(.horizontal)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Сумма")
@@ -327,7 +356,7 @@ struct AddExpenseView: View {
             .lineLimit(1)
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
-            .background(.ultraThinMaterial, in: .capsule)
+            .background(Color(.secondarySystemBackground), in: .capsule)
         }
         .buttonStyle(.plain)
         .accessibilityHint(input.isEmpty ? "Заполнить, как в прошлый раз" : "Подставить место и категорию")
@@ -351,22 +380,16 @@ struct AddExpenseView: View {
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 4)
                     }
-                    if let categoryID, autoPicked {
-                        pickedHint(store.category(for: categoryID))
-                    }
+                    categoryRow
                     if noteFocused {
                         suggestionList
                     }
-                    categoryCard
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 12)
             }
             .scrollDismissesKeyboard(.interactively)
             .scrollBounceBehavior(.basedOnSize)
-            paymentPicker
-                .padding(.horizontal)
-                .padding(.top, 8)
             mainButton(categoryID == nil ? "Выберите категорию" : subscriptionSelected ? "Далее" : "Сохранить",
                        enabled: categoryID != nil) {
                 if subscriptionSelected { go(.subscription) } else { save() }
@@ -375,7 +398,7 @@ struct AddExpenseView: View {
         }
     }
 
-    /// Картой или наличными — одним касанием над кнопкой «Сохранить». Обычно уже стоит как надо.
+    /// Картой или наличными — рядом с суммой и днём. Обычно уже стоит как надо.
     private var paymentPicker: some View {
         Picker("Чем платили", selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true })) {
             ForEach(PaymentMethod.allCases) { Text($0.title).tag($0) }
@@ -406,22 +429,7 @@ struct AddExpenseView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .background(.regularMaterial, in: .rect(cornerRadius: 16))
-    }
-
-    private func pickedHint(_ category: ExpenseCategory) -> some View {
-        HStack(spacing: 12) {
-            CategoryIcon(category: category)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(category.name)
-                    .font(.headline)
-                Text("Категория подобрана сама — можно сменить ниже")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 4)
-        .accessibilityElement(children: .combine)
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
     }
 
     /// Пока пусто — частые места; по мере ввода — похожие. Нажали — подставилась и категория.
@@ -455,42 +463,59 @@ struct AddExpenseView: View {
                     }
                 }
             }
-            .background(.regularMaterial, in: .rect(cornerRadius: 16))
+            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
         }
     }
 
-    private var categoryCard: some View {
+    /// Категории одной строкой прямо под полем — без прокрутки вниз даже при крупном шрифте.
+    /// Выбранная — первой и закрашена; остальные — по частоте; все — по «Ещё».
+    private var categoryRow: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Категория")
-                .font(.headline)
-                .padding(.horizontal, 4)
-            CategoryGrid(categories: visibleCategories, selection: categoryID) { pick($0) } onAdd: {
-                newCategory = ExpenseCategory(name: "", symbol: "star.fill", colorName: "orange")
-            }
-            if orderedCategories.count > 8 {
-                Button(showAllCategories ? "Свернуть" : "Все категории (\(orderedCategories.count))") {
-                    withAnimation(.snappy) { showAllCategories.toggle() }
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(chipCategories) { category in
+                            CategoryChip(category: category, selected: category.id == categoryID) { pick(category) }
+                                .id(category.id)
+                        }
+                        Button { showingAllCategories = true } label: {
+                            Label("Ещё", systemImage: "ellipsis")
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 14)
+                                .background(Color(.secondarySystemBackground), in: .capsule)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Все категории")
+                    }
+                    .padding(.horizontal)
                 }
-                .font(.subheadline)
-                .padding(.horizontal, 4)
+                .onChange(of: categoryID) { _, id in
+                    guard let id else { return }
+                    withAnimation(.smooth(duration: 0.3)) { proxy.scrollTo(id, anchor: .leading) }
+                }
+            }
+            .padding(.horizontal, -16)
+            if autoPicked && categoryID != nil {
+                Text("Категория подобрана сама")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
             }
         }
-        .padding(12)
-        .background(.regularMaterial, in: .rect(cornerRadius: 20))
     }
 
-    /// Частые категории; выбранная и «Подписка» видны всегда.
-    private var visibleCategories: [ExpenseCategory] {
-        let all = orderedCategories
-        var visible = showAllCategories ? all : Array(all.prefix(8))
-        if let categoryID, !visible.contains(where: { $0.id == categoryID }),
-           let selected = all.first(where: { $0.id == categoryID }) {
-            visible.insert(selected, at: 0)
+    /// Выбранная категория, затем частые; «Подписка» видна всегда.
+    private var chipCategories: [ExpenseCategory] {
+        var list = Array(orderedCategories.prefix(8))
+        if let categoryID, let selected = orderedCategories.first(where: { $0.id == categoryID }) {
+            list.removeAll { $0.id == categoryID }
+            list.insert(selected, at: 0)
         }
-        if !visible.contains(where: \.isSubscription), let subscription = all.first(where: \.isSubscription) {
-            visible.append(subscription)
+        if !list.contains(where: \.isSubscription), let subscription = orderedCategories.first(where: \.isSubscription) {
+            list.append(subscription)
         }
-        return visible
+        return list
     }
 
     // MARK: 3. Подписка
@@ -548,9 +573,9 @@ struct AddExpenseView: View {
                     .foregroundStyle(selected ? palette.accent : Color.secondary)
             }
             .padding(16)
-            .background(.regularMaterial, in: .rect(cornerRadius: 18))
+            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
             .overlay {
-                RoundedRectangle(cornerRadius: 18)
+                RoundedRectangle(cornerRadius: 16)
                     .strokeBorder(selected ? palette.accent : Color.clear, lineWidth: 2)
             }
             .contentShape(.rect)
@@ -587,7 +612,7 @@ struct AddExpenseView: View {
             .padding(.bottom, 12)
         }
         .padding(.horizontal, 16)
-        .background(.regularMaterial, in: .rect(cornerRadius: 18))
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
     }
 
     // MARK: Общее
@@ -605,7 +630,7 @@ struct AddExpenseView: View {
                     .lineLimit(1)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 14)
-                    .background(.ultraThinMaterial, in: .capsule)
+                    .background(Color(.secondarySystemBackground), in: .capsule)
             }
             .buttonStyle(.plain)
             .accessibilityHint("Изменить сумму или день")
@@ -797,7 +822,7 @@ private struct KeyStyle: ButtonStyle {
             .font(.title.weight(.medium))
             .fontDesign(.rounded)
             .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 64)
-            .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
+            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
             .contentShape(.rect)
             .opacity(isEnabled ? 1 : 0.35)
             .scaleEffect(configuration.isPressed ? 0.94 : 1)
@@ -824,7 +849,7 @@ private struct Chip: View {
             .padding(.horizontal, 14)
             .foregroundStyle(selected ? Color(.systemBackground) : Color.primary)
             .background {
-                Capsule().fill(selected ? AnyShapeStyle(Color.primary) : AnyShapeStyle(.ultraThinMaterial))
+                Capsule().fill(selected ? AnyShapeStyle(Color.primary) : AnyShapeStyle(Color(.secondarySystemBackground)))
             }
         }
         .buttonStyle(.plain)
@@ -947,5 +972,31 @@ private extension Currency {
 
     private func rgb(_ hex: UInt32) -> Color {
         Color(uiColor: UIColor(hex: hex))
+    }
+}
+
+/// Категория капсулой: значок её цвета и название; выбранная залита своим цветом.
+private struct CategoryChip: View {
+    let category: ExpenseCategory
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: category.symbol)
+                    .foregroundStyle(selected ? Color.white : category.color)
+                Text(category.name)
+                    .lineLimit(1)
+            }
+            .font(.subheadline.weight(selected ? .semibold : .regular))
+            .foregroundStyle(selected ? Color.white : Color.primary)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
+            .background(selected ? AnyShapeStyle(category.color) : AnyShapeStyle(Color(.secondarySystemBackground)), in: .capsule)
+            .animation(.smooth(duration: 0.2), value: selected)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

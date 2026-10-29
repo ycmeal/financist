@@ -86,3 +86,33 @@ extension View {
         #endif
     }
 }
+
+extension View {
+    /// Откуда «вырастает» экран (iOS 18): кнопка или строка. На iOS 17 — обычное появление.
+    @ViewBuilder
+    func zoomSource(_ id: some Hashable, in namespace: Namespace.ID) -> some View {
+        #if compiler(>=6.0)
+        if #available(iOS 18.0, *) {
+            self.matchedTransitionSource(id: id, in: namespace)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
+    /// Экран, который «вырастает» из `zoomSource` с тем же id и сворачивается обратно.
+    @ViewBuilder
+    func zoomDestination(_ id: some Hashable, in namespace: Namespace.ID) -> some View {
+        #if compiler(>=6.0)
+        if #available(iOS 18.0, *) {
+            self.navigationTransition(.zoom(sourceID: id, in: namespace))
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+}
