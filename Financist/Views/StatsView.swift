@@ -106,6 +106,20 @@ struct StatsContent: View {
                     }
                 }
 
+                if !report.byPayment.isEmpty {
+                    Section("Чем платили") {
+                        ForEach(report.byPayment) { item in
+                            ShareRow(icon: Image(systemName: item.method.symbol)
+                                         .font(.title3)
+                                         .foregroundStyle(palette.accent)
+                                         .accessibilityHidden(true),
+                                     title: item.method.title,
+                                     value: report.currency.format(item.total.rounded(scale: 0)),
+                                     share: item.share, color: palette.accent)
+                        }
+                    }
+                }
+
                 if !report.topPlaces.isEmpty {
                     Section("Частые места") {
                         ForEach(report.topPlaces) { place in

@@ -30,6 +30,18 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink { LimitView() } label: {
+                        LabeledContent {
+                            Text(store.monthlyLimit.map { $0.currency.format($0.amount) } ?? "Нет")
+                        } label: {
+                            SettingsLabel("Лимит на месяц", symbol: "gauge.with.needle.fill", color: "red")
+                        }
+                    }
+                } footer: {
+                    Text("Сколько можно потратить за месяц. На «Тратах» появится полоска: сколько уже потрачено и сколько осталось.")
+                }
+
+                Section {
                     NavigationLink { CategoriesView() } label: {
                         SettingsLabel("Категории", symbol: "square.grid.2x2.fill", color: "orange")
                     }

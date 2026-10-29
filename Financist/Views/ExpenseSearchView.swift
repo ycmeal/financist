@@ -21,7 +21,7 @@ struct ExpenseSearchView: View {
             .filter { expense in
                 let category = store.category(for: expense.categoryID).name
                 return search.matches(note: expense.note, noteKey: keys[expense.note],
-                                      category: category, categoryKey: keys[category])
+                                      category: category, categoryKey: keys[category], payment: expense.payment)
             }
             .sorted { $0.date > $1.date }
     }

@@ -14,6 +14,8 @@ struct Expense: Identifiable, Codable, Hashable {
     var recurringID: UUID?
     /// Курс пока примерный: курсы этого дня ещё не загружены. Как только загрузятся — пересчитается сам.
     var ratesPending = false
+    /// Картой или наличными. У старых трат, регулярных платежей и подписок не указано.
+    var payment: PaymentMethod?
 
     func rate(_ currency: Currency) -> Decimal {
         if currency == .base { return 1 }
@@ -40,6 +42,75 @@ extension Expense {
         rates = try c.decodeRates(forKey: .rates) ?? [:]
         recurringID = try c.decodeIfPresent(UUID.self, forKey: .recurringID)
         ratesPending = try c.decodeIfPresent(Bool.self, forKey: .ratesPending) ?? false
+        // Незнакомый способ оплаты (из будущей версии) — просто «не указано», трата читается.
+        payment = (try? c.decodeIfPresent(String.self, forKey: .payment)).flatMap { $0 }.flatMap(PaymentMethod.init(rawValue:))
+    }
+}
+
+/// Чем заплатили за трату.
+enum PaymentMethod: String, Codable, CaseIterable, Identifiable, Hashable {
+    case card, cash
+
+    var id: Self { self }
+    /// «Картой», «Наличными» — на кнопках выбора.
+    var title: String { self == .card ? "Картой" : "Наличными" }
+    /// «картой», «наличными» — в строке траты.
+    var phrase: String { self == .card ? "картой" : "наличными" }
+    var symbol: String { self == .card ? "creditcard" : "banknote" }
+}
+
+/// Лимит трат на месяц. Хранится в своей валюте: траты в других валютах пересчитываются по их курсам.
+struct MonthlyLimit: Codable, Hashable {
+    var amount: Decimal
+    var currency: Currency
+}
+
+/// Как идут дела с лимитом месяца: сколько потрачено, сколько осталось и сколько можно в день.
+struct LimitProgress: Equatable {
+    let limit: MonthlyLimit
+    /// Потрачено за месяц в валюте лимита.
+    let spent: Decimal
+    /// Сколько дней месяца осталось, считая сегодняшний.
+    let daysLeft: Int
+
+    init(limit: MonthlyLimit, spent: Decimal, now: Date = .now, calendar: Calendar = .current) {
+        self.limit = limit
+        self.spent = spent
+        let days = calendar.range(of: .day, in: .month, for: now)?.count ?? 30
+        daysLeft = max(1, days - calendar.component(.day, from: now) + 1)
+    }
+
+    /// Доля лимита: 0,81 — потрачено 81%. Больше 1 — лимит превышен.
+    var share: Double { limit.amount > 0 ? (spent / limit.amount).doubleValue : 0 }
+    var remaining: Decimal { limit.amount - spent }
+    var isOver: Bool { spent > limit.amount }
+    /// Осталось меньше 15% — пора притормозить.
+    var isNear: Bool { !isOver && share >= 0.85 }
+    /// Сколько можно тратить в день до конца месяца, чтобы уложиться.
+    var perDay: Decimal? { isOver ? nil : remaining / Decimal(daysLeft) }
+
+    /// «973 из 1 200 $».
+    var spentText: String {
+        "\(Fmt.number(spent.rounded(scale: 0), minFraction: 0, maxFraction: 0)) из \(limit.currency.format(limit.amount))"
+    }
+
+    /// «Осталось 227 $ · примерно 15 $ в день», «Лимит превышен на 50 $».
+    var statusText: String {
+        let currency = limit.currency
+        if isOver { return "Лимит превышен на \(currency.format((spent - limit.amount).rounded(scale: 0)))" }
+        let left = "Осталось \(currency.format(remaining.rounded(scale: 0)))"
+        guard let perDay, daysLeft > 1 else { return left }
+        return "\(left) · примерно \(currency.format(perDay.rounded(scale: 0))) в день"
+    }
+}
+
+extension Sequence where Element == Expense {
+    /// Сколько заплачено картой и сколько наличными (траты без отметки не считаются).
+    func totalsByPayment(in currency: Currency) -> [(method: PaymentMethod, total: Decimal)] {
+        PaymentMethod.allCases.compactMap { method in
+            let items = filter { $0.payment == method }
+            return items.isEmpty ? nil : (method, items.total(in: currency))
+        }
     }
 }
 
@@ -131,8 +202,8 @@ struct RecurringPayment: Identifiable, Codable, Hashable {
 struct Vault: Codable {
     /// Версия формата, которую понимает эта сборка.
     /// 1 — первая; 2 — архив курсов по дням и отметка «курс примерный» у трат;
-    /// 3 — пробные подписки и особая категория «Подписка».
-    static let currentSchema = 3
+    /// 3 — пробные подписки и особая категория «Подписка»; 4 — лимит на месяц и «картой / наличными» у трат.
+    static let currentSchema = 4
 
     var schemaVersion = Vault.currentSchema
     var expenses: [Expense] = []
@@ -161,6 +232,10 @@ struct Vault: Codable {
     var palette: Palette = .sage
     /// Когда последний раз сохраняли файл переноса — чтобы мягко напомнить.
     var lastTransferFileAt: Date?
+    /// Лимит трат на месяц; nil — без лимита.
+    var monthlyLimit: MonthlyLimit?
+    /// Чем платили в последний раз — подставляется в новую трату.
+    var lastPayment: PaymentMethod = .card
 
     init() {}
 
@@ -191,5 +266,9 @@ struct Vault: Codable {
         palette = (try? c.decodeIfPresent(Palette.self, forKey: .palette)) ?? .sage
         lastTransferFileAt = try c.decodeIfPresent(Date.self, forKey: .lastTransferFileAt)
         eveningMinutes = try min(21 * 60, c.decodeIfPresent(Int.self, forKey: .eveningMinutes) ?? 20 * 60 + 30)
+        // Лимит и способ оплаты — настройки: если не читаются, просто без них.
+        monthlyLimit = (try? c.decodeIfPresent(MonthlyLimit.self, forKey: .monthlyLimit)).flatMap { $0 }
+            .flatMap { $0.amount > 0 ? $0 : nil }
+        lastPayment = (try? c.decodeIfPresent(PaymentMethod.self, forKey: .lastPayment)).flatMap { $0 } ?? .card
     }
 }

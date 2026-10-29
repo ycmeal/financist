@@ -29,6 +29,9 @@ struct AddExpenseView: View {
     @State private var autoPicked = false
     /// Пробная подписка: спишут позже, iPhone напомнит заранее.
     @State private var isTrial: Bool
+    /// Картой или наличными: как платили в прошлый раз, а в знакомом месте — как платили там.
+    @State private var payment: PaymentMethod
+    @State private var paymentTouched = false
     @State private var chargeDate = Calendar.current.date(byAdding: .day, value: 7, to: Calendar.current.startOfDay(for: .now)) ?? .now
     @State private var remindDays = Trial.defaultReminder
     @State private var suggestions: [Suggestion] = []
@@ -60,6 +63,7 @@ struct AddExpenseView: View {
         _categoryTouched = State(initialValue: template != nil)
         // Повтор и запись на день из календаря — это уже оплаченное, не пробный период.
         _isTrial = State(initialValue: template == nil && presetDate == nil)
+        _payment = State(initialValue: template?.payment ?? .card)
     }
 
     private var subscriptionSelected: Bool {
@@ -100,10 +104,13 @@ struct AddExpenseView: View {
             }
         }
         .onChange(of: note) { _, newValue in
+            let known = SuggestionEngine.exact(newValue, in: suggestions)
+            // В знакомом месте платим так же, как в прошлый раз, — если способ оплаты не меняли сами.
+            if !paymentTouched, let paid = known?.payment { payment = paid }
             // Знакомое место (как его ни напиши) — сразу его категория, если её не выбирали вручную.
             // Незнакомое — по словам в названии: «Kasap Ali» — «Продукты», «Nur Eczanesi» — «Здоровье».
             guard !categoryTouched else { return }
-            if let known = SuggestionEngine.exact(newValue, in: suggestions) {
+            if let known {
                 pickAutomatically(known.categoryID)
             } else if let guessed = SuggestionEngine.guessCategory(newValue, in: orderedCategories) {
                 pickAutomatically(guessed.id)
@@ -337,7 +344,8 @@ struct AddExpenseView: View {
                         .font(.largeTitle.bold())
                         .accessibilityAddTraits(.isHeader)
                     noteField
-                    if !trimmedNote.isEmpty && savedNote != trimmedNote {
+                    // «Запишу как «Migros»» — только если правда по-другому, а не одной заглавной буквой.
+                    if !trimmedNote.isEmpty && SuggestionEngine.normalize(savedNote) != SuggestionEngine.normalize(trimmedNote) {
                         Text("Запишу как «\(savedNote)»")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -356,12 +364,24 @@ struct AddExpenseView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .scrollBounceBehavior(.basedOnSize)
+            paymentPicker
+                .padding(.horizontal)
+                .padding(.top, 8)
             mainButton(categoryID == nil ? "Выберите категорию" : subscriptionSelected ? "Далее" : "Сохранить",
                        enabled: categoryID != nil) {
                 if subscriptionSelected { go(.subscription) } else { save() }
             }
             .padding(.top, 8)
         }
+    }
+
+    /// Картой или наличными — одним касанием над кнопкой «Сохранить». Обычно уже стоит как надо.
+    private var paymentPicker: some View {
+        Picker("Чем платили", selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true })) {
+            ForEach(PaymentMethod.allCases) { Text($0.title).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityLabel("Чем платили")
     }
 
     private var noteField: some View {
@@ -618,6 +638,7 @@ struct AddExpenseView: View {
         suggestions = store.suggestions
         templates = store.recentTemplates
         orderedCategories = store.categoriesByUsage
+        if template?.payment == nil { payment = store.lastPayment }
         if template == nil {
             // Валюта прошлой траты — без перелива подсветки при открытии.
             var instant = Transaction()
@@ -668,6 +689,7 @@ struct AddExpenseView: View {
         note = expense.note
         categoryTouched = true
         pickAutomatically(expense.categoryID)
+        if !paymentTouched, let paid = expense.payment { payment = paid }
         go(.details)
     }
 
@@ -729,7 +751,8 @@ struct AddExpenseView: View {
                 if await Reminders.requestPermission() { store.refreshReminders() }
             }
         } else {
-            store.addExpense(amount: amount, currency: currency, categoryID: categoryID, note: savedNote, date: date)
+            store.addExpense(amount: amount, currency: currency, categoryID: categoryID, note: savedNote, date: date,
+                             payment: payment)
         }
         dismiss()
     }

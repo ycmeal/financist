@@ -59,6 +59,8 @@ extension Vault {
             copy.categoryID = categoryMap[payment.categoryID] ?? payment.categoryID
             recurring.append(copy)
         }
+        // Лимит с другого телефона берём, только если здесь его нет.
+        if monthlyLimit == nil { monthlyLimit = incoming.monthlyLimit }
         // Пробные подписки: новые добавляем; решение, принятое на другом телефоне, переносим сюда,
         // а принятое здесь не отменяется.
         for trial in incoming.trials {

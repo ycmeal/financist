@@ -219,6 +219,11 @@ private struct SummaryHeader: View {
                 TotalTile(title: RuDate.monthNominative(.now).capitalized, value: currency.format(month.rounded(scale: 2)))
             }
 
+            // Лимит на месяц (Настройки → Лимит на месяц): сколько потрачено и сколько осталось.
+            if let progress = store.limitProgress() {
+                LimitBar(progress: progress)
+            }
+
             Button { store.isAddingExpense = true } label: {
                 Label("Добавить трату", systemImage: "plus.circle.fill")
                     .font(.title3.weight(.semibold))
@@ -372,7 +377,8 @@ struct ExpenseRow: View {
 
     private func subtitle(_ category: ExpenseCategory) -> String {
         let when = showDate ? RuDate.dayTitle(expense.date) : RuDate.time(expense.date)
-        return expense.note.isEmpty ? when : "\(category.name) · \(when)"
+        let paid = expense.payment.map { " · \($0.phrase)" } ?? ""
+        return (expense.note.isEmpty ? when : "\(category.name) · \(when)") + paid
     }
 }
 

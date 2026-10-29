@@ -7,6 +7,8 @@ struct Suggestion: Identifiable, Hashable {
     let currency: Currency?
     let lastAmount: Decimal?
     let count: Int
+    /// Чем платили здесь в последний раз (только у своих мест из истории).
+    let payment: PaymentMethod?
     /// Страны (по валюте), где это место есть. Пусто — подходит везде или это своё место из истории.
     let places: Set<Currency>
     /// Ключи для поиска: само название и другие написания («Карфур» для Carrefour).
@@ -15,12 +17,13 @@ struct Suggestion: Identifiable, Hashable {
     var id: String { keys[0] }
 
     init(note: String, categoryID: UUID, currency: Currency? = nil, lastAmount: Decimal? = nil, count: Int = 0,
-         places: Set<Currency> = [], aliases: [String] = []) {
+         payment: PaymentMethod? = nil, places: Set<Currency> = [], aliases: [String] = []) {
         self.note = note
         self.categoryID = categoryID
         self.currency = currency
         self.lastAmount = lastAmount
         self.count = count
+        self.payment = payment
         self.places = places
         var keys = [SuggestionEngine.key(note)]
         for alias in aliases {
@@ -135,7 +138,8 @@ enum SuggestionEngine {
             let seed = seedByKey[groupKey]
             return Suggestion(note: seed?.note ?? latest.note.trimmingCharacters(in: .whitespacesAndNewlines),
                               categoryID: categoryID, currency: latest.currency, lastAmount: latest.amount,
-                              count: items.count, aliases: seed?.aliases ?? [])
+                              count: items.count, payment: sorted.first { $0.payment != nil }?.payment,
+                              aliases: seed?.aliases ?? [])
         }
         result.sort { $0.count != $1.count ? $0.count > $1.count : $0.note < $1.note }
 
@@ -626,9 +630,11 @@ struct SearchQuery {
     var isEmpty: Bool { text.isEmpty }
 
     /// Ключи (`SuggestionEngine.key`) названия и категории считаются заранее — один раз на название.
-    func matches(note: String, noteKey: String, category: String, categoryKey: String) -> Bool {
+    /// «наличными», «нал», «картой» находят траты с этим способом оплаты.
+    func matches(note: String, noteKey: String, category: String, categoryKey: String, payment: PaymentMethod? = nil) -> Bool {
         guard !text.isEmpty else { return false }
         if note.localizedCaseInsensitiveContains(text) || category.localizedCaseInsensitiveContains(text) { return true }
+        if text.count >= 3, let payment, payment.title.localizedCaseInsensitiveContains(text) { return true }
         guard !sound.isEmpty else { return false }
         if noteKey.contains(sound) || categoryKey.contains(sound) { return true }
         let words = " \(noteKey) "

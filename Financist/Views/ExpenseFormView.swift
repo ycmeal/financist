@@ -18,6 +18,8 @@ struct ExpenseFormView: View {
     @State private var categoryID: UUID?
     @State private var date = Date.now
     @State private var pickingOtherDay = false
+    /// Картой или наличными; у старых трат — не указано.
+    @State private var payment: PaymentMethod?
     @State private var showAllCategories = false
     @State private var newCategory: ExpenseCategory?
     @State private var isSetUp = false
@@ -64,7 +66,7 @@ struct ExpenseFormView: View {
         }
         return Expense(id: original.id, date: date, amount: amount, currency: currency,
                        categoryID: categoryID, note: SuggestionEngine.canonical(note, in: suggestions),
-                       rates: rates, recurringID: original.recurringID, ratesPending: pending)
+                       rates: rates, recurringID: original.recurringID, ratesPending: pending, payment: payment)
     }
 
     private var matches: [Suggestion] {
@@ -79,6 +81,7 @@ struct ExpenseFormView: View {
                 categorySection
                 noteSection
                 whenSection
+                paymentSection
                 if let draft {
                     conversionSection(draft)
                 }
@@ -348,6 +351,25 @@ struct ExpenseFormView: View {
         )
     }
 
+    // MARK: Оплата
+
+    private var paymentSection: some View {
+        Section {
+            Picker("Чем платили", selection: $payment) {
+                ForEach(PaymentMethod.allCases) { Text($0.title).tag(Optional($0)) }
+            }
+            .pickerStyle(.segmented)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+        } header: {
+            Text("Чем платили")
+        } footer: {
+            if payment == nil {
+                Text("Не указано — трата записана раньше, чем появился этот выбор.")
+            }
+        }
+    }
+
     // MARK: Пересчёт
 
     private func conversionSection(_ expense: Expense) -> some View {
@@ -380,6 +402,7 @@ struct ExpenseFormView: View {
         note = original.note
         categoryID = original.categoryID
         date = original.date
+        payment = original.payment
     }
 
     private func save() {

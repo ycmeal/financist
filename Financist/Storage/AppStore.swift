@@ -299,8 +299,9 @@ final class AppStore {
             vault.expenses[index] = expense
         } else {
             vault.expenses.append(expense)
-            // Запоминаем выбор валюты для следующей траты.
+            // Запоминаем выбор валюты и способа оплаты для следующей траты.
             vault.inputCurrency = expense.currency
+            if let payment = expense.payment { vault.lastPayment = payment }
             vault.recentCurrencies.removeAll { $0 == expense.currency }
             vault.recentCurrencies.insert(expense.currency, at: 0)
             vault.recentCurrencies = Array(vault.recentCurrencies.prefix(4))
@@ -311,11 +312,12 @@ final class AppStore {
     /// Новая трата из ввода: с курсами своего дня. Если их ещё нет, трата помечается «уточнится»
     /// и пересчитается сама, когда курсы загрузятся.
     @discardableResult
-    func addExpense(amount: Decimal, currency: Currency, categoryID: UUID, note: String, date: Date) -> Expense {
+    func addExpense(amount: Decimal, currency: Currency, categoryID: UUID, note: String, date: Date,
+                    payment: PaymentMethod? = nil) -> Expense {
         let day = ratesForDay(date, currency: currency)
         let expense = Expense(date: date, amount: amount, currency: currency, categoryID: categoryID,
                               note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-                              rates: day.rates, ratesPending: !day.exact)
+                              rates: day.rates, ratesPending: !day.exact, payment: payment)
         upsert(expense)
         return expense
     }
@@ -458,11 +460,31 @@ final class AppStore {
     }
 
     /// Сколько потрачено в этом месяце в валюте бюджета.
-    func spentThisMonth(in currency: Currency) -> Decimal {
+    func spentThisMonth(in currency: Currency, now: Date = .now) -> Decimal {
         vault.expenses
-            .filter { Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }
+            .filter { Calendar.current.isDate($0.date, equalTo: now, toGranularity: .month) }
             .total(in: currency)
     }
+
+    // MARK: Лимит на месяц
+
+    /// Лимит трат на месяц; nil — без лимита. Ноль и меньше — тоже без лимита.
+    var monthlyLimit: MonthlyLimit? {
+        get { vault.monthlyLimit }
+        set {
+            vault.monthlyLimit = newValue.flatMap { $0.amount > 0 ? $0 : nil }
+            persist()
+        }
+    }
+
+    /// Как идут дела с лимитом в этом месяце; nil — лимит не задан.
+    func limitProgress(now: Date = .now) -> LimitProgress? {
+        guard let limit = vault.monthlyLimit else { return nil }
+        return LimitProgress(limit: limit, spent: spentThisMonth(in: limit.currency, now: now), now: now)
+    }
+
+    /// Чем платили в последний раз — так и предлагаем в новой трате.
+    var lastPayment: PaymentMethod { vault.lastPayment }
 
     // MARK: Регулярные платежи
 
@@ -843,7 +865,7 @@ final class AppStore {
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
 
-        var lines = ["Дата;Сумма;Валюта;Категория;Заметка;Сумма в USD;Курс за 1 USD"]
+        var lines = ["Дата;Сумма;Валюта;Категория;Заметка;Сумма в USD;Курс за 1 USD;Оплата"]
         for e in vault.expenses.sorted(by: { $0.date < $1.date }) {
             lines.append([
                 dateFormatter.string(from: e.date),
@@ -853,6 +875,7 @@ final class AppStore {
                 esc(e.note),
                 num(e.amountUSD.rounded(scale: 4)),
                 num(e.rate(e.currency)),
+                e.payment?.phrase ?? "",
             ].joined(separator: ";"))
         }
         // BOM, чтобы Excel открыл кириллицу правильно.

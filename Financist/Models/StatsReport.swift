@@ -44,6 +44,14 @@ struct CurrencyTotal: Identifiable {
     var id: Currency { currency }
 }
 
+/// Сколько заплачено картой и сколько наличными (доля — среди трат, где это отмечено).
+struct PaymentShare: Identifiable {
+    let method: PaymentMethod
+    let total: Decimal
+    let share: Double
+    var id: PaymentMethod { method }
+}
+
 struct PlaceTotal: Identifiable {
     let note: String
     let count: Int
@@ -72,6 +80,7 @@ struct StatsReport {
     let weekdays: [WeekdayTotal]
     let byCurrency: [CurrencyTotal]
     let topPlaces: [PlaceTotal]
+    let byPayment: [PaymentShare]
     let insights: [Insight]
     let trend: Insight?
 
@@ -123,6 +132,11 @@ struct StatsReport {
             .sorted { $0.total > $1.total }
 
         // «мигрос» и «Migros» — одно место.
+        let paid = items.totalsByPayment(in: currency)
+        let paidSum = paid.reduce(Decimal(0)) { $0 + $1.total }
+        byPayment = paid.map { PaymentShare(method: $0.method, total: $0.total,
+                                            share: paidSum > 0 ? ($0.total / paidSum).doubleValue : 0) }
+
         topPlaces = Dictionary(grouping: items.filter { !SuggestionEngine.key($0.note).isEmpty }) { SuggestionEngine.key($0.note) }
             .values
             .map { group in
