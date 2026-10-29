@@ -198,18 +198,20 @@ struct AddExpenseView: View {
             }
             Spacer(minLength: 12)
 
-            // Снизу вверх, ближе к пальцу — то, что меняют чаще: день, под ним клавиши; выше — чем платили и недавние.
-            if !templates.isEmpty {
-                recentStrip
-                    .padding(.bottom, 12)
-                    .transition(.opacity)
+            // Недавние и две половинки — «чем платили» и день — одной плотной группой над клавишами,
+            // чтобы сумме наверху было просторно.
+            VStack(spacing: 8) {
+                if !templates.isEmpty {
+                    recentStrip
+                        .transition(.opacity)
+                }
+                HStack(spacing: 8) {
+                    PaymentSwitch(selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true }))
+                    DaySwitch(date: date, onPick: { date = Self.keepingTime($0) }, onCalendar: { pickingDay = true })
+                }
+                .padding(.horizontal)
             }
-            PaymentSwitch(selection: Binding(get: { payment }, set: { payment = $0; paymentTouched = true }))
-                .padding(.horizontal)
-                .padding(.bottom, 10)
-            DaySwitch(date: date, onPick: { date = Self.keepingTime($0) }, onCalendar: { pickingDay = true })
-                .padding(.horizontal)
-                .padding(.bottom, 12)
+            .padding(.bottom, 12)
             Keypad(commaEnabled: currency.fractionDigits > 0) { press($0) }
                 .padding(.horizontal)
             mainButton("Далее", enabled: input.value != nil) { go(.details) }
@@ -972,7 +974,7 @@ private struct PressDown: ButtonStyle {
     }
 }
 
-/// «Картой ⇄ Наличными» — одна широкая плашка. Нажали — цвет перетекает, значок и слово меняются,
+/// «Картой ⇄ Наличными» — половинка рядом с днём. Нажали — цвет перетекает, значок и слово меняются,
 /// по плашке пробегает блик. На наличные из купюры выпрыгивают монетки, на карту — от неё расходятся
 /// круги, как от бесконтактной оплаты. Всё внутри плашки. С «Уменьшением движения» — только цвет и слово.
 private struct PaymentSwitch: View {
@@ -987,7 +989,7 @@ private struct PaymentSwitch: View {
     var body: some View {
         let cash = selection == .cash
         Button { selection = cash ? .card : .cash } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Image(systemName: cash ? "banknote.fill" : "creditcard.fill")
                     .font(.title3)
                     .contentTransition(.symbolEffect(.replace.downUp))
@@ -1000,12 +1002,9 @@ private struct PaymentSwitch: View {
                     .transition(.asymmetric(insertion: .offset(y: height * 0.55).combined(with: .opacity),
                                             removal: .offset(y: -height * 0.55).combined(with: .opacity)))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(.footnote.weight(.semibold))
-                    .opacity(0.55)
             }
             .foregroundStyle(cash ? Self.cashInk : palette.background)
-            .padding(.horizontal, 18)
+            .padding(.horizontal, Self.inset)
             .frame(height: height)
             .frame(maxWidth: .infinity)
             .background(cash ? Self.cashPaper : palette.accent)
@@ -1055,7 +1054,7 @@ private struct PaymentSwitch: View {
             }
         }
         .frame(width: iconBox, height: iconBox)
-        .offset(x: 18)
+        .offset(x: Self.inset)
     }
 
     /// Блик, который один раз пробегает по плашке слева направо.
@@ -1076,8 +1075,9 @@ private struct PaymentSwitch: View {
     /// Куда летит каждая монетка: вбок и вверх (в высотах плашки), как крутится. Подпрыгивает в пределах
     /// плашки и падает за её нижний край.
     private static let coins: [(dx: CGFloat, rise: CGFloat, spin: Double)] = [
-        (0.4, 0.32, 200), (1.1, 0.42, -260), (1.8, 0.34, 320), (2.6, 0.4, -180), (3.4, 0.3, 240),
+        (0.3, 0.32, 200), (0.75, 0.42, -260), (1.2, 0.34, 320), (1.7, 0.4, -180), (2.2, 0.3, 240),
     ]
+    private static let inset: CGFloat = 14
     private static let cashPaper = Color(light: 0xE9E2C6, dark: 0x4A4632)
     private static let cashInk = Color(light: 0x3D4A2E, dark: 0xEDE6C8)
     private static let gold = Color(light: 0xE8B94A, dark: 0xF2C55C)
@@ -1141,8 +1141,8 @@ private struct Sweep: ViewModifier, Animatable {
     }
 }
 
-/// День: отрывной календарь. Нажали — «Сегодня» ⇄ «Вчера»: к сегодняшнему вчерашний листок отрывается,
-/// ко вчерашнему — листок ложится сверху. Рядом — календарь для любого дня.
+/// День — половинка рядом с оплатой, отрывной календарь. Нажали — «Сегодня» ⇄ «Вчера»: к сегодняшнему
+/// вчерашний листок отрывается, ко вчерашнему — листок ложится сверху. Подержали — календарь для любого дня.
 /// Если выбран другой день, листок показывает его, а нажатие возвращает «Сегодня».
 private struct DaySwitch: View {
     let date: Date
@@ -1153,6 +1153,8 @@ private struct DaySwitch: View {
     /// Какой листок сейчас лежит сверху — отстаёт от date на время перелистывания.
     @State private var settled: Date?
     @State private var turn: PageTurn?
+    @State private var pressing = false
+    @State private var held = 0
 
     private struct PageTurn: Equatable {
         let top: Date
@@ -1167,47 +1169,45 @@ private struct DaySwitch: View {
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
         let shown = calendar.startOfDay(for: date)
         let isToday = calendar.isDateInToday(date)
-        let title = isToday ? "Сегодня" : calendar.isDateInYesterday(date) ? "Вчера" : RuDate.dayTitle(date)
+        // В половинке тесно: другой день — просто день недели, число и месяц видны на листке.
+        let title = isToday ? "Сегодня" : calendar.isDateInYesterday(date) ? "Вчера"
+            : RuDate.weekdays[calendar.component(.weekday, from: date)].capitalized
+        let toggle = { onPick(isToday ? yesterday : today) }
         HStack(spacing: 10) {
-            Button { onPick(isToday ? yesterday : today) } label: {
-                HStack(spacing: 12) {
-                    pages(settled ?? shown)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(title)
-                            .font(.headline)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .id(title)
-                            .transition(.asymmetric(insertion: .offset(y: height * 0.5).combined(with: .opacity),
-                                                    removal: .offset(y: -height * 0.5).combined(with: .opacity)))
-                        Text(isToday ? "нажмите — вчера" : "нажмите — сегодня")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .contentTransition(.opacity)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                    .clipped()
-                }
-                .padding(.horizontal, 8)
-                .frame(height: height)
-                .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
-                .contentShape(.rect(cornerRadius: 16))
+            pages(settled ?? shown)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .id(title)
+                    .transition(.asymmetric(insertion: .offset(y: height * 0.5).combined(with: .opacity),
+                                            removal: .offset(y: -height * 0.5).combined(with: .opacity)))
+                // В две строки — так влезает и при крупном шрифте.
+                Text("подержите — календарь")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
             }
-            .buttonStyle(PressDown())
-            .accessibilityLabel("День: \(RuDate.dayTitle(date))")
-            .accessibilityHint(isToday ? "Нажмите — вчера" : "Нажмите — сегодня")
-
-            Button(action: onCalendar) {
-                Image(systemName: "calendar")
-                    .font(.title3)
-                    .frame(width: height, height: height)
-                    .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
-            }
-            .buttonStyle(PressDown())
-            .accessibilityLabel("Другой день")
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .clipped()
         }
+        .padding(.horizontal, 8)
+        .frame(height: height)
+        .frame(maxWidth: .infinity)
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
+        .contentShape(.rect(cornerRadius: 16))
+        // Как у PressDown: проседает, а не становится прозрачной.
+        .scaleEffect(pressing ? 0.97 : 1)
+        .brightness(pressing ? -0.04 : 0)
+        .animation(.spring(duration: 0.25, bounce: 0.45), value: pressing)
+        .onTapGesture(perform: toggle)
+        .onLongPressGesture(minimumDuration: 0.45) {
+            held += 1
+            onCalendar()
+        } onPressingChanged: { pressing = $0 }
+        .sensoryFeedback(.impact(weight: .medium), trigger: held)
         .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.25), value: shown)
         .onAppear { settled = shown }
         .onChange(of: shown) { old, new in
@@ -1216,6 +1216,12 @@ private struct DaySwitch: View {
             turn = new > old ? PageTurn(top: old, bottom: new, forward: true) : PageTurn(top: new, bottom: old, forward: false)
         }
         .sensoryFeedback(.selection, trigger: shown)
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel("День: \(RuDate.dayTitle(date))")
+        .accessibilityHint(isToday ? "Нажмите — вчера. Другой день — в действиях" : "Нажмите — сегодня. Другой день — в действиях")
+        .accessibilityAction(.default, toggle)
+        .accessibilityAction(named: "Выбрать день в календаре", onCalendar)
     }
 
     /// Листок сверху и тот, что под ним, пока один отрывается или ложится.

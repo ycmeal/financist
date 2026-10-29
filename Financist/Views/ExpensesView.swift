@@ -231,13 +231,14 @@ private struct SummaryHeader: View {
             }
 
             Button { store.isAddingExpense = true } label: {
-                // Простой «+» цвета текста — на цветной кнопке он виден всегда.
-                Label("Добавить трату", systemImage: "plus")
+                // «+» — часть самой надписи, поэтому всегда того же цвета, что и текст (а не акцентного, как у Label).
+                Text("\(Image(systemName: "plus")) Добавить трату")
                     .font(.title3.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityLabel("Добавить трату")
             .controlSize(.large)
             .zoomSource("add", in: zoom)
         }
