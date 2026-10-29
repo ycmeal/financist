@@ -428,6 +428,15 @@ final class AppStore {
         persist()
     }
 
+    /// Убрать из «Недавних» всё сразу — каждое место до его последней траты.
+    func hideAllRecents() {
+        for e in vault.expenses where !e.note.isEmpty {
+            let key = Self.recentKey(e)
+            vault.hiddenRecents[key] = max(vault.hiddenRecents[key] ?? .distantPast, e.date)
+        }
+        persist()
+    }
+
     private static func recentKey(_ e: Expense) -> String {
         SuggestionEngine.key(e.note) + "|" + e.categoryID.uuidString
     }

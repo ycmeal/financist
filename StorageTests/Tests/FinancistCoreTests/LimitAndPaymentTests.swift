@@ -161,6 +161,22 @@ final class LimitAndPaymentTests: XCTestCase {
         XCTAssertEqual(store.recentTemplates.map(\.note), ["pazar", "Migros"], "A new expense there brings it back")
     }
 
+    @MainActor
+    func testClearAllRecentsHidesEveryPlaceNotJustTheVisibleOnes() async throws {
+        let store = launch()
+        let groceries = try XCTUnwrap(store.vault.categories.first { $0.name == "Продукты" })
+        for i in 0..<9 {
+            store.addExpense(amount: 1, currency: .lira, categoryID: groceries.id, note: "Place \(i)",
+                             date: .now.addingTimeInterval(Double(i - 20) * 60), payment: .card)
+        }
+        XCTAssertEqual(store.recentTemplates.count, 6)
+        store.hideAllRecents()
+        XCTAssertTrue(store.recentTemplates.isEmpty, "Older places must not slide in")
+        XCTAssertEqual(store.vault.expenses.count, 9)
+        store.addExpense(amount: 1, currency: .lira, categoryID: groceries.id, note: "Place 2", date: .now, payment: .card)
+        XCTAssertEqual(store.recentTemplates.map(\.note), ["Place 2"])
+    }
+
     func testHiddenRecentsTravelWithTheTransferFile() {
         var here = Vault()
         here.hiddenRecents = ["a|1": Date(timeIntervalSince1970: 100)]

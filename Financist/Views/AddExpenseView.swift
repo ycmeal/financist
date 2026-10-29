@@ -36,6 +36,7 @@ struct AddExpenseView: View {
     @State private var remindDays = Trial.defaultReminder
     @State private var suggestions: [Suggestion] = []
     @State private var templates: [Expense] = []
+    @State private var confirmClearRecents = false
     @State private var orderedCategories: [ExpenseCategory] = []
     @State private var showingAllCategories = false
     @State private var isSetUp = false
@@ -312,17 +313,27 @@ struct AddExpenseView: View {
     /// Недавние разные траты: нажали — подставились место и категория (и сумма, если её ещё нет).
     private var recentStrip: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
+            // Крестик слева — убрать все недавние; одну — долгим нажатием на неё.
+            HStack(spacing: 6) {
+                Button { confirmClearRecents = true } label: {
+                    Image(systemName: "xmark")
+                        .contentShape(.rect.inset(by: -12))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Убрать все недавние")
                 Text("Недавние")
-                    .font(.footnote.weight(.semibold))
-                Spacer(minLength: 8)
-                Text("подержите, чтобы убрать")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
             }
+            .font(.footnote.weight(.semibold))
             .foregroundStyle(.secondary)
             .padding(.horizontal)
+            .confirmationDialog("Убрать все недавние?", isPresented: $confirmClearRecents, titleVisibility: .visible) {
+                Button("Убрать", role: .destructive) {
+                    store.hideAllRecents()
+                    withAnimation(.snappy) { templates = store.recentTemplates }
+                }
+            } message: {
+                Text("Траты останутся. Место снова появится здесь, когда запишете там новую трату.")
+            }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(Array(templates.prefix(5))) { recentChip($0) }
