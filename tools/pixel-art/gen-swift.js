@@ -38,8 +38,9 @@ const op = o => {
       return `.water(top: ${y0}, bottom: ${y1}` + (x0 !== 0 || x1 !== 96 ? `, from: ${x0}, to: ${x1}` : '') + (style ? ', lagoon: true' : '') + ')';
     }
     case 'boat': {
-      const [, names, bottom, speed, offset, depth, fps = 0] = o;
-      return `.boat([${[].concat(names).map(str).join(', ')}], bottom: ${bottom}, speed: ${num(speed)}, offset: ${num(offset)}, depth: ${depth}` + (fps ? `, fps: ${num(fps)}` : '') + ')';
+      const [, names, bottom, speed, offset, depth, fps = 0, dayOnly = 0] = o;
+      return `.boat([${[].concat(names).map(str).join(', ')}], bottom: ${bottom}, speed: ${num(speed)}, offset: ${num(offset)}, depth: ${depth}` +
+        (fps ? `, fps: ${num(fps)}` : '') + (dayOnly ? ', dayOnly: true' : '') + ')';
     }
     case 'anim': return `.anim([${o[1].map(str).join(', ')}], x: ${o[2]}, bottom: ${o[3]}, depth: ${o[4]}, fps: ${num(o[5])})`;
     case 'bob': return `.bob(${str(o[1])}, x: ${o[2]}, bottom: ${o[3]}, depth: ${o[4]}, amp: ${o[5]}, period: ${num(o[6])})`;

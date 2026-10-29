@@ -1,11 +1,13 @@
 import SwiftUI
 
 /// Пиксельная картинка во всю ширину вверху «Трат» — прямо под строкой состояния и Dynamic Island.
-/// Место — страны, где тратили в последний раз (у каждой страны свои места, они меняются по дням),
+/// Место — страны, где тратили в последний раз (у каждой страны свои места, с каждым входом — следующее),
 /// небо, солнце, луна и звёзды — по часам телефона, флаг — нарисованный вручную флаг этой страны.
 /// Внизу картинка плавно уходит в фон экрана. Если включено «Уменьшение движения», картинка не шевелится.
 struct CityBackdrop: View {
     let place: Place?
+    /// Номер входа в приложение: с каждым входом — следующее место страны.
+    let visit: Int
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.palette) private var palette
@@ -15,7 +17,7 @@ struct CityBackdrop: View {
         let seed = PixelCity.seed(for: place?.code)
         TimelineView(.animation(minimumInterval: 0.25, paused: reduceMotion)) { context in
             let date = context.date
-            let pixels = PixelCity.render(scene: PixelCity.scene(for: place?.code, day: PixelCity.day(date)),
+            let pixels = PixelCity.render(scene: PixelCity.scene(for: place?.code, visit: visit),
                                           part: DayPart(date), sun: DayPart.sunProgress(date), flag: flag,
                                           time: date.timeIntervalSince(Calendar.current.startOfDay(for: date)), seed: seed)
             if let image = Self.image(pixels) {
@@ -89,7 +91,8 @@ struct CityGreeting: View {
     /// «Турция · 1 $ = 49,8 ₺»; для долларовых стран — только название.
     private var placeLine: String? {
         guard let place else { return nil }
-        guard let currency = place.currency, currency != .usd else { return place.country }
+        let currency = place.currency
+        guard currency != .usd else { return place.country }
         return "\(place.country) · 1 $ = \(Fmt.rate(store.vault.rates.rate(currency))) \(currency.symbol)"
     }
 }

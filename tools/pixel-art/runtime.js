@@ -191,8 +191,9 @@ const PixelCity = ((D) => {
         }
         case 'boat': {
           // Sails across and comes back from the other side; negative speed goes left.
-          // A list of names is a walk cycle: frames change `fps` times a second.
-          const [, names, bottom, speed, offset, depth, fps = 0] = op;
+          // A list of names is a walk cycle: frames change `fps` times a second. dayOnly: not at night (paragliders).
+          const [, names, bottom, speed, offset, depth, fps = 0, dayOnly = 0] = op;
+          if (dayOnly && part === 'night') break;
           const rows = frame(names, fps), w = rows[0].length, span = COLS + w;
           const p = floor((offset + t * Math.abs(speed)) % span);
           sprite(rows, speed > 0 ? p - w : COLS - p, bottom, depth, speed > 0 ? 0 : 1);
@@ -264,10 +265,10 @@ const PixelCity = ((D) => {
     return out;
   }
 
-  /* Places of a country, one per day in turn. */
-  function sceneFor(code, day) {
+  /* Places of a country, the next one on every entry into the app. */
+  function sceneFor(code, visit) {
     const list = D.PLACES[code] || D.PLACES[''];
-    return list[((day % list.length) + list.length) % list.length];
+    return list[((visit % list.length) + list.length) % list.length];
   }
 
   function draw(canvas, opts) {

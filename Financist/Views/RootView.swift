@@ -8,6 +8,7 @@ struct RootView: View {
     @State private var didStart = false
     @State private var isAuthenticating = false
     @State private var offerLock = false
+    @State private var wasInBackground = false
 
     var body: some View {
         @Bindable var store = store
@@ -39,9 +40,17 @@ struct RootView: View {
             store.consumeTrialRequest()
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background && store.lockEnabled { store.isLocked = true }
+            if phase == .background {
+                wasInBackground = true
+                if store.lockEnabled { store.isLocked = true }
+            }
             updateCover()
             if phase == .active {
+                // Вернулись из фона — новый вход: в шапке следующая картинка страны.
+                if wasInBackground {
+                    wasInBackground = false
+                    store.countVisit()
+                }
                 // Открыть данные, если ещё не открыты; досохранить; обновить копии и напоминания.
                 store.appBecameActive()
                 if store.isLocked { authenticate() }
@@ -112,6 +121,7 @@ struct RootView: View {
         store.consumeTrialRequest()
         ShareFile.cleanUp()
         BuildAge.recordLaunch()
+        store.countVisit()
         Task { await store.refreshRates(force: false) }
         offerLockIfNeeded()
     }

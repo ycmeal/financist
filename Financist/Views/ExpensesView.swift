@@ -105,7 +105,7 @@ struct ExpensesView: View {
                 }
                 .contentMargins(.top, 0, for: .scrollContent)
                 .background(alignment: .top) {
-                    CityBackdrop(place: place)
+                    CityBackdrop(place: place, visit: store.headerVisit)
                         .ignoresSafeArea(edges: .top)
                 }
                 .warmListBackground()

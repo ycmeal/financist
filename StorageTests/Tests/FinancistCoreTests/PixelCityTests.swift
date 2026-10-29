@@ -34,21 +34,29 @@ final class PixelCityTests: XCTestCase {
     func testSamePicturesAsTheMockup() {
         let cases: [(String, DayPart, Double?, String?, Double, String?, UInt32)] = [
             ("istanbul", .day, 0.5, "TR", 1234.5, "TR", 2_306_190_960),
-            ("moscow", .night, nil, "RU", 40000.25, "RU", 550_223_265),
-            ("dubai", .dusk, 0.93, "AE", 63000, "AE", 1_510_315_967),
-            ("paris", .night, nil, "EU", 75610, "EU", 2_522_786_484),
             ("cappadocia", .dawn, 0.07, "TR", 25000, "TR", 2_159_179_077),
-            ("desert", .day, 0.3, "AE", 50000.75, "AE", 2_290_080_810),
-            ("village", .dusk, 0.85, "RU", 66000.5, "RU", 985_389_065),
-            ("tropic", .day, 0.6, "TH", 45000, "TH", 2_867_048_031),
-            ("mountains", .night, nil, "KZ", 3600, "KZ", 2_531_074_143),
+            ("galata", .night, nil, "TR", 2000.75, "TR", 4_046_241_592),
+            ("pamukkale", .dusk, 0.86, "TR", 65000, "TR", 1_700_947_405),
+            ("oludeniz", .day, 0.55, "TR", 47000.5, "TR", 635_616_392),
+            ("ephesus", .day, 0.4, "TR", 41000, "TR", 583_761_379),
+            ("uzungol", .night, nil, "TR", 82000, "TR", 4_058_512_615),
             ("samarkand", .dawn, 0.15, "UZ", 26000, "UZ", 2_904_672_343),
             ("khiva", .day, 0.45, "UZ", 43000, "UZ", 2_130_244_529),
+            ("bukhara", .dawn, 0.1, "UZ", 24500, "UZ", 1_130_155_485),
+            ("guremir", .day, 0.65, "UZ", 51000.25, "UZ", 1_853_356_145),
+            ("tashkent", .night, nil, "UZ", 79000, "UZ", 3_424_025_961),
+            ("chimgan", .day, 0.3, "UZ", 37000, "UZ", 2_112_626_344),
+            ("bazaar", .dusk, 0.9, "UZ", 67000, "UZ", 2_294_253_120),
+            ("dubai", .dusk, 0.93, "AE", 63000, "AE", 1_510_315_967),
+            ("desert", .day, 0.3, "AE", 50000.75, "AE", 2_290_080_810),
+            ("moscow", .night, nil, "RU", 40000.25, "RU", 550_223_265),
+            ("village", .dusk, 0.85, "RU", 66000.5, "RU", 985_389_065),
+            ("paris", .night, nil, "EU", 75610, "EU", 2_522_786_484),
             ("coast", .dawn, 0.12, "EU", 24000, "EU", 2_660_342_141),
-            ("alps", .day, 0.7, "CH", 52000, "CH", 1_252_104_079),
             ("newyork", .night, nil, "US", 80000, "US", 2_589_429_146),
             ("city", .day, 0.5, nil, 40000, nil, 3_207_444_980),
         ]
+        XCTAssertEqual(Set(cases.map(\.0)), Set(PixelCity.scenes.keys), "Every place is checked")
         for (scene, part, sun, flag, time, seed, checksum) in cases {
             let frame = render(scene, part, sun: sun, flag: flag, time: time, seed: seed)
             XCTAssertEqual(frame.count, PixelCity.cols * PixelCity.rows)
@@ -64,16 +72,17 @@ final class PixelCityTests: XCTestCase {
     }
 
     func testEveryCountryHasItsFlagAndPlaces() {
-        let codes = Place.countries.map(\.1) + ["EU"]
-        for code in codes {
+        for currency in Currency.allCases {
+            let code = Place(currency: currency).code
             XCTAssertEqual(PixelCity.flagPixels(code)?.count, PixelCity.flagWidth * PixelCity.flagHeight, code)
-            for day in 0..<3 {
-                XCTAssertNotNil(PixelCity.scenes[PixelCity.scene(for: code, day: day)], code)
+            for visit in 0..<8 {
+                XCTAssertNotNil(PixelCity.scenes[PixelCity.scene(for: code, visit: visit)], code)
             }
         }
-        XCTAssertNil(PixelCity.flagPixels("ZZ"))
-        XCTAssertEqual(PixelCity.scene(for: "ZZ", day: 5), "city")
-        XCTAssertEqual(PixelCity.scene(for: nil, day: 5), "city")
+        XCTAssertEqual(Set(PixelCity.flags.keys), ["TR", "UZ", "AE", "RU", "EU", "US"], "Only the app's currency countries")
+        XCTAssertNil(PixelCity.flagPixels("KZ"))
+        XCTAssertEqual(PixelCity.scene(for: "KZ", visit: 5), "city")
+        XCTAssertEqual(PixelCity.scene(for: nil, visit: 5), "city")
     }
 
     func testDrawingsAreWhole() {
@@ -90,7 +99,7 @@ final class PixelCityTests: XCTestCase {
                 let names: [String]
                 switch op {
                 case let .sprite(name, _, _, _, _), let .bob(name, _, _, _, _, _), let .sparkle(name, _, _): names = [name]
-                case let .boat(list, _, _, _, _, _), let .anim(list, _, _, _, _): names = list
+                case let .boat(list, _, _, _, _, _, _), let .anim(list, _, _, _, _): names = list
                 case .water, .birds, .flag: names = []
                 }
                 for name in names { XCTAssertNotNil(PixelCity.parsedSprites[name], "\(id): no drawing \(name)") }
@@ -103,28 +112,19 @@ final class PixelCityTests: XCTestCase {
         }
     }
 
-    func testPlacesTakeTurnsByDay() {
-        XCTAssertEqual(PixelCity.scene(for: "TR", day: 20_390), "istanbul")
-        XCTAssertEqual(PixelCity.scene(for: "TR", day: 20_391), "cappadocia")
-        XCTAssertEqual(PixelCity.scene(for: "TR", day: 20_392), "istanbul")
-        XCTAssertEqual(Set((0..<6).map { PixelCity.scene(for: "UZ", day: $0) }), ["samarkand", "khiva"])
-        XCTAssertEqual(Set((0..<6).map { PixelCity.scene(for: "AE", day: $0) }), ["dubai", "desert"])
-        XCTAssertEqual(Set((0..<6).map { PixelCity.scene(for: "RU", day: $0) }), ["moscow", "village"])
-        XCTAssertEqual(Set((0..<6).map { PixelCity.scene(for: "EU", day: $0) }), ["paris", "coast", "alps"])
-        XCTAssertEqual(PixelCity.scene(for: "FR", day: 3), "paris")
-        XCTAssertEqual(PixelCity.scene(for: "TR", day: -1), "cappadocia", "Days before 1970 still work")
-    }
-
-    func testPlaceChangesAtLocalMidnight() {
-        let zone = TimeZone(identifier: "Europe/Istanbul")!
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = zone
-        func at(_ day: Int, _ hour: Int, _ minute: Int) -> Date {
-            calendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
+    func testEveryEntryShowsTheNextPlace() {
+        func places(_ code: String) -> [String] { (0..<14).map { PixelCity.scene(for: code, visit: $0) } }
+        XCTAssertEqual(Set(places("TR")), ["istanbul", "cappadocia", "galata", "pamukkale", "oludeniz", "ephesus", "uzungol"])
+        XCTAssertEqual(Set(places("UZ")), ["samarkand", "khiva", "bukhara", "guremir", "tashkent", "chimgan", "bazaar"])
+        XCTAssertEqual(Set(places("AE")), ["dubai", "desert"])
+        XCTAssertEqual(Set(places("RU")), ["moscow", "village"])
+        XCTAssertEqual(Set(places("EU")), ["paris", "coast"])
+        XCTAssertEqual(Set(places("US")), ["newyork"])
+        for code in ["TR", "UZ", "AE", "RU", "EU"] {
+            let list = places(code)
+            XCTAssertTrue(zip(list, list.dropFirst()).allSatisfy { $0 != $1 }, "\(code): every entry — another place")
         }
-        let evening = PixelCity.day(at(29, 23, 59), timeZone: zone)
-        XCTAssertEqual(PixelCity.day(at(29, 0, 1), timeZone: zone), evening)
-        XCTAssertEqual(PixelCity.day(at(30, 0, 1), timeZone: zone), evening + 1)
+        XCTAssertEqual(PixelCity.scene(for: "TR", visit: -1), "uzungol", "Negative counts still work")
     }
 
     func testSunByDayMoonStarsAndLitWindowsAtNight() {

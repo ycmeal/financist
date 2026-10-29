@@ -508,6 +508,16 @@ final class AppStore {
         Place.lastSpent(in: vault.expenses) ?? Place.from(timeZone: .autoupdatingCurrent)
     }
 
+    /// Сколько раз входили в приложение: с каждым входом шапка показывает следующее место страны.
+    private(set) var headerVisit = UserDefaults.standard.integer(forKey: AppStore.headerVisitKey)
+    private static let headerVisitKey = "header.visit"
+
+    /// Новый вход — запуск или возврат из фона (не каждое появление поверх шторки или Face ID).
+    func countVisit() {
+        headerVisit &+= 1
+        UserDefaults.standard.set(headerVisit, forKey: Self.headerVisitKey)
+    }
+
     // MARK: Пробные подписки
 
     /// Особая категория «Подписка» — она есть всегда.

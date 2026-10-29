@@ -2,7 +2,7 @@ import Foundation
 
 /// Пиксельные места для шапки «Трат», 96×84 точки. Небо — по времени суток (рассвет, день, закат, ночь):
 /// днём солнце идёт по дуге, ночью луна и звёзды; облака плывут, вода блестит, лодки плывут, флаг развевается.
-/// У каждой страны свои места — Стамбул и Каппадокия, Самарканд и Хива, Москва и деревня… — они сменяются по дням.
+/// У каждой страны свои места — Стамбул, Каппадокия, Самарканд, Хива, Москва… — с каждым входом следующее.
 /// Сами рисунки — в PixelData.swift (собираются скриптом из tools/pixel-art вместе с кликабельным макетом),
 /// здесь — как их рисовать. Тот же алгоритм — в макете: правки делать в обоих местах, тесты сверяют кадры.
 enum PixelCity {
@@ -31,7 +31,8 @@ enum PixelCity {
         case sprite(String, x: Int, bottom: Int, depth: Int, flags: Int)
         case water(top: Int, bottom: Int, from: Int = 0, to: Int = 96, lagoon: Bool = false)
         /// Плывёт через кадр и возвращается с другой стороны; speed < 0 — влево. Несколько имён — шаги.
-        case boat([String], bottom: Int, speed: Double, offset: Double, depth: Int, fps: Double = 0)
+        /// dayOnly — ночью не видно (парапланы).
+        case boat([String], bottom: Int, speed: Double, offset: Double, depth: Int, fps: Double = 0, dayOnly: Bool = false)
         case anim([String], x: Int, bottom: Int, depth: Int, fps: Double)
         /// Воздушный шар: медленно вверх-вниз; ночью не летает.
         case bob(String, x: Int, bottom: Int, depth: Int, amp: Int, period: Double)
@@ -56,15 +57,10 @@ enum PixelCity {
 
     // MARK: Страна → место и флаг
 
-    /// Место страны на этот день: у Турции, например, Стамбул и Каппадокия по очереди.
-    static func scene(for code: String?, day: Int) -> String {
+    /// Место страны для этого входа в приложение: места идут по очереди, с каждым входом — следующее.
+    static func scene(for code: String?, visit: Int) -> String {
         let list = places[code ?? ""] ?? places[""] ?? ["city"]
-        return list[(day % list.count + list.count) % list.count]
-    }
-
-    /// Номер дня по местным часам: место меняется в полночь.
-    static func day(_ date: Date, timeZone: TimeZone = .current) -> Int {
-        Int(((date.timeIntervalSince1970 + Double(timeZone.secondsFromGMT(for: date))) / 86_400).rounded(.down))
+        return list[(visit % list.count + list.count) % list.count]
     }
 
     /// Свой постоянный рисунок окон и звёзд у каждой страны.
@@ -350,8 +346,8 @@ enum PixelCity {
                 case let .water(y0, y1, x0, x1, lagoon):
                     water(y0, y1, x0, x1, lagoon ? light.lagoon : light.water, glintX)
 
-                case let .boat(names, bottom, speed, offset, depth, fps):
-                    guard let s = frame(names, fps) else { break }
+                case let .boat(names, bottom, speed, offset, depth, fps, dayOnly):
+                    guard !(dayOnly && part == .night), let s = frame(names, fps) else { break }
                     let span = cols + s.width
                     let p = Int((offset + t * abs(speed)).truncatingRemainder(dividingBy: Double(span)).rounded(.down))
                     sprite(s, speed > 0 ? p - s.width : cols - p, bottom, depth, speed > 0 ? 0 : 1)

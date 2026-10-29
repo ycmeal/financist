@@ -14,7 +14,11 @@ function sprite(name, grid) {
   return name;
 }
 
-const SCENE_IDS = ['istanbul', 'cappadocia', 'samarkand', 'khiva', 'dubai', 'desert', 'moscow', 'village', 'paris', 'coast', 'alps', 'newyork', 'mountains', 'tropic', 'city'];
+const SCENE_IDS = [
+  'istanbul', 'cappadocia', 'galata', 'pamukkale', 'oludeniz', 'ephesus', 'uzungol',
+  'samarkand', 'khiva', 'bukhara', 'guremir', 'tashkent', 'chimgan', 'bazaar',
+  'dubai', 'desert', 'moscow', 'village', 'paris', 'coast', 'newyork', 'city',
+];
 const SCENES = {};
 for (const id of SCENE_IDS) {
   const s = require('./scenes/' + id)({ sprite, P });
@@ -24,16 +28,14 @@ for (const id of SCENE_IDS) {
   SCENES[id] = s;
 }
 
+/* Places of each country, one per entry into the app in turn; '' — when the country is unknown. */
 const PLACES = {
-  TR: ['istanbul', 'cappadocia'], UZ: ['samarkand', 'khiva'], AE: ['dubai', 'desert'], RU: ['moscow', 'village'],
-  EU: ['paris', 'coast', 'alps'], US: ['newyork'],
-  KZ: ['mountains'], KG: ['mountains'], TJ: ['mountains'], MN: ['mountains'], AZ: ['mountains'], GE: ['mountains'], AM: ['mountains'],
-  CA: ['mountains'], TM: ['desert'],
-  FR: ['paris'], DE: ['city', 'alps'], AT: ['alps'], CH: ['alps'], SI: ['alps'],
-  IT: ['coast'], ES: ['coast'], PT: ['coast'], GR: ['coast'], CY: ['coast'], HR: ['coast'], ME: ['coast'], MT: ['coast'],
-  IL: ['desert'], EG: ['desert'], JO: ['desert'], QA: ['desert'], SA: ['desert'], OM: ['desert'], BH: ['desert'], KW: ['desert'],
-  MA: ['desert'], TN: ['desert'],
-  IN: ['tropic'], LK: ['tropic'], MV: ['tropic'], TH: ['tropic'], VN: ['tropic'], ID: ['tropic'], MY: ['tropic'], SG: ['tropic'],
+  TR: ['istanbul', 'cappadocia', 'galata', 'pamukkale', 'oludeniz', 'ephesus', 'uzungol'],
+  UZ: ['samarkand', 'khiva', 'bukhara', 'guremir', 'tashkent', 'chimgan', 'bazaar'],
+  AE: ['dubai', 'desert'],
+  RU: ['moscow', 'village'],
+  EU: ['paris', 'coast'],
+  US: ['newyork'],
   '': ['city'],
 };
 

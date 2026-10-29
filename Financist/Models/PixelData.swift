@@ -7,6 +7,8 @@ extension PixelCity {
         "1": Material(0x8C8FAD),
         "2": Material(0x6A6C8A),
         "3": Material(0xB0B6CC),
+        "4": Material(0xA6E3E9),
+        "5": Material(0x63CBD6),
         "V": Material(0xFFFFFF),
         "W": Material(0xF1EDE4),
         "w": Material(0xD3CCBE),
@@ -381,6 +383,635 @@ extension PixelCity {
         .bb.
         .bb.
         """,
+        "gal.tower": """
+        ......LYl......
+        ......LLl......
+        .....LLLll.....
+        .....LLLll.....
+        ....LLLLlll....
+        ....LLLLlll....
+        ...LLLLLllll...
+        ...LLLLLllll...
+        ..LLLLLLlllll..
+        ..LLLLLLlllll..
+        .WWWWWWWWWWWWW.
+        ..SSSSSSSSsss..
+        ..SoSoSoSosos..
+        ..SoSoSoSosos..
+        ..SSSSSSSSsss..
+        .SSSSSSSSSSSSS.
+        ..sssssssssss..
+        ..CCSSSSSSsss..
+        ..CCSSSSSSsss..
+        ..CCSoSSSSsss..
+        ..CCSoSSSosss..
+        ..CCSSSSSosss..
+        ..CCSSSSSSsss..
+        ..sssssssssss..
+        ..CCSSSSSSsss..
+        ..CCSSSSSSsss..
+        ..CCSoSSSSsss..
+        ..CCSoSSSosss..
+        ..CCSSSSSosss..
+        ..CCSSSSSSsss..
+        ..sssssssssss..
+        ..CCSSSSSSsss..
+        ..CCSSSSSSsss..
+        ..CCSoSSSSsss..
+        ..CCSoSSSosss..
+        ..CCSSSSSosss..
+        ..CCSSSSSSsss..
+        ..sssssssssss..
+        ..CCSSSSSSsss..
+        ..CCSSSSSSsss..
+        ..CCSSSSSSsss..
+        .CCCSSSDSSssss.
+        .CCCSSDDDSssss.
+        .CCCSSDDDSssss.
+        .CCCSSDDDSssss.
+        .CCCSSDDDSssss.
+        """,
+        "gal.far": """
+        ..........................................................
+        .........................3..........3.....................
+        .........................3..........3.....................
+        .........................3..33333...3.....................
+        .....................3...3.3333333..3...3.................
+        .....................3...3333333333.3...3.................
+        ......3........3.....3...3333333333.3...3.................
+        ......3........3.....33..3333333333.3.3.3.................
+        ......3..333...3....333333333333333333333.................
+        ..33..3.333333.33333333333333333333333333....3.333333...33
+        ..33..3.333333.33333.33333333333333333333.3333.333333...33
+        3333333333333333333333333333333333333333333333333333333333
+        3333333333333333333333333333333333333333333333333333333333
+        3333333333333333333333333333333333333333333333333333333333
+        """,
+        "gal.back": """
+        ................................................................................................
+        ................................................................................................
+        ................................................................................................
+        .......................................................................gggggggg...........gggggg
+        .gggggg..ggggggg......................................................wwwwwwwwww.ggggggg.wwwwwww
+        wwwwwwwwwwwwwwwww.....................................ggggggg.........AAAAAAAAAawwwwwwwwwPPPPPPP
+        WWWWWWWwPPPPPPPPp.gggggg.............................wwwwwwwww.gggggg.AoAoAoAoAaWWWWWWWWwPoPoPoP
+        WoWoWoWwPoPoPoPPpwwwwwwww.gggggggg..gggggggg..gggggg.WWWWWWWWwwwwwwwwwAoAoAoAoAaWoWoWoWWwPoPoPoP
+        WoWoWoWwPoPoPoPPpAAAAAAAawwwwwwwwwwwwwwwwwwwwwwwwwwwwWoWoWoWWwPPPPPPPpAAaaaaaaAaWoWoWoWWwPPPPPPP
+        WWWWWWWwPPpppppPpAoAoAoAaWWWWWWWWWwPPPPPPPPPpAAAAAAAaWoWoWoWWwPoPoPoPpAoaoaaoaAaWWwwwwwWwPoPoPoP
+        WoWoWoWwPopopopPpAoAoAoAaWoWoWoWoWwPoPoPoPoPpAoAoAoAaWWwwwwwWwPoPoPoPpAoaaaaaaAaWowowowWwPoPoPoP
+        WoWoWoWwPopppppPpAAAAAAAaWoWoWoWoWwPoPoPoPoPpAoAoAoAaWowowowWwPPPPPPPpAAAAAAAAAaWowwwwwWwPPPPPPP
+        WWWWWWWwPPPPPPPPpAoAoAoAaWWwwwwwwWwPPppppppPpAAAAAAAaWowwwwwWwPoPoPoPpAoAoAoAoAaWWWWWWWWwPoPoPoP
+        WoWoWoWwPoPoPoPPpAoAoAoAaWowowwowWwPopoppopPpAoAoAoAaWWWWWWWWwPoPoPoPpAoAoAoAoAaWoWoWoWWwPoPoPoP
+        WoWoWoWwPoPoPoPPpAAAAAAAaWowwwwwwWwPoppppppPpAoAoAoAaWoWoWoWWwPPPPPPPpAAAAAAAAAaWoWoWoWWwPPPPPPP
+        WWWWWWWwPPPPPPPPpAoAoAoAaWWWWWWWWWwPPPPPPPPPpAAAAAAAaWoWoWoWWwPoPoPoPpAoAoAoAoAaWWWWWWWWwPoPoPoP
+        WoWoWoWwPoPoPoPPpAoAoAoAaWoWoWoWoWwPoPoPoPoPpAoAoAoAaWWWWWWWWwPoPoPoPpAoAoAoAoAaWoWoWoWWwPoPoPoP
+        WoWoWoWwPoPoPoPPpAAAAAAAaWoWoWoWoWwPoPoPoPoPpAoAoAoAaWoWoWoWWwPPPPPPPpAAAAAAAAAaWoWoWoWWwPPPPPPP
+        WWWWWWWwPPPPPPPPpAAAAAAAaWWWWWWWWWwPPPPPPPPPpAAAAAAAaWoWoWoWWwPPPPPPPpAAAAAAAAAaWWWWWWWWwPPPPPPP
+        EEEEEEEERRRRRRRRRNNNNNNNNUUUUUUUUUUEEEEEEEEEERRRRRRRRNNNNNNNNNUUUUUUUUEEEEEEEEEERRRRRRRRRNNNNNNN
+        WoooooowPooooooopAooooooaWoooooooowPoooooooopAooooooaWooooooowPoooooopAooooooooaWooooooowPoooooo
+        WoooooowPooooooopAooooooaWoooooooowPoooooooopAooooooaWooooooowPoooooopAooooooooaWooooooowPoooooo
+        """,
+        "gal.left": """
+        ............................................
+        ............................................
+        ............................................
+        ............................................
+        .ggggg.........gggggg..........ggggg........
+        wwwwwww.......wwwwwwww........wwwwwww.......
+        AAAAAAa.ggggg.PPPPPPPp.gggggg.WWWWWWw.gggggg
+        AoAoAAawwwwwwwPoPoPoPpwwwwwwwwWoWoWWwwwwwwww
+        AoAoAAaWWWWWWwPoPoPoPpAAAAAAAaWoWoWWwPPPPPPP
+        AAAAAAaWoWoWWwPPPPPPPpAoAoAoAaWWWWWWwPoPoPoP
+        AoAoAAaWoWoWWwPoPoPoPpAoAoAoAaWoWoWWwPoPoPoP
+        AoAoAAaWWWWWWwPoPoPoPpAAAAAAAaWoWoWWwPPppppp
+        AAAAAAaWoWoWWwPPPPPPPpAoAoAoAaWWWWWWwPopoppo
+        AoAoAAaWoWoWWwPoPoPoPpAoAoAoAaWoWoWWwPoppppp
+        AoAoAAaWWWWWWwPoPoPoPpAAAAAAAaWoWoWWwPPPPPPP
+        AAAAAAaWoWoWWwPPPPPPPpAoAoAoAaWWWWWWwPoPoPoP
+        AoAoAAaWoWoWWwPoPoPoPpAoAoAoAaWoWoWWwPoPoPoP
+        AoAoAAaWWWWWWwPoPoPoPpAAAAAAAaWoWoWWwPPPPPPP
+        AAAAAAaWoWoWWwPPPPPPPpAoAoAoAaWWWWWWwPoPoPoP
+        AoAoAAaWoWoWWwPoPoPoPpAoAoAoAaWoWoWWwPoPoPoP
+        AoAoAAaWWWWWWwPoPoPoPpAAAAAAAaWoWoWWwPPPPPPP
+        NNNNNNNUUUUUUUEEEEEEEERRRRRRRRNNNNNNNUUUUUUU
+        AoooooaWooooowPoooooopAooooooaWooooowPoooooo
+        AoooooaWooooowPoooooopAooooooaWooooowPoooooo
+        """,
+        "gal.right": """
+        ..................
+        ..................
+        ..................
+        ...........ggggg..
+        ..........wwwwwww.
+        .gggggggg.AAAAAAa.
+        wwwwwwwwwwAoAoAAa.
+        PPPPPPPPPpAoAoAAaw
+        PoPoPoPoPpAAAAAAaW
+        PoPoPoPoPpAoAoAAaW
+        PPppppppPpAoAoAAaW
+        PopoppopPpAAAAAAaW
+        PoppppppPpAoAoAAaW
+        PPPPPPPPPpAoAoAAaW
+        PoPoPoPoPpAAAAAAaW
+        PoPoPoPoPpAoAoAAaW
+        PPPPPPPPPpAoAoAAaW
+        PoPoPoPoPpAAAAAAaW
+        PoPoPoPoPpAoAoAAaW
+        PPPPPPPPPpAoAoAAaW
+        PoPoPoPoPpAAAAAAaW
+        PoPoPoPoPpAoAoAAaW
+        PPPPPPPPPpAoAoAAaW
+        EEEEEEEEEERRRRRRRN
+        PoooooooopAoooooaW
+        PoooooooopAoooooaW
+        """,
+        "gal.tram": """
+        ..........D.........
+        ...........D........
+        ............D.......
+        ..WWWWWWWWWWWWWWWW..
+        .RCCCCCCCCCCCCCCCCR.
+        .RooRooRooRooRooRoR.
+        .RooRooRooRooRooRoR.
+        .RRRRRRRRRRRRRRRRRR.
+        .RRDRRRRRRRRRRRRRRR.
+        .rrrrrrrrrrrrrrrrrr.
+        ..KK............KK..
+        """,
+        "gal.street": """
+        GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+        GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+        gGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGG
+        GGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgG
+        gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+        GGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgG
+        DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+        gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+        gGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGG
+        DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+        gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+        GGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgG
+        gGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGG
+        gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+        gGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGG
+        GGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgGGGgG
+        """,
+        "pam.hills": """
+        ................................................................................................
+        ................................................................................................
+        ................................................................................................
+        ............................................V...................................................
+        .........................................11VV22w................................................
+        ..............V........................11111122222............................................11
+        ...........1V1122w..................11111111222222222.....................V..................111
+        .......111111112222222...........111111111112222222222222.............V1VV1222w..........1111111
+        .....11111111122222222222......111111111111112222222222222........11111111222222222....111111111
+        .11111111111111222222222222211111111111111112222222222222222221111111111111222222222221111111111
+        111111111111111222222222221111111111111111122222222222222221111111111111111222222221111111111111
+        111111111111112222222211111111111111111111112222222222221111111111111111112222222221111111111111
+        """,
+        "pam.terraces": """
+        ................................................................................................
+        ................................................................................................
+        ................................................................................................
+        ............................................................WWWW.W..WWWW.WWW.....W.WWW.WWWW..WW.
+        ..........................................................WwWwwWWWWWWWWWWWWWWWwWWWWWWWWWWWWWWWWw
+        .........................................................4444VWV444444VWV444444VWV444444VWV44444
+        .......................................................WW4445VWV544445VWV544445VWV544445VWV54444
+        ......................................................WwW555VwWwV5555VWWwV5555VWWWV5555VwWWV5555
+        ....................................................WWWWWVVVwWWWwVVVVwWWWWVVVVwWWWwVVVVWWWWwVVVV
+        ...................................................444444VV444444VwV4444444VV4444444VV4444444VV4
+        .................................................WW444445VV544445VWV5444445VV5444445VV5444445VV5
+        ................................................WWW55555VwWV5555VWWWV55555VWwV55555VwwV55555VwWV
+        ..............................................WWWWwVVVVVwWWWVVVVwWWwwVVVVVwWWwVVVVVwWWWVVVVVwWWW
+        .............................................V4444444VV4444444VV4444444VV4444444VV444444VwV44444
+        ...........................................WWV5444445VV5444445VV5444445VV5444445VV544445VWV54444
+        ..........................................WWWwV55555VwwV55555VwwV55555VwwV55555VwwV5555VwwWV5555
+        ........................................WWWWWwWVVVVVwWWwVVVVVWWwwVVVVVwWWwVVVVVwWWwVVVVwWwWWVVVV
+        ......................................VWV444444VwV4444444VV4444444VV4444444VV444444VWV4444444VV4
+        .....................................WVWV544445VWV5444445VV5444445VV5444445VV544445VWV5444445VV5
+        ...................................WWWwWwV5555VwWwV55555VWwV55555VWWV55555VWwV5555VWWwV55555VwwV
+        ..................................WwWWWWWwVVVVwWWWWVVVVVwWwwVVVVVwWWwVVVVVwWwwVVVVwwWWwVVVVVwWWw
+        ................................44VWV4444444VV444444VwV444444VwV4444444VV444444VWV444444VwV44444
+        ...............................w45VWV5444445VV544445VWV544445VWV5444445VV544445VWV544445VWV54444
+        .............................wWW5VWWWV55555VWwV5555VwWWV5555VWWwV55555VwwV5555VWwwV5555VwWwV5555
+        ............................WWWWVWWWWwVVVVVwWWwVVVVwWWWWVVVVwWWWwVVVVVWWWWVVVVWWWWwVVVVWWWWwVVVV
+        ..........................4444VV4444444VV444444VwV444444VwV444444VwV4444444VV444444VwV4444444VV4
+        .........................W4445VV5444445VV544445VWV544445VWV544445VWV5444445VV544445VWV5444445VV5
+        .......................WWW555VWwV55555VWwV5555VwWwV5555VWWwV5555VwWWV55555VwWV5555VwWwV55555VwwV
+        ......................WWWWVVVWWWwVVVVVwWWwVVVVwWWWwVVVVwWWWwVVVVwWWWwVVVVVwWWwVVVVwWWWwVVVVVWWWW
+        ....................44444VwV4444444VV444444VwV444444VwV4444444VV444444VwV444444VwV444444VwV44444
+        ...................W44445VWV5444445VV544445VWV544445VWV5444445VV544445VWV544445VWV544445VWV54444
+        .................WWW5555VwWwV55555VWwV5555VWWwV5555VWWwV55555VwWV5555VwWwV5555VWWWV5555VwWWV5555
+        ................WWWwVVVVwWWWwVVVVVWWWwVVVVWWWWwVVVVwWWWwVVVVVwWWwVVVVwWWWwVVVVwWWWwVVVVwWWwwVVVV
+        ................WWWWWwwwWWWWWWWWWwWWWWwWWWWwWWWwwwwWWWWWwWwWwWWWWWwwwWWWWWwwwWWWwWWwwWwwWWWWwwww
+        """,
+        "pam.ground": """
+        JjJJjJJJJJJJJJjJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJjJJjJjJJJJJJJJJJ
+        JJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJjJJJjJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJjjJJJJJJJJJJJJJJJJ
+        jjJJJJJJJJJJJjjjJJJJJJJJJJJJJJJJSSSSSSSSjJJJJJJJSSSSSSSSJJJJJJJJSSSSSSSSJJjJJJJJSSSSSSSSJJJjJJJJ
+        JJJjJjJJJJJJJjJJJJJJJJJjJJJJJJSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+        JJJjJjJJJJJJJJJJJJJJJjJJJJJJJJSSJJJJJJJJSSSSSSSSjJJJJJJJSSSSSSSSJJJJJJJJSSSSSSSSJJJJJJJJSSSSSSSS
+        JJJjJJJJJjJJJJJJJJJJJJJJJJJJJjJJJJjJJJJJJjJJjJjJJJjJJJJJJJjJJjJJJJJJJJJJJJJjJJJJJJJJJJjJJJJJJJJJ
+        JJJJJJJJjJJJJJJJJJJJJJJJjJJJJJJJJJjJJJJJjJJJJjJJJJJJJJJJJJjJjJJJJJjJJJJJJJJJJJJJJJJJJjJJJJJJJJJJ
+        JJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJjJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJjJJJ
+        JJJjJJjJJJJJJjJJJJJJJJJJjJJJjJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJjJJJJjJJJJJJJJjJJJJJJJjJj
+        JJJjJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJjJJJJjJJJJJJJJJJJJJjjJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJj
+        JjJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJjJJJJJJJJjJJJJJJJJJJjJJJJJJJJJJJjjJjJJJjJJJJjjJjJJJJJJJjJJJjJJ
+        JJJJJJJJJJJjJJJJjJjJjJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJjJJJJJJjJJJjJJJJjjjJjJjJJJJJJJJJJJ
+        JJJJJJjJJJJJjJJJJJJJJJJJJJJJJjJJjjJJJjJjJJJJJJJJJJJJJJJjJJJJJJJjjJJJJJJJJjJJJJJJJJJJjJJJjJjJJJjJ
+        JJJJJjJJJJJJJJJJJJJJJjJJJJJjJJJJJJJJJJJJJJJJjJJJJJjJJJJJJjJJjJJJJJJJJJJjJJjJJJJJJJJJJJJJJJJJJjJj
+        """,
+        "pam.ruins": """
+        ..........................
+        ....SSSSSSSSSSS...........
+        ....sssssssssss...........
+        SSs..S...S...S............
+        .S...S...S...S.........SSs
+        .S...S...S...S.....SSs..S.
+        .S...S...S...S...SSSSSS.S.
+        .S...S...S...S...SS..SS.S.
+        .S...S...S...S...SS..SS.S.
+        .S...S...S...S...SS..SS.S.
+        .S...S...S...S...SS..SS.S.
+        .Ss..Ss..Ss..Ss..SS..SS.Ss
+        """,
+        "tree.round": """
+        ..HHHHF..
+        .HHHHfFF.
+        HHHHFFFff
+        HHHfFFfff
+        HHffFFfff
+        HffFFffff
+        .FFFffff.
+        .FFfffff.
+        ...fXf...
+        ....X....
+        """,
+        "tree.roundSmall": """
+        .HHHFF.
+        HHHfFFf
+        HHFffFf
+        HFfFFff
+        fFFFfff
+        .FFfff.
+        ..fXf..
+        ...X...
+        """,
+        "olu.mountain": """
+        ................................................................................1...............
+        ...............................................................................122..............
+        ..............................................................................11222.............
+        .............................................................................1112222............
+        ............................................................................111112222...........
+        ...........................................................................11111122222..........
+        ..........................................................................1111112222222.........
+        .........................................................................I11I112i2222if2........
+        .......................................................................III1II1I2i2222fi2if......
+        ......................................................................IIIFFIIFIiiiiiiifiiiii....
+        .....................................................................IIIIIIIIFIiifiiiiifiiii....
+        ....................................................................IIIIIFIIIIIFfiiiififiiiii...
+        ...................................................................FIIIFIIIFFIIFiiiiiifiiiiiii..
+        ..................................................................FFIIIIIIIIIFIfiiiiiififiiiiiii
+        .................................................................IIIIIIIIIIIIIfiiffifiiifiiififf
+        ................................................................IIFIIIIIIIIFIIiifiiiiiiifiiiiifi
+        ....................................................1..........IIIFIIIIIIFIIIIiifffiiiiifiiiiiif
+        ...................................................122........IIIIIIIIIIIFIIIIiiiiiiiiiiiiifffii
+        .................................................1111222....IIIIIIIFFIIIIFIIIIIiiifiiiiiiffiiifi
+        ................................................111122222..IFFIIIIFIFIIIIIFIIIFiiiffiifiiiiiifii
+        ...............................................11111122222.IIIFFIFIIIIIIIFIIIIIiiiifiiifiiiififi
+        .............................................111111112222222FIIIIIIIIFFIFIFIIfiifiiiifiiiiiiifif
+        ............................................11111111222222222IIFIIIIFFIIFIIIFIiiiiiiiiiiiiiiiiii
+        ...........................................1I11111I2iii22i2ii22FIIFIIIIIIFIFIIifiiiiiiiiiiiiiiiI
+        .........................................IIFFI1IIFIIiiii2i2iii22iIIFIIIIIIIIIiiiifiiiiiifiifiiiI
+        .......................................IIFIIIIIFIIIiiiiiifiiiiifiiIIIFFIIIIIIFfifiiiifiifififIFF
+        .......................................IIFIIIIFIIFIIfiiifiiiiiififIIIIFIIIIIIFifiiiifiiiiiiiIIFI
+        .....................................IIIFIIIIIFFIFIifiiiiifffiiiiiiifIIIFIFIiififiififfifififIII
+        ....................................IIIIIFIIIIIIIFFIifffifiiiiiffiiiiiIFIIFIfiiiiiiiiiiffiiIIFII
+        ..................................IIIIIIIIIFIIIIIIFIiiiiifiiiifiiiifiiiiFFIFiifiiiiiiiiiifIIIIIF
+        ..................................FIIIFIIIIIIIIIIFIfiiiiiiifiiiiififiiiiIIIIIiffiiiiiiiiiiIIFFII
+        ................................IIIIIIIFIIIIIFFIIFIiiifiiiiiifififfiiiififIIFiiiiiifiiiiiIIIIIII
+        ...............................IIIIIIIFIIIIIIIFIIIFiiiiiiiiiiiiifffiiiiiiiiFIifiifiiifiiFIIIFIII
+        ..............................FFIIIIIIFIIIIFIIIIIIFiiiffffiiiifiiiiffiiiifiiIiiiiifiifIIIIIFIIII
+        """,
+        "olu.lagoon": """
+        CCCCCCCCCCCCCCCCCCCCCCCCICCCCCCICCCCCCCCCCCCCCCCCC..............
+        CCCCCCCCCCCCCCCCCICCCCCCIiCCCCCIiCCCCCICCCCCCICCCC..............
+        CCCCCCCCCCICCccccIiccc................IicccccIiCCC..............
+        CCCCCCCcccIi....................................ccc.............
+        CCCIccc.........................................................
+        cccIi...........................................................
+        cc........................................................ccccCC
+        ............................................................cccC
+        ............................................................cccc
+        ............................................................cccC
+        cc........................................................ccccCC
+        cccc....................................................ccccCCCC
+        CCCcccc..............................................ccccCCCCCCC
+        cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+        CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+        """,
+        "olu.g1": """
+        ..RYRYRYR..
+        .RYRYRYRYR.
+        RY.......YR
+        D.........D
+        .D.......D.
+        ..D.....D..
+        ...D...D...
+        ....DKD....
+        .....K.....
+        """,
+        "olu.g2": """
+        ..UWUWUWU..
+        .UWUWUWUWU.
+        UW.......WU
+        D.........D
+        .D.......D.
+        ..D.....D..
+        ...D...D...
+        ....DKD....
+        .....K.....
+        """,
+        "olu.g3": """
+        ..OYOYOYO..
+        .OYOYOYOYO.
+        OY.......YO
+        D.........D
+        .D.......D.
+        ..D.....D..
+        ...D...D...
+        ....DKD....
+        .....K.....
+        """,
+        "olu.g4": """
+        ..PWPWPWP..
+        .PWPWPWPWP.
+        PW.......WP
+        D.........D
+        .D.......D.
+        ..D.....D..
+        ...D...D...
+        ....DKD....
+        .....K.....
+        """,
+        "olu.gulet": """
+        .....D.....D......
+        .....D.....D......
+        .....DW....DW.....
+        .....DW....DWW....
+        .....D.....D......
+        b..BBBBBBBBBBBBB..
+        BBBBWWWWWWWWWWWBBB
+        .BBBBBBBBBBBBBBBB.
+        ..bbbbbbbbbbbbbb..
+        """,
+        "olu.pine": """
+        ....I....
+        ....I....
+        ...IIi...
+        ....I....
+        ...IIi...
+        ..IIIii..
+        ...IIi...
+        ..IIIii..
+        ..IIIii..
+        ..IIIii..
+        ..IIIii..
+        .IIIIiii.
+        ..IIIii..
+        ....X....
+        """,
+        "olu.pineSmall": """
+        ...I...
+        ...I...
+        ..IIi..
+        ...I...
+        ..IIi..
+        .IIIii.
+        ..IIi..
+        .IIIii.
+        IIIIiii
+        ...X...
+        """,
+        "eph.celsus": """
+        ................W.................
+        .......WWWWW..WWWWW...WWWWW.......
+        ......WWWWWWWWWWWWWWWWWWWWWW......
+        ....CCCCVCVCCCCVCCVCCCCVCVCCCC....
+        ....CCCCWCWCoCCWCCWCCoCWCWCCCC....
+        ....CCCCWCWCCCCWCCWCCCCWCWCCCC....
+        ....CCCCWCWCCCCWCCWCCCCWCWCCCC....
+        ....CCCCWCWCCCCWCCWCCCCWCWCCCC....
+        ....CCCCWCWCCCCWCCWCCCCWCWCCCC....
+        ....CCCCWCWCCCCWCCWCCCCWCWCCCC....
+        ....CCCCWCWCCCCWCCWCCCCWCWCCCC....
+        ....CCCCWCWCoCCWCCWCCoCWCWCCCC....
+        .WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW.
+        ..wwwwwCCCwwwwwCCCCwwwwwCCCwwwww..
+        ..WWWWW...WWWWW....WWWWW...WWWWW..
+        .ccVcVcccccVcVccccccVcVcccccVcVcc.
+        .CCWCWCCCCCWCWCCCCCCWCWCCCCCWCWCC.
+        .CCWCWCCCCCWCWWWWWWWWCWCCCCCWCWCC.
+        .CCWCWCCCCCWCWCDDDDCWCWCCCCCWCWCC.
+        .ccWcWWWWWWWcWcDDDDcWcWWWWWWWcWcc.
+        .CCWCWCDDDCWCWCDDDDCWCWCDDDCWCWCC.
+        .CCWCWCDDDCWCWCDDDDCWCWCDDDCWCWCC.
+        .CCWsWCDDDCWsWCDDDDCWsWCDDDCWsWCC.
+        .ccWSWcDDDcWSWcDDDDcWSWcDDDcWSWcc.
+        .CCWSWCDDDCWSWCDDDDCWSWCDDDCWSWCC.
+        .CCWsWCDDDCWsWCDDDDCWsWCDDDCWsWCC.
+        .CCWCWCDDDCWCWCDDDDCWCWCDDDCWCWCC.
+        .ccWcWcDDDcWcWcDDDDcWcWcDDDcWcWcc.
+        WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+        wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+        WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+        """,
+        "eph.street": """
+        wWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWW
+        wWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWW
+        wWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWW
+        wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+        WWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWw
+        WWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWw
+        WWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWw
+        wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+        wWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWW
+        wWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWW
+        wWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWW
+        wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+        WWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWw
+        WWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWwWWWWWWWWWw
+        """,
+        "eph.fragments": """
+        ..................................................
+        VVV.....VVVV.................VVVV.................
+        Ww.......Ww...................Ww..................
+        Ww.......Ww.....VVVV..WWWWWW..Ww........VVVV......
+        Ww.......Ww......Ww..wWWWWWWw.Ww.........Ww.......
+        Ww.......Ww......Ww...wwwwww..Ww.........Ww.......
+        """,
+        "eph.hills": """
+        ................................................................................................
+        .........................................jjjjjjjjjjj............................................
+        ....................................jjjjjjjjjjjjjjjjjjjjj.......................................
+        .....jjjjjjjjjjj.................jjjjjjjjjjjjjjjjjjjjjjjjfff....................................
+        .jjjjjjjjjjjjjjjjjjj...........jjjjjjjjjjjjjjjjjjjjjjjjjjfffff...................jjjjjjjjjjj....
+        jjjjjjjjjjjjjjjjjjjjfff......jjjjjjjjjjjjjjjjjjjjjjjjjjjjfffffff............jjjjjjjjjjjjjjjjjjjj
+        jjjjjjjjjjjjjjjjjjjjfffff..jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfffffffff........jjjjjjjjjjjjjjjjjjjjjj
+        jjjjjjjjjjjjjjjjjjjjfffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfffffffffff...jjjjjjjjjjjjjjjjjjjjjjjjj
+        jjjjjjjjjjjjjjjjjjjjffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjffffffffffffjjjjjjjjjjjjjjjjjjjjjjjjjjj
+        jjjjjjjjjjjjjjjjjjjjffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjffffffffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+        jjjjjjjjjjjjjjjjjjjjfjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfffffffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+        jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfffffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+        jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjffffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+        jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
+        """,
+        "cypress.tall": """
+        .I.
+        .I.
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        .X.
+        """,
+        "cypress.mid": """
+        .I.
+        .I.
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        IIi
+        .X.
+        """,
+        "uzg.mountains": """
+        ......................................................................I.........................
+        .....................................................................Ifi........................
+        .....................................................................IIf........................
+        ....................................................................IIifi.......................
+        ...................................................................IIIIifi......................
+        ...................................................................FIIIiii......................
+        ..................................................................IIIIfiiii.....................
+        .................................................................IFIIiiiffii...................f
+        ................................................................IIIIIfiiifiii..................I
+        ................................................................IIIIIIiiiiiii.................IF
+        ...............................................................FIIIIIFiiifiiif...............III
+        ..............................................................IIIIIIFiifiiiiffif............IFIF
+        ............................................................IIFIIFIIIIiifiiiiiiff..........IIFIF
+        ............................................................IIIIIIIFFIiifffifffiif.........IFIII
+        ............................................................FIIIFFIIIiififiiifiiii.........IIFIi
+        ..........................................................IIFIIIFIIIiifififfiiiiiii.......FIIIIi
+        ...........................................................IIIFFIIFIffiiiiiiiiiiiii.....IFFIIIII
+        ..........................................................FIIFFIIIIIiiifffiiifffffii....IIIIIIIF
+        ........................................................IIIIFFIIIIFFIiiiiiiiiiiiiifiii..FIIIIIIF
+        .......................................................IIIFIIIFIFFFIIiiiiiiiiiifiiiiiiiFIIIIFIFf
+        ......f................................................IIIFFIIIIIIIIIiifffiiiiifiiiffiFFIIIIIIii
+        .....ffi...............................................IIIFIIIIIIIIfiiififiiifiiiiiffIIIIFFIFIii
+        ....FIiii.............................................IFIIIFFIIFIIIiiiiiiififiiiiiifiIIFIIFIIIIi
+        ..IFIIiiiii.........................................FFIFFIIIFIIFIIFfiiiiiiiffffiiifiiIFIIIFIIIii
+        ..FIIIIiifi.......................f.................FIIIIIIIIIIIIFFIfiiififfffiiiiiIFFIFFFFIFIIi
+        IFIFIIiiiiiifi...................Iii...............FIFIIFFIFIFIFFIFiiiiiiiiiiifiiiIIIIIIIFIFFIIf
+        IIFIIIfiifiiifi................FIIIifi.............IIIIIIIFIIIIIIIIIiffiiiififiifIIIFIIIIIIIFIFi
+        IIIIIIiiiffiiif...............FFIIffiif...........IIFIIIIFIFIIIIFIIiiifiiiiiffifiIIIIIIIIIIIIIii
+        IIIIIFiifiifiiiif............IFIIFFiiifi........IIIFIIIIIIIFIIFIIIfiiifiifiifiiiFFIIIIIIIIFIIIfi
+        IFFIIfifiifiifiiii.........IIIIIIFifiifiiii......IIFIIIIIFIIIIIFIIIifiiffiiiiiiIIFIFIIIIIFIIIfif
+        IIIIFFiififfiiiiiiif......IIIFIIIIIfffiiiifi...IIFIIIIIIIIFIIIIIIIiififfiiiiiiiiIFIFIIIIIIIIFFii
+        IIFIFIiiiiiiiiifiiiii....IIIIIFFFIiifffiiiiii..IIIIIIFIIFIIIIFIIIFiiiiiiifiiiffFIFIIFIIIFFIIIIfi
+        IIIIFIffiiiiiifififfff..IIIFIIIIIifiifiifiifff.IIIIFIIIFIFIFIIIIIIIifiiiiiiiiIFIFIIIIIIIIIIIIifi
+        IFIIIIiiiiiiffiiiifiiiFFIIIIIIIIIIffiiiifiiifIFIIIIIFIIIFIIIIIFIIIIfiiiffiiiiiIIIIIIIIIFIIIFFiii
+        IIIIIiiiiiifiiffiiffiIFIIFIIIIIIIfiifiiiiiiiiIFIFIIIIFIIFFIFIIFFIiiiiffiiiiiIIIIIFIIIFFIIIIFIifi
+        IIIIiiiiiiiiiffiiiiIIFFIIFIIIFFIIfiiiififiiiIIIIIFIIIIIIIIIFIFFIFIiiiffiiiiFIFFFIIIIIFIFIIIIiffi
+        IIFIIfifffiiifiifFIFIIFIIFIIIIFIIiiifiiiiiiiIIFFIIIIIIFIIIIIIIFIIiiiifiiifiFIIIIIIIIIIIIIFIFIiii
+        IIIIifiiiifiifiiiIFFFIIIIIFIIIIIIIfiiififiFIIIIIIIIIIFIIIIIIIIFIFIiifiifiiIIIIIIIIIIIIIFIIIIiffi
+        IIFIifiiiiiiiffIIFIIIFIIIIIIIIFIiiifiiffiIIIIIIFIIIIFIFFIIFIIFIIFfifiiiiiIIIFIIIIFIIIIFIIIIIfiii
+        FIFIfffiiiiifIIIIIIIIIFIFIFFIFFIiiiiiiifiIIIFIIIFIIIFIIIIIIFIIIFIiiffiffFFIFIIIFIFIIIIIIIIIFfiif
+        """,
+        "uzg.mosque": """
+        ..........................
+        ..........................
+        ..Y....................Y..
+        ..y....................y..
+        ..L....................L..
+        ..L....................L..
+        ..L....................L..
+        .LLl..................LLl.
+        .LLl..................LLl.
+        .LLl..................LLl.
+        .WWw........Y.........WWw.
+        Wwwww......LLLl......Wwwww
+        .ggg.......LLLl.......ggg.
+        .WWw....DDDDDDDDDD....WWw.
+        .WWw...KKKKKKKKKKKK...WWw.
+        .WWw..KKKKKKKKKKKKKK..WWw.
+        .WWw.KKKKKKKKKKKKKKKK.WWw.
+        WwwwwKKKKKKKKKKKKKKKKWwwww
+        .gggKKKKKKKKKKKKKKKKKKggg.
+        .WWwWWWWWWWWWWWWWWWWWwWWw.
+        .WWwWWWWWWWWWWWWWWWWWwWWw.
+        .WWwWWWWWWWWWWWWWWWWWwWWw.
+        .WWwWWWWWWWWWWWWWWWWWwWWw.
+        .WWwWWoWWoWWoWWoWWoWWwWWw.
+        .WWwWWoWWoWWoWWoWWoWWwWWw.
+        .WWwWWWWWWWWWWWWWWWWWwWWw.
+        .WWwWWWWWWWWWWWWWWWWWwWWw.
+        .WWwWWoWWoWWDDDoWWoWWwWWw.
+        .WWwWWoWWoWWDDDoWWoWWwWWw.
+        .WWwWWWWWWWWDDDWWWWWWwWWw.
+        .WWwWWWWWWWWDDDWWWWWWwWWw.
+        .WWwWWWWWWWWDDDWWWWWWwWWw.
+        """,
+        "uzg.house": """
+        ...GGGG...
+        .GGGGGGGG.
+        GGGGGGGGGG
+        .BBoBBoBB.
+        .BBBBBBBb.
+        .BBoBBDBb.
+        """,
+        "uzg.pier": """
+        BBBBBBBBBBBBBB
+        b..b...b...b..
+        b..b...b...b..
+        """,
+        "uzg.pine": """
+        ...I...
+        ...I...
+        ..IIi..
+        ...I...
+        ..IIi..
+        .IIIii.
+        ..IIi..
+        ..IIi..
+        .IIIii.
+        ..IIi..
+        .IIIii.
+        IIIIiii
+        ...X...
+        """,
+        "uzg.pineSmall": """
+        ..I..
+        ..I..
+        .IIi.
+        ..I..
+        .IIi.
+        IIIii
+        .IIi.
+        .IIi.
+        ..X..
+        """,
         "uz.registan": """
         ................Y.......................Y.........
         ................T.......................T.........
@@ -620,6 +1251,480 @@ extension PixelCity {
         SSSSSSSSSSSSsSsSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsSSSSSSSSSSSSSSSSSSSSSSSsSSSSSSSSS
         SsSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsSSSSSSSSSSSSSSSSSSSSSsSSsSSSSSSSSSSSSSSSSSSSSSSSSSS
         SSSSSsSSSSSSSSSSSSSSSSSSSSSSSsSSSSSsSSSSSSSSSSsSSSSSSsSSSSSsSsSSSSSssSSSSSSSSSSsSSsSSSSSSSSSSssS
+        """,
+        "bkh.minaret": """
+        ....aaaa....
+        ...AAAAAA...
+        .AAAAAAAAAA.
+        SSSSSSSSSSSS
+        .AAAAAAAaaa.
+        .ADADADADaa.
+        .ADADADADaa.
+        .AoAoAoAoaa.
+        .ADADADADaa.
+        .AAAAAAAaaa.
+        .ssssssssss.
+        SSSSSSSSSSSS
+        ..TTTTTTTT..
+        ..tttttttt..
+        ..SAAASaaa..
+        ..AAASAaas..
+        ..AASAAasa..
+        ..ASAAAsaa..
+        ..SSSSSsss..
+        ..AAASAaas..
+        ..AASAAasa..
+        ..ASAAAsaa..
+        ..SAAASaaa..
+        ..AAASAaas..
+        .SSSSSSssss.
+        .AASAAAsaaa.
+        .ASAAASaaas.
+        .SAAASAaasa.
+        .AAASAAasaa.
+        .AASAAASaaa.
+        .SSSSSSSsss.
+        .SAAASAAasa.
+        .AAASAAAsaa.
+        .AASAAASaaa.
+        .ASAAASAaas.
+        .SAAASAAasa.
+        .SSSSSSSsss.
+        .AASAAASaaa.
+        .ASAAASAaas.
+        .SAAASAAasa.
+        .AAASAAAsaa.
+        .AASAAASaaa.
+        """,
+        "bkh.mosque": """
+        .................TTUUUu.....
+        ................TTTUUUuu....
+        ...............TTTTUUUuuu...
+        ..TTTTTTTTTTT.TTTTTUUUuuuu..
+        ..AAAAAAAAAAaUUUUUUUUUuuuuu.
+        ..ATTTTTTTTTaUUUUUUUUUuuuuu.
+        ..AAAAAAAAAAaUUUUUUUUUuuuuu.
+        ..ATAAAAAAATaTTTTTTTTTTTTTT.
+        ..AAAAAUAAAAaUUUUUUUUUUUUUU.
+        ..AAAAUUUAAAaAAAAAAAAAAAAAA.
+        ..ATAUUUUUATaAAAAAAAAAAAAAA.
+        AAAAUUUUUUUAaAAAAAAAAAAAAAAa
+        AAAAUUUUUUUAaAAAAAAAAAAAAAAa
+        AaATUUTUUUUTaaAAaAAaAAaAAaAa
+        ADAAUUUUUUUAaDAADAADAADAADAa
+        ADAAUUUUUUUAaDAADAADAADAADAa
+        ADATUUUTUUUTaDAADAADAADAADAa
+        ADAAUUDDDUUAaDAADAADAADAADAa
+        ADAAUUDDDUUAaDAADAADAADAADAa
+        AAATUUDDDUUTaAAAAAAAAAAAAAAa
+        AAAAUUDDDUUAaAAAAAAAAAAAAAAa
+        AAAAUUDDDUUAaAAAAAAAAAAAAAAa
+        """,
+        "bkh.madrasah": """
+        ......................
+        ...Y..............Y...
+        ...t..............t...
+        .tVtTt..........tVtTt.
+        TtTtTtt........TtTtTtt
+        TtTtTtt........TtTtTtt
+        UUUUUUTTTTTTTTTUUUUUUU
+        AAAAAAAAAAAAAAaAAAAAAA
+        AAAAAAATTTTTTTaAAAAAAA
+        AAAAAAAAAAAAAAaAAAAAAA
+        AAAAAAATAAAAATaAAAAAAA
+        AAAAAAAAAAUAAAaAAAAAAA
+        AUAAUAAAAUUUAAaAUAAUAA
+        AUAAUAATUUUUUTaAUAAUAA
+        AUAAUAAUUUUUUUaAUAAUAA
+        AUAAUAAUUUUUUUaAUAAUAA
+        AAAAAAATUTUUUTaAAAAAAA
+        AUAAUAAUUDDDUUaAUAAUAA
+        AUAAUAAUUDDDUUaAUAAUAA
+        AUAAUAATUDDDUTaAUAAUAA
+        AUAAUAAUUDDDUUaAUAAUAA
+        AAAAAAAUUDDDUUaAAAAAAA
+        """,
+        "bkh.square": """
+        aAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAa
+        aAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAa
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        AAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAA
+        AAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAA
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        aAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAa
+        aAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAa
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        AAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAA
+        AAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAA
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        aAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAa
+        aAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAa
+        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        AAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAAAAaAA
+        """,
+        "gur.mausoleum": """
+        ...................y....................
+        ...................Y....................
+        ...................YY...................
+        ........................................
+        ...............VVVVtTttu................
+        ..............VVVVTtTttut...............
+        .............VVVVVTtTtTutu..............
+        ............VVVVVVTtTtTutut.............
+        ...........VVVVVVtTtTtTututu............
+        ..........TtTtTtTtTtTtTttutut...........
+        ..........TtTtTtTtTtTtTttutut...........
+        ..........TtTtTtTtTtTtTttutut...........
+        .........tTtTtTtTtTtTtTttututu..........
+        .........tTtTtTtTtTtTtTttututu..........
+        .........tTtTtTtTtTtTtTttututu..........
+        AAAAA....tTtTtTtTtTtTtTttututu....AAAAAA
+        TTTTT....tTtTtTtTtTtTtTttututu....TTTTTT
+        UUUu.....TTTTTTTTTTTTTTTTTTTTTT....UUUu.
+        AAAa.......WWWWWWWWWWWWWWWWWW......AAAa.
+        AAAa.......WUWUWUWUWUWUWUWUWW......AAAa.
+        TTTt......TTTTTTTTTTTTTTTTTTTT.....TTTt.
+        AAAa.......TUTUTUTUTUTUTUTUtu......AAAa.
+        UUUu.......UUUTUUUTUUUTUUUtUu......UUUu.
+        AAAa.......TUTUTUTUTUTUTUTUtu......AAAa.
+        AAAa.......UTUUUTUUUTUUUTUUUt......AAAa.
+        TTTt.......TUTUTUTUTUTUTUTUtu......TTTt.
+        AAAa.......UUUTUUUTUUUTUUUtUu......AAAa.
+        UUUu.......TUTUTUTUTUTUTUTUtu......UUUu.
+        AAAa.......UTUUUTUUUTUUUTUUUt......AAAa.
+        AAAa.......TUTUTUTUTUTUTUTUtu......AAAa.
+        TTTt.......UUUUUUUUUUUUUUUUUu......TTTt.
+        AAAa.TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAa.
+        UUUu.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAaUUUu.
+        AAAa.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAa.
+        AAAa.AAUUUUUUAAAAAAUUAAAAAAUUUUUUAaAAAa.
+        TTTt.AAUTUTUUAAAAAUUUUAAAAAUTUTUUAaTTTt.
+        AAAa.AAUUUUUUAAAAUUUUUUAAAAUUUUUUAaAAAa.
+        UUUu.AAUUTUTUAAAAUUUUUUAAAAUUTUTUAaUUUu.
+        AAAa.AAUUUUUUAAAAUUUUUUAAAAUUUUUUAaAAAa.
+        AAAa.AAUTUTUUAAAAUUUUUUAAAAUTUTUUAaAAAa.
+        TTTt.AAUUUUUUAAAAUUUUUUAAAAUUUUUUAaTTTt.
+        AAAa.AAUUTUTUAAAAUDDDDUAAAAUUTUTUAaAAAa.
+        UUUu.AAUUUUUUAAAAUDDDDUAAAAUUUUUUAaUUUu.
+        AAAa.AAUUUUUUAAAAUDDDDUAAAAUUUUUUAaAAAa.
+        AAAa.AAAAAAAAAAAAUDDDDUAAAAAAAAAAAaAAAa.
+        TTTt.AAAAAAAAAAAAUDDDDUAAAAAAAAAAAaTTTt.
+        """,
+        "gur.paving": """
+        sSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSS
+        sSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSS
+        sSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSS
+        ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+        SSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSS
+        SSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSS
+        SSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSS
+        ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+        sSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSS
+        sSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSS
+        sSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSS
+        ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+        SSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSS
+        SSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSS
+        SSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSSSSSsSS
+        ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+        """,
+        "tree.big": """
+        ...HHHHHHF...
+        ..HHHHHHFff..
+        .HHHHHHFFFfF.
+        .HHHHHFFfFfF.
+        HHHHHFfFFfFff
+        HHHHFFFFFffff
+        HHHfFFfFFffff
+        HHFFFffFfffff
+        HFFFfFFffffff
+        .FFFffffffff.
+        ..FFfffffff..
+        ...Fffffff...
+        .....fXf.....
+        ......X......
+        """,
+        "tsk.tower": """
+        ........*........
+        ........W........
+        ........R........
+        ........R........
+        ........W........
+        ........W........
+        ........R........
+        ........R........
+        ........W........
+        ........W........
+        ......GGGGG......
+        ......ggggg......
+        .......ggg.......
+        ........G........
+        ........G........
+        ........G........
+        ........G........
+        ........G........
+        .....GGGGGGG.....
+        ....GGGGGGGGG....
+        ....ooooooooo....
+        ....GGGGGGGGG....
+        .....ggggggg.....
+        ........Gg.......
+        ........GG.......
+        ........Gg.......
+        ........Gg.......
+        ........GG.......
+        ........Gg.......
+        ........Gg.......
+        .......GGGg......
+        .......GGgg......
+        .......GGgg......
+        .......GGGg......
+        ......G.Gg.g.....
+        ......G.Gg.g.....
+        ......GgGGgg.....
+        .....G..Gg..g....
+        ....G...Gg...g...
+        ....G...GG...g...
+        ...GggggGgggggg..
+        ..G.....Gg.....g.
+        .G......GG......g
+        G.......Gg.......
+        """,
+        "tsk.mosque": """
+        ............................
+        .Y........................Y.
+        .T........................T.
+        .T........................T.
+        TTT......................TTT
+        TTT......................TTT
+        WWw......................WWw
+        WWw..........Y...........WWw
+        WWw..........YY..........WWw
+        WWw......................WWw
+        WWw........VVTTTt........WWw
+        WWw.......VVVTTTtt.......WWw
+        WWWW.....VVVVTTTttt.....WWWW
+        ggg......TTTTTTTttt......ggg
+        WWw......TTTTTTTttt......WWw
+        WWw......TTTTTTTTTT......WWw
+        WWw......WWWWWWWWWw......WWw
+        WWw......WWWWWWWWWw......WWw
+        WWw......WWWWWWWWWw......WWw
+        WWw......WWWWWWWWWw......WWw
+        WWWW.....WWWWWWWWWw.....WWWW
+        ggg.WWWWWWWWWWWWWWwWWWWW.ggg
+        WWw.wwwwwwwwwwwwwwwwwwww.WWw
+        WWw.WWWWWWWWWWWWWWWWWWWw.WWw
+        WWw.WWWWWWWWWWWWWWWWWWWw.WWw
+        WWw.WWwWWwWWwWWwWWwWWwWw.WWw
+        WWw.WWDWWDWWDWWDWWDWWDWw.WWw
+        WWw.WWDWWDWWDWWDWWDWWDWw.WWw
+        WWw.WWDWWDWWDWWDWWDWWDWw.WWw
+        WWw.WWDWWDWWDWWDWWDWWDWw.WWw
+        WWw.WWDWWDWWDWWDWWDWWDWw.WWw
+        WWw.WWDWWDWWDWWDWWDWWDWw.WWw
+        WWw.WWDWWDWWDWWDWWDWWDWw.WWw
+        WWw.WWWWWWWWWWWWWWWWWWWw.WWw
+        """,
+        "tsk.city": """
+        ..................................................
+        ..................................................
+        ..................................................
+        333333333..........33333333.......................
+        3o3o3o3o3..........3o3o3o33.......................
+        333333333..........33333333................3333333
+        3o3o3o3o3..........3o3o3o33.3333333........3o3o3o3
+        333333333.33333333.33333333.3o3o3o3........3333333
+        3o3o3o3o3.3o3o3o33.3o3o3o33.3333333.333333.3o3o3o3
+        333333333.33333333.33333333.3o3o3o3.3o3o33.3333333
+        3o3o3o3o3.3o3o3o33.3o3o3o33.3333333.333333.3o3o3o3
+        333333333.33333333.33333333.3o3o3o3.3o3o33.3333333
+        """,
+        "tsk.bank": """
+        WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+        GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+        GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG
+        JJJJJJJjJJJJjJJjJJJJJJJJJjJJJJJJJJJJJJJJjJJJJJJJJJJJjJJJJJJJJJJJJJJjJJJJJJJJJJJJjJJJJJjjJjJJJJJj
+        JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJjJJJJjJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJ
+        JJJJJJJJJJJJJjJJJjJjJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJjJJJJJJJJJJJJJJJjJJJJJJJJJJJJJjJJJJJJJJJJJJJJJ
+        JJJJJJJJJJjJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ
+        JJJJJJJJjJJJJJJJJJJJjJJJJJJJJJjJJJJJJJJJjjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJjJJJJjJJJJJJJJ
+        JJJJJJJJJJJJJJJJJjJJjjJJjJJJJJJjJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJjJJJjJ
+        JJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJ
+        JJJJJJjJJJJJJJJjJJJJJJJJJJJJJjJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJjJJJJJJJJ
+        JJJjJJJJJJJJJJJjJJJJJJJJJJJJJJJjJJJJJjjjJJJJJJJJJJJjJJJjJJJJJJJJJJJJJJJJJjJJjJJJJjJJJJJJJJJJJJjJ
+        JJjjJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJjjJJJJjJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJjJJJJJJJJJJjJJJjj
+        JJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJjJJjJJJjJJJJJjJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJ
+        jJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJjJJJJJJJJJJJjJJJJJJJJJJJJjjJJJJjJJ
+        JJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJjJJJjJJjJJJJJJJJJJJjJJJJJJJJJJJJJJJjJJJJJJjjJJJJJ
+        """,
+        "chm.peaks": """
+        ..........................................................................V.....................
+        .........................................................................Vww....................
+        ........................................................................VVwww...................
+        .......................................................................VVVVwww..................
+        .......................................................................VVVVwww..................
+        ......................................................................VVVVVwwww.................
+        .....................................................................VVVVVVwwwww................
+        ....................................................................VVVVVVwwwwwww...............
+        ....................................................................VVVVVwwwwwwwww..............
+        ...................................................................VV1VVV22www2www..............
+        ..................................................................VV1111V22w2w2w2222............
+        .................................................................11111111122222222222...........
+        ............................................V....................11111111222222222222...........
+        ...........................................Vww.................11111111111222222222222..........
+        ..........................................VVVww................111111111222222222222222.........
+        ..........................................VVwww...............1111111111222222222222222........V
+        .........................................VVVwwwww............111111111112222222222222222......VV
+        ........................................VVVVwwwww............1111111111112222222222222222......V
+        ........................................VVVVwwwwww.........11111111111112222222222222222222..111
+        .....................................VVVVVVVwwwwwwww.......11111111111111222222222222222222..111
+        ......................................VVVVVVwwwwwwww......11111111111111222222222222222222221111
+        .....................................1VVVVVVww22w2w2.....111111111111112222222222222222222221111
+        ................V..................1111VV1VVww22222222...111111111111112222222222222222222211111
+        ...............VVw................111111111222222222222.1111111111111112222222222222222222111111
+        ..............VVwww..............111111111112222222222111111111111111111222222222222222222111111
+        ............VVVVVwwww............111111111112222222222111111111111111112222222222222222221111111
+        ..........VVVVVVVwwwwww..........111111111122222222221111111111111111112222222222222222221111111
+        .........VVVVVVVwwwwwwww.......11111111111222222222211111111111111111122222222222222222111111111
+        ........VVVVVVVVVwwwwwwwww.....11111111111122222222211111111111111111122222222222222222111111111
+        .......VVVVVVVVVwwwwwwwwwww...111111111111222222222111111111111111111122222222222222221111111111
+        .....VVVVVVVVVVVwwwwwwwwwwwww1111111111111122222222111111111111111111112222222222222211111111111
+        ...V1VVV1VV11111wwwwww2wwww111111111111111122222221111111111111111111112222222222222211111111111
+        ..V111V111111112wwwww222ww1111111111111111122222111111111111111111111122222222222221111111111111
+        111111111111111222222222221111111111111111222222111111111111111111111112222222222221111111111111
+        111111111111111222222222221111111111111111222221111111111111111111111222222222222221111111111111
+        111111111111111222222222211111111111111111222211111111111111111111111222222222222111111111111111
+        111111111111111222222221111111111111111111222211111111111111111111111222222222222111111111111111
+        111111111111112222222211111111111111111112222111111111111111111111111122222222222111111111111111
+        """,
+        "chm.foothills": """
+        ................................................................................................
+        ................................................................................................
+        ................................................................................................
+        ...................................jjjjjjjjjjj...............................................jjj
+        ...............................jjijjjjjjjiijjjjjjj.........................................iijij
+        ............................jijjjjjjjjjijijijjjjjjaaa...............jiijjijijjjjj.........jijjjj
+        ...jjjjiijjjjj............jjjjjjijjjjjjjijjjjjjjjjaaaia........jjjjjjjijjjjjijjjjjjjja..jiijjjjj
+        ijjjjjjjjjjjjjjjji......jjijjjjjjjjjijjjjjjjjjijjjaaaaaii...jjjjijjjijjjjjjjjjijjijjjiijjijjjjjj
+        jjjijjiijjijjjjjjaaa..jjjjjjjjiijijijijjjjjjjjjjjjaaaaaaaajjjjjjjijjjjjjjjjjjjjijijjjajjjjjjijjj
+        jjjjjjjijjjjjjjjjaaaajjjjjjjjjjjjjjjjjiiijjjjjjjjjaaiaajijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjiijjjj
+        ijjjjjjjijjjjjjjjiajjjjiiijjijijjjjjjjijjjijijjjjjaaajjijjjjjjjjjijjjijjjijjjjijjjjjjjjjjjjjjjjj
+        jjjjjjjiijjijjjjiijjjjjjjjjjjjjjijjjjijjjjjjjjjjjiajjjjjjjjjjijjjijijjjjjjjijijjjjjjijjjijjjjjjj
+        ijjjjjjjjjjjiijjjjjijjjjjjijjjjjjjjjjijiiijjjjjjjjjjijjjjjjjjjjjjjjijjjjijjjjjjjjijijjjjjjjijjjj
+        jjjijjjjjjjjjjjjjjjjjjjjjjjijjjjjjjjjijjjjjjjjjjjjjjjjjijjjjjijjjjjjijijjjjjjjjjjjjijjijjijijjij
+        jjjjjjijjjjjjjijjjjjjjjjjijjijjjjjjjijjijjjjjjjjjjjjjjijjjijjjjjjjjjjjjijjijjiijjjjjijjiijijijjj
+        jjjjjjjjjjjjjjjjjjjjjjijjjjjjjjjjjjjjiijijjjjjjiijijjjjjjjjjjjjjijjjjjjjjijjjjjjjjijjjjjijjjjjjj
+        """,
+        "chm.dacha": """
+        ....eEEe....
+        ..eEEEEEEe..
+        eEEEEEEEEEEe
+        .WWoWWWWoWw.
+        .WWoWWDWoWw.
+        .WWWWWDWWWw.
+        """,
+        "chm.meadow": """
+        JJJJJjJJJJJJJjjJJJPPJJJJJJJJjjJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJPPJJJJJJJJJJJJJJJJJJPJJJJJJjJJJJJJJ
+        JJJJJJJJJJJJJJJJJJPJJJJJJJJJJJjJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ
+        JJJJJJJjJjJJjJJJJJjJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJjJJJPJJPJJJJJJJJJJJJJJJPJJJJJJJjJJJJJJJJJjJJJ
+        PJJJJJJJJJjJJJJjJJJJJJJJJJPJJJJJJjJjJJJJJJjJJJJJjJjJJJJPJJJJJJJJJJJJJJJJPjJJJJJJJJjJJJJJJJJJJJjJ
+        JJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJjJJPJJJJJJJJJPJJJJJJJJJJJJJjJJJJjjJJJJJJjJJJJjJJJJJJJJJJJJJJjJJ
+        jJJJJJJJJJJJjJJPJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJPJJJjJJJPJJJJJJJJJJJJJJPJJJJJJJJJJJJJJPJJJjJJJjJ
+        JJJJJJjJjJJJJJJJJJJJJJJJJJJJJjjJjjjJjJJJJJJJJJJjJJJJJJJJJJjJJJJJJJJJJjJJJJJJJJJJJJjJJJjJJJJJJJJJ
+        JJJJjJJJJJJJJJJJJJJjJJJJJJJJJJjJJJJJJJJJJJJJJjJJJJJJJJjJJJJJJJJJJJJJJJjJJjjJJJJJJJJJJjjPJJJJJJJJ
+        JJJJJJjJJJJJJJJJjJJJJJJJJJJJJJJJPjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJjjJjJ
+        JJJJJJJPJJJJJJJJJjJJJJJJJJJJJJJJJJJJPJJJJJJJPJJJJJJJjJJJJjJJJJJJJJJJPJJJJjjJJJjJJJJJJJJJJJJJJJJJ
+        JJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJPJJJJJJJJJJJJjJJJJJJJJ
+        JJJJJPJJJJJJjJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJjJJJJJjJJJJJJPJjJJJJJJJJPJ
+        JJJJJJJJJJJJJJjJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJ
+        JJJJjJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJjJPJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJj
+        JJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJPJJJJJJJJJJjJjJJJjJJJJJJJJJJJJJJJJJJJJJJJJJ
+        JJJPJJJJJJJJJJJJJJJJjjJJJJJJJJJJJJJJJJjJjJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJ
+        """,
+        "chm.poplar": """
+        .FHf.
+        .FHf.
+        .FFf.
+        FFFff
+        FFHff
+        FFHff
+        FFHff
+        .FHf.
+        .FHf.
+        .FHf.
+        ..X..
+        ..X..
+        """,
+        "bzr.dome": """
+        ........................TTTT........................
+        .......................SSSSSS.......................
+        .......................TTTTTT.......................
+        .......................TTTTTT.......................
+        .......................TTTTTT.......................
+        .................UUVTTTTUUTTTTtuut..................
+        .............TVTUTVUTTTUTTUTTTUTtutttu..............
+        ...........VTVUVTVTTTUTTTTTTUTTTTttutttt............
+        .........UVTUTVTUTTUTTTUTTUTTTUTTUtttuttut..........
+        .......TTTUUTTTTTUUTTTTTUUTTTTTUUTttttuutttt........
+        ......UTUTTTTUTUTTTTUTUTTTTUTUTTTTUtuttttutut.......
+        .....TUTUTTTTUTUTTTTUTUTTTTUTUTTTTUtuttttututt......
+        ....UTTTTTUUTTTTTUUTTTTTUUTTTTTUUTTTttuutttttuu.....
+        ...TTUTTTUTTUTTTUTTUTTTUTTUTTTUTTUTTtuttutttuttu....
+        ...TTTTUTTTTTTUTTTTTTUTTTTTTUTTTTTTUttttttuttttt....
+        ..UTTUTTTUTTUTTTUTTUTTTUTTUTTTUTTUTTTuttutttuttut...
+        ..TUUTTTTTUUTTTTTUUTTTTTUUTTTTTUUTTTTtuutttttuutt...
+        ..TTTTUTUTTTTUTUTTTTUTUTTTTUTUTTTTUTUttttututtttu...
+        ..TTTTUTUTTTTUTUTTTTUTUTTTTUTUTTTTUTUttttututtttut..
+        ..TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT..
+        ..SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSs..
+        ..SSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSSs..
+        ..SSoSSSoSSSoSSSoSSSoSSSoSSSoSSSoSSSoSSSoSSSoSSSSs..
+        ..SSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSSs..
+        ..SSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSDSSSSs..
+        ..SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSs..
+        """,
+        "bzr.stalls": """
+        WWRRWWRRWWRRWWRRW..UWWUUWWUUWWUUWWUU..NNWWNNWWNNWWNNWWN..YOOYYOOYYOOYYOOYY..
+        WWRRWWRRWWRRWWRRW..UWWUUWWUUWWUUWWUU..NNWWNNWWNNWWNNWWN..YOOYYOOYYOOYYOOYY..
+        .r.r.r.r.r.r.r.r...u.u.u.u.u.u.u.u.u...n.n.n.n.n.n.n.n...o.o.o.o.o.o.o.o.o..
+        b...............b..b...............b..b...............b..b...............b..
+        b...............b..b...............b..b...............b..b...............b..
+        b...............b..b...............b..b...............b..b...............b..
+        b...............b..b...............b..b...............b..b...............b..
+        b....Y...Y......b..b....N...N......b..b....R...R......b..b...............b..
+        b..Yy.Yy.Yy.Yy..b..b..Nn.Nn.Nn.Nn..b..b..Rr.Rr.Rr.Rr..b..b...SB.SB.SB.SB.b..
+        b..yy.yy.yy.yy..b..b..nn.nn.nn.nn..b..b..rr.rr.rr.rr..b..b...BB.BB.BB.BB.b..
+        bbbbbbbbbbbbbbbbb..bbbbbbbbbbbbbbbbb..bbbbbbbbbbbbbbbbb..bbbbbbbbbbbbbbbbb..
+        bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..
+        bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..
+        bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..
+        bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..
+        bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..bBBBBBBBBBBBBBBBb..
+        """,
+        "bzr.ground": """
+        SsSSSssSSSSSSSSSSSSSSsssSSSSSSSSSSSSSSsSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsSSSsSSSSSSSSS
+        SSSSSssssSSsSSSsSSSSSSSSSsSSSSSSSSSsSSSSSSSSsSsSsSSsSSSSSSSSssSSSSSSSSSSSSSSSSsSSSSSSSSSsSSSSsSS
+        SSsSSSSSSSSsSSSSSSSSsSSSsSSSSsSSSSsSSSSSSsSsSSSSSSSSSSSSSSSSSSSsSSSSSSsSSSSSSSSSSSSSSSSSSSSSSSSS
+        SSSSSSSSSSSSsSSSSSSSSSSSSSSSSSSSSSsSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSssSSsSSSSsSSSSSSSSSSSSSSSSSSSSS
+        SSSSSSSSSSSSSSsSSsSSsSSSSSSsSSSSSSSSSsSSSSsSSSSSSSSSSSSSSSsSSSsSSSSSSSSSSSSSSSSSSSSSSSSSSsSSSSSS
+        sSSSSSSSSSSSSSSSSSSSsSsSSsSSSSSSSSSSSsSSSSSSSSSSSSSsSsSSSSSSSSSSsSSSSSSSSSSSSsSSSSSSSSSSSSSsSSSS
+        SSSSSSSSSSSSSSSSsSSSsSSSSSSSSSSSSsSSSsSsSSSSsssSSSSSSSSSSSSSSSSSSssSSSSSSSSSSSSSSSSSSSSsSSSssssS
+        sSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsSSSSSSsSSSSSSSSSSsSSSSSSsSSsSSSSSSSSSSSSSSSSSSSSsssSSSSSsSsSSSSS
+        SSSSSSSSSSSSSSSSSsSsSsSSSSSSSSSSsSsSSSSSSSSSSSSSSSSSSSSSSSsSSSSsSSSSSsSSSSSSSsSSSSSSSSSsSSSSSSSS
+        SSsSSsSSSSSSSSSSSSSSsSSsSSSSSSSsSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsSSSSSSSSSSsSSSssSSSSSSS
+        SsSSSsSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSsSSSSSSSSSSSSSSSSSSSSSSSSsSsSSSSSSsSSsSSSSSSSSSSSSSSSSSs
+        SSSSSSSSSsSSsSSSsSSSSSSSsSSSSSSSSSSSSSSSSSSSSSSSSSSssssSSSSSSSsSSSSSsSsSSSSSSSSSSSSSSSSSSSSSSSSS
+        SSSSSSSSSSSSSsSSSSsSSSSSSSSSSSSsSSsSsSSsSSssSSSSSSSSSSSSSsSSSSSSSSSSSSSSSSSSSSSSSSSSsSSSSSSSSSSS
+        SSSSSssSSSSSSssSSsSSSSSsSSSsSSSSSSSSSSSSSSSSSSSSSSSSssSSsSsSSSSSsSSSSSSSSssSsSSsSSSSSSSSSSSSSSSS
+        SSSsSSSssSSsssSSsSSSSSSSSSSSSSSSSSSSSSSSSsSSSSSSSSSSSSSSSsSSSSSSSSSSsSsSSSSSSSSSSSSSSSSSSSSSSsSs
+        ssSSSSSSSSSSSSSsSSsSSSSsSSSSSSsSSSSSSSSSSSSSsSSsSSSSsSSSSSSSSSSSSSSSSSsSSSSSsSssSSSSSSSSsSSSSSSS
+        """,
+        "bzr.melons": """
+        ...Yy...
+        ..YyYy..
+        .YyYyYy.
+        YyYyYyYy
         """,
         "dxb.skyline": """
         ............................................
@@ -1395,28 +2500,6 @@ extension PixelCity {
         sSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSS
         SSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSSSSSSsSSS
         """,
-        "tree.round": """
-        ..HHHHF..
-        .HHHHfFF.
-        HHHHFFFff
-        HHHfFFfff
-        HHffFFfff
-        HffFFffff
-        .FFFffff.
-        .FFfffff.
-        ...fXf...
-        ....X....
-        """,
-        "tree.roundSmall": """
-        .HHHFF.
-        HHHfFFf
-        HHFffFf
-        HFfFFff
-        fFFFfff
-        .FFfff.
-        ..fXf..
-        ...X...
-        """,
         "cst.town": """
         ............................................UU..
         ...........................................UUUu.
@@ -1492,127 +2575,6 @@ extension PixelCity {
         ....D.....
         RRRRRRRRRR
         .WWWWWWWW.
-        """,
-        "alp.peaks": """
-        ......................................................................V.........................
-        .....................................................................Vww........................
-        ....................................................................VVwww.......................
-        ....................................................................VVVwww......................
-        ...................................................................VVVVwww......................
-        ...................................................................VVVwwww......................
-        ...................................................................VVVVwww......................
-        ..................................................................VVVVwwwwww....................
-        .................................................................VVVVwwwwwww..............V.....
-        ................................................................VVVV1w2w2www2w...........VVw....
-        ...............................................................1V1V1112222222w...........VVw....
-        ..............................................................11111111222222222..........VVw....
-        ..............................................V................111111122222222.........VVVVwww..
-        .............................................Vww..............111111112222222222........VVwwww..
-        .............................................Vww.............11111112222222222222.....VVVVVwwww.
-        ............................................VVwww............11111112222222222222.....VVVVwwwww.
-        ..........................................VVVVVwwww.........1111111112222222222222...VVVVVwwwwww
-        ..........................................VVVVVwwwww........1111111122222222222222..V1VV12wwwww2
-        ......................V..................VVVVVwwwwww......1111111111122222222222222211VV122ww2w2
-        .....................VVw................VVVVVVwwwwwww....111111111111222222222222222111111222222
-        ....................VVVww..............VVVVVVVwwwwwwww...111111111112222222222222221111112222222
-        ...................VVVVwww............11VVV11V22www2222.1111111111112222222222222221111112222222
-        ..................VVVVVwwww...........111VV11222w222222..111111111122222222222222211111122222222
-        .................VVVVVwwwwwww........11111111222222222211111111111112222222222221111111122222222
-        ...............VVVVVVVVwwwwwww.......11111111222222222211111111111122222222222221111111122222222
-        ...............VVVVVVVwwwwwwww.......11111111222222222211111111111112222222222221111111112222222
-        .............VVVVVVVVwwwwwwwwwwww...111111112222222222111111111111122222222222211111111122222222
-        ............11111VV11Vwww222w2w2ww11111111111222222222111111111111122222222222211111111122222221
-        ............1111111111ww2222w222w211111111111222222221111111111111122222222222111111111112222221
-        .........111111111111222222222221111111111111222222211111111111111222222222221111111111122222211
-        ........1111111111111122222222221111111111111222221111111111111111222222222211111111111222222111
-        .......11111111111111122222222221111111111111222222111111111111111122222222211111111111222222111
-        ......111111111111111222222222211111111111111222221111111111111111222222222211111111111222221111
-        ......111111111111112222222221111111111111122222211111111111111111222222221111111111111122221111
-        ....11111111111111112222222222111111111111112222211111111111111112222222221111111111111122111111
-        ...111111111111111111222222211111111111111112221111111111111111112222222221111111111111222111111
-        ..1111111111111111112222222211111111111111122222111111111111111112222222211111111111112221111111
-        ..1111111111111111112222222111111111111111122211111111111111111111222222111111111111112211111111
-        """,
-        "alp.forest": """
-        ................................................................................................
-        ................................................................................................
-        ...............................................................................IIIIIIIIIIf......
-        .....IIIIIIIIIII...........................................................IIIIIIIIIIIIIfffIII..
-        .IIIIIIfIIfIIfIIIIfI....................................................IIfIIIfIIIIIIIIIIfIffIif
-        IIIIIIIIIIIIIIIffIIIiii..............IIIIIIIIIIIIfIf.................IIIIIIIfIIIfIffIIIIIfIIIfif
-        fIIIIIIfIIIIfIIIIIIfiiiii.......IffIIIIIfIfIIIIIIIIIfIIii..........IffIIIIIIIIIIIIIIIIIIfIIIIffi
-        IIIfIIIIIIIfffIIIIIIfiiifii..fIIIfIffIIIIIIIfIIfIfIIIIIfiifi......IIIIIIIIIIfIIIfIIIIIIfIIIIIIii
-        IfIIfIIIIIIIIIIIIffIfiiifiIIIIfIIIfIIfIIIIIffIIIIIIIIIIiffiiiif.IIIIfIIIIIIfIIfIIIIIIIIIfIIIIIif
-        IIIIIfIIIIIIIIIIIIIfiifIIIfIIIIIIfIIfIIIIIIIIIIIfIIffIIiiiiiiffIIIIIIfIIfIIIfIIIIIIIIIIIIIIIIIfi
-        IIIfIIIIIIIIIIIIIIfIifIIIIIIfIIIIIIIIIIIIIIIIIIIfIIIIIIiiiiffIIffIIIIIIfIIIIIIIfIIfIIIIfIIIfIfii
-        IIIIIIIIIIIIfIIffIfIIIIIIIIIIIfIIIIIIIfIIIIfIIfIIIIfIffiiiiiIIIIIIffIIfIIIIfIIffIIIIfIIIIIIIIIfi
-        IIIIIIIIfIIIfIIfIIIIIIIIIIIIIIffIIIIfIIIIIIIffIIIIIIfIIifiIfIIIIIIIIIffIffIIIIfIfIIIIIIIIIIIIIii
-        IIIfffIfIIIIfIIIIIIfIIIIIIIIIIIIIIIIffIIIIIIIIIIIIIIfIIiiIIIIfIIIIIIIIIIIfIfIIIfIfIIffIfIfIIfIif
-        """,
-        "alp.chalet": """
-        ....eEEe....
-        ..eEEEEEEe..
-        eEEEEEEEEEEe
-        .bBBoBBoBBb.
-        .bBBBBBBBBb.
-        .WWoWWWWoWw.
-        .WWWWWDWWWw.
-        .WWWWWDWWWw.
-        """,
-        "alp.church": """
-        ..........NN.
-        ..........NN.
-        ..........Nn.
-        ..........Nn.
-        .........NNNN
-        .........nnnn
-        .........WWWw
-        .........WWWw
-        .........WYWw
-        .........YKYw
-        ...eeee..WYWw
-        ..EEEEEE.WWWw
-        .EEEEEEEEWWWw
-        EEEEEEEEEWDDw
-        WWWWWWWWWWWWw
-        WWWWWWWWWWWWw
-        WWWWWWWWWWWWw
-        WWoWWWoWWWWWw
-        WWoWWWoWWWWWw
-        WWWWWWWWWWWWw
-        WWWWWWWWWWWWw
-        WWWWWWWWWWWWw
-        """,
-        "alp.meadow": """
-        JjJJJJJjJjJJjjjjJjJYjJjJPjJWJJjJJJJJPJJYJJJJJJJJJjJJJJJJJJJJJJjJJJJJJJJJJJjJJJjJJJJJJJJJjWJjjJJj
-        JJJJJJJJJJJJJWYJJYJPJJJJJJJJjjJJJJJJJJYJJJjJJJJJJJjJjJJJWjJJJjJJJJJJJJJJJJjJJJJJJJjJJJJJJJJYJJJJ
-        jJWJJJjJJjJJYJJJJJjYJJJJPjJjJWJJjJWJYjJJJJJJJJJJJJJJJPJJJjJJJjPJJJJjjJJjJJJJJJjJJJWjJJJJJJJJJJJJ
-        JJJJJJJJJJJJjJJJJJJJjJJJJJYjJJjJJJJJJJJjJJJJJYJJJJYJJJJJJJJJJJjJJJjJYJJJJJjJJJJJJJJjjJYJjJJJJJJJ
-        JJJWJJJJJjJJJJjjJJJjPWJJJjJPJJJJJJjJjYJjJJWJPJWJJJJJJJjJJJJJJjJJJJJJJjjJjJJJjJJJJJJJPJJJJJJJjJJP
-        JJJjJJJJJJJJJjJjYjJJJJJJJJJJJJWJJJJJJJJjJJJjJJJJWjJJJJJJJJJWjJJJJJJPJJJJJJJWJJJJjJJJJJJJjjJJJJJJ
-        JWJJjJjJWJJJJJjJJPJjJJjJJJjjJJjJJjJjJJJjJjJJJJJWJjJJJJjJJYJWJjJjjJJPJJJJJJJJJjJJJJJJJJJJJJJJjjYJ
-        JJYJJJJJJJJJJJjJJjYJjJjJJJJjjJJJJJJjJJJjJJJJJjJJJJJJjJjJJJJJJJJWjYJJJJJJJJJJJJJjJJjJjJJYJJJJJJJJ
-        JJJJJJJjJJJJjJJJjJJjJJJJJJYJJJJjJjJJJjJJJJJJjJJJJJJjjJJJJJjJJJWJJJJJJJjJjJJJJJJJJJJjJJJJPjJJJJJJ
-        JJJJJJJWJJJJJJJJJJJJJJPJJJJJjWJJJJJJJJJJJJJjPJJJJJJjJJYJJJJJjJJJJJJYJJJjjJJJPJJJPJjJJJJjJJJJjJJj
-        JJJPJWJjjJJJYjJJJJJJJJJWjJJJJJJJJJJJJjJJjJJJJJJJJJPJJJJjJJjJJJJJJjJJJJJJJJJJJJJJJJJJJJWJjJJYjJJJ
-        JJJJJJJJJJWJYJJJjJJJJJJWWjJJjJPJJjJJJWJJJJjJJJJjJJJJJJJjJJJJJJJYJjJJJJJJJJJJjJPJJJJJJJJJJJJjJJJj
-        JjjJJJJJJJJPJJJWJjJJWJJJJJJJjJJJJJJjJJJJjJjJJjJJJjJJJYJJJJJjJJJJJYJJJjJJJJJJJJJJJJJJJJJjJJJJJPJJ
-        JjJJJJJJJJJJPjJJJJJJJJJjjJJJJJPjWJjJjjJJJJJJJjJJJJjJJJJJJJJJJJJJJJJJJJjYjJJJjJJJJJJJJJYjJJJjJPJJ
-        JJJjjjJJJJJJJJjJJPJJjJJjYJJJJJJJJJjJjJJJJjjJJJWJPJJjjJJJJJJJjJjJJJJJJJJjJJjJJJJjJJJJWJjJPJJJJPJJ
-        JJWJJJJJJJJJJJJJJJJjJJJjJjJjJJJJJJJjJJJJJJjPjJJJJjJJJJjJJJJJJJJJjJJJJjjYJjJJJJJPJJJJJJJJjJJJJJJJ
-        """,
-        "alp.pine": """
-        ...I...
-        ...I...
-        ..IIi..
-        ...I...
-        ..IIi..
-        .IIIii.
-        ..IIi..
-        .IIIii.
-        .IIIii.
-        .IIIii.
-        ...X...
         """,
         "ny.skyline": """
         ..................................................
@@ -1705,263 +2667,6 @@ extension PixelCity {
         ..OoOoOoOoOO..
         OOOOOOOOOOOOOO
         .DDDDDDDDDDDD.
-        """,
-        "mnt.peaks": """
-        ....................................................................................V...........
-        ...................................................................................Vww..........
-        ..............................................................V.....................ww..........
-        .............................................................VVw..................VVwww.........
-        .............................................................Vww..................VVwww.........
-        ............................................................VVVwww...............VVVVwww........
-        ...........................................................VVVwwww...............VVVwwww........
-        ...........................................................VVVwwww..............VVVwwwwww.......
-        ..........................................................VVVVwwwww.............VVVwwwwww.......
-        .........................................................VVVVVwwwwww............VVVwwwwwww......
-        .........................................................VVVVVwwwwww..........VVVVVVwwwwwww.....
-        ........................................................VVVVVwwwwwwww..........1V1V1w2w22ww.....
-        ........................................................VVVVVVwwwwwww........V1111V2222222w2w...
-        ......................................................V1VVV1V122ww2wwww.....11111112222222222...
-        ....................................V.................11V11112222w2w2ww.....111111122222222222..
-        ...................................VVw...............1111111122222222222...1111111222222222222..
-        ..................................VVVww..............1111111222222222222...1111111122222222222..
-        .................................VVVwwww............1111111122222222222222.11111111222222222222.
-        ................................VVVVVwwww...........111111111222222222222.111111112222222222222.
-        ................................VVVVwwwww...........1111111122222222222222111111112222222222222.
-        ..........V.....................VVVVVwwww..........111111111122222222222221111111112222222222222
-        .........Vww...................VVVVVwwwwww........1111111111122222222222111111111122222222222222
-        ........VVwww.................VVVVVwwwwwwww......11111111111222222222222211111111122222222222222
-        ......VVVVwwwww...............VVVVVVwwwwwwww.....11111111112222222222222111111111222222222222222
-        ......VVVVwwwww.............VVVVVVVwwwwwwwwwww...11111111111222222222221111111111222222222222222
-        .....VVVVVVwwwww............1V1V1V1122w2w2w22w.1111111111111222222222211111111111122222222222222
-        ...VVVVVVVwwwwwwww........111V111112222222w22221111111111112222222222211111111111122222222222221
-        ..VVVVVVVVwwwwwwwwww.......111111111222222222211111111111111222222222211111111112222222222222211
-        .VVVVVVVVVwwwwwwwwwww.....1111111112222222222211111111111112222222222111111111112222222222222211
-        VVVVVVVVVVwwwwwwwwwwww...11111111112222222222111111111111112222222221111111111111222222222222211
-        VVVVVVVVVVwwwwwwwwwwwww.111111111122222222222111111111111112222222221111111111112222222222222211
-        V11VVVVV1ww2wwwwwwwww2w1111111111112222222221111111111111122222222221111111111112222222222222111
-        1111VVVV12w2ww22w222w221111111111122222222211111111111111122222222111111111111111222222222221111
-        111111111122222222222111111111111112222222111111111111111122222221111111111111111222222222221111
-        111111112222222222221111111111111122222221111111111111111112222221111111111111112222222222211111
-        111111111222222222211111111111111122222221111111111111111122222221111111111111122222222222111111
-        111111111222222222211111111111111122222211111111111111111222222221111111111111122222222222111111
-        111111111222222222111111111111111222222211111111111111111122222211111111111111122222222222111111
-        111111112222222222111111111111111222222111111111111111111122222111111111111111122222222211111111
-        111111112222222221111111111111111122222111111111111111111122222111111111111111112222222211111111
-        """,
-        "mnt.foothills": """
-        ................................................................................................
-        ................................................................................................
-        ...................................jjjjjjjjjjj..................................................
-        ...............................jjjjjjjjjjjjjjjjjjj..............................................
-        .jjjjjjjjjjj.................jjjjjjjjjjjjjjjjjjjjjff.........................................jjj
-        jjjjjjjjjjjjjjjf..........jjjjjjjjjjjjjjjjjjjjjjjjfffff...............jjjjjjjjjjjjj........jjjjj
-        jjjjjjjjjjjjjjjfff.......jjjjjjjjjjjjjjjjjjjjjjjjjffffff.........jjjjjjjjjjjjjjjjjjjjjff.jjjjjjj
-        jjjjjjjjjjjjjjjffffff..jjjjjjjjjjjjjjjjjjjjjjjjjjjffffffff....jjjjjjjjjjjjjjjjjjjjjjjjffjjjjjjjj
-        jjjjjjjjjjjjjjjffffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfffffffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
-        jjjjjjjjjjjjjjjfffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfffffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
-        jjjjjjjjjjjjjjjffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfffffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
-        jjjjjjjjjjjjjjjffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfffjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
-        jjjjjjjjjjjjjjjfjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjfjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
-        jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj
-        """,
-        "mnt.spruce": """
-        ...I...
-        ...I...
-        ..IIi..
-        ...I...
-        ..IIi..
-        .IIIii.
-        ..IIi..
-        ..IIi..
-        .IIIii.
-        ..IIi..
-        .IIIii.
-        IIIIiii
-        ...X...
-        """,
-        "mnt.spruceSmall": """
-        ..I..
-        ..I..
-        .IIi.
-        ..I..
-        .IIi.
-        IIIii
-        .IIi.
-        .IIi.
-        ..X..
-        """,
-        "mnt.yurt": """
-        ...WWW...
-        .WWWWWWw.
-        WWWWWWWww
-        RYRYRYRYr
-        WWWDDWWww
-        WWWDDWWww
-        """,
-        "mnt.horse": """
-        bBBBBb..
-        .BBBBBBb
-        .B..B..B
-        .b..b...
-        """,
-        "mnt.apple": """
-        .HHHfF.
-        HHHFRFF
-        HRFFFFf
-        HFFFFff
-        FfRFfRf
-        .Fffff.
-        ..fXf..
-        ...X...
-        """,
-        "mnt.meadow": """
-        JJJjJjJJJJjJJJJjJJJJJJYJJJJJJJJJJJJJJJJJJJjJJJJJJjJJJJJJJJJJJJJJJjJJJJJJJjJJJJJJjJJJJJJJJJJJJJJj
-        JJjJJJJJJJJJJJJJJJJJJJJJJJJYJJJJJjJYJJJJJJJJJJJjJJJJYJjjJJJJJJJJJjJYJJjJJJJJJJJJJJJJJjJJJJJJJJJJ
-        JJYJJJJJJjJJJJJJJJJJJJJJJJJJJJJjJjJJJJJJJjJJJJJjJJJJJjJJJjJJYJJJjJJJJJJJJJJYJJJJJjjjJJJJJJJJJJJY
-        JJjjJJjJJJJJJJJJJJjJJJJJJJJJJJJJJJJjJJJJjjJJJJjJJJJJJJJJJjjJJJJJJJJJJJJJJJJJJjJJjJYjJJJJJJJjJJJJ
-        JJJJJJJJJJJJJJJJJJJJJJJJJjJJJJYJJJJJJJJYJJJJJYJJJJJjJJJJJJJjJJJJJJJJJJjJJJJYJJJJJJJJJJJJjJJJJJYJ
-        JJYJJJJJJJJJJJjJjJJJYJJJJJJJJJJJJJJjJjJJJJJJJJJJJJJJJJjJJJJJJJJjJJJYJJJJJJJjjJJJJJJJJjJJJJJJJJJJ
-        JJjJJJJJJYJYJJJjJJYJJJjJJJjJYJJJJjJYJJJJJJJJJJJJjjJJJJJJJJJJJJJjJJJjJJJJjJJJJJJjJJJJJJJJJJJJJYJJ
-        JJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJjJJJYjJJJJjJJJJJJJJJJJJjJJJJJJJjjJJJJJJYJJJJJJJJYJJJJJJJJJJJJJJJJ
-        JJJJjJJJjJJJjJJJJJYJJJYJJjJJYJJJJjjJJJJJJJJJjJJJjJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJjJJJJJJjJ
-        JJJJJJJJJJjJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJYjJJJJJJJJJJJJJJJJJJJjJJJJJJJJjJJJJJJjJYJjJJJJJJJJJJJJ
-        JJJJJJJJJJJJJJJJJJjJJJJJJjJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJYJJJJJJJJJJJJJJJJJJJJJJJ
-        JJjJJJJJJJJJJJJjJJYJJJJJJJJJJYJJJJJjJJJJJJJJJJJJJYJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ
-        JJjJJJJJJJjJJJJJJJJjJJJJJJJJJYJjjJJJJJJJJJJJJJjJJJJJJJJJJYJJJJJJJJJJJJJJJYJJJJJJJJJJJJJJJJJJJjJj
-        jJJjjYJjJJJjYJJJJJJjjJjJJJJJJJJJJJJjjJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJJJJYJJJJJJJJJJJJJJJjJJJJ
-        JJJJJJJJJjJYJJJJJJjJJJJJJJJJjJJJjJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJjJJJJJJJjJjJJJJJJJJJ
-        JjJJJJJJJJJJjJJJJJJJYJYJJJJJJJJJJJJJJJYJJJJJYJJJJJJJJJJJjJJJJJjJjJJJJJJJJjJJJJJJjJJJJJJJJJJYJJJJ
-        JJjJJJJJJJJJJJJjJJJJJJYJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJJJJJjJJjJjJJJJJJJJJJjJJJJ
-        JJJJJJJJJjJJJjJJJJjJJJJJJJJJJJJJJJJjJJJJJJJJJJJJjJJJJJJJJYJJJJJJYJJJJJJJJJJJJJJJJJjJJJJJJJJJJJJJ
-        """,
-        "trp.k1": """
-        ...FFFFff...
-        ...FFFFff...
-        ..FFFFFfff..
-        ..GFFFGfff..
-        .FGFFFGfggf.
-        .FFFGGGgggg.
-        .GGGFGGgfgg.
-        .GGGGGFgggg.
-        .GFGGGGgggf.
-        .GGGFFGfggf.
-        .GFGGGGgggg.
-        .GFFGGGggfg.
-        .GFGGFGgggg.
-        .GGGGGGgggf.
-        GFGGGGGGgggg
-        GFGFGFGGggfg
-        GGGGGGGGgggg
-        GGGGGGGGgggg
-        GGGGGGGGgggg
-        GGGGGGGGgggg
-        GGGGGGGGgggg
-        GGGGGGGGgggg
-        """,
-        "trp.k2": """
-        ...FFf...
-        ..FFFff..
-        .FFFFfff.
-        .GFFGfff.
-        .GFFGggg.
-        .GGFGgfg.
-        .GGFGGgg.
-        .GGGGFfg.
-        GGGGGGggg
-        FGGFGFggg
-        GGFGFGggg
-        GGGGGGggg
-        GGGGGGggg
-        GGGGGGggg
-        GGGGGGggg
-        """,
-        "trp.k3": """
-        ....FFFFFfff....
-        ....FFFFFfff....
-        ..FFFFFFFFffff..
-        ..FFGFFGFGfggf..
-        ..GFFFFGFFfggf..
-        ..GGGGGFGGgggg..
-        ..GFGGGFGFgfgg..
-        ..GGGGGGGGgfgf..
-        .GGFGGFGGGggggg.
-        .GFGGGGGGGgggff.
-        .GFFGGGGGGggfgg.
-        .GGGGGGGGGggggg.
-        .GGGFGGGGGgfggg.
-        .GGGGGGGGGgfgff.
-        .FGGGFFGFGggggg.
-        .GGGGGGGGGffffg.
-        .GGGGGGGGGggggg.
-        .GGGGFGFFGgffgf.
-        .GGGGGGGGGggggg.
-        GGGGGGGGGGgggggg
-        GGGGGGGGGGgggggg
-        GGGGGGGGGGgggggg
-        GGGGGGGGGGgggggg
-        GGGGGGGGGGgggggg
-        GGGGGGGGGGgggggg
-        GGGGGGGGGGgggggg
-        """,
-        "trp.k4": """
-        ..FFf..
-        ..FFf..
-        .FFFff.
-        .FFFff.
-        GGGFfgg
-        GGGGggg
-        GGGGggg
-        GGGGggg
-        GGGGggg
-        GGGGggg
-        """,
-        "trp.boat": """
-        ..............RY
-        .............YBN
-        b...........BB..
-        BBBBBBBBBBBBBB..
-        .bbbbbbbbbbbb...
-        """,
-        "trp.beach": """
-        VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-        CCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCC
-        CSCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCSCCCCCCCCCCCCCCCSCCCCC
-        CSCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCSCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCC
-        CCCCSSCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCS
-        CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCSCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-        CCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCSCC
-        CCCCCCCCCCSCCCCSCCCCCSCCSCCCSCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-        CCCCCCCCCCCCCCCCCCCCCSCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCSSCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCSCSCCC
-        SCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCSCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCC
-        CCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCSCCCSCCCCCCCCSCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCC
-        CCCCCCCCCCSCCCCCCSCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCC
-        CCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCCCCCCSCCCCCCCC
-        CCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCSCCCCCCCCCCCSCCCCCCCCCCCCCCCCCCCCSCCCCCSCCCCCCSCCCCCCCCCSCCCCCCC
-        """,
-        "palm.lean": """
-        ...HH.HH......
-        .HHFFHFFHH....
-        HFFf.F.fFFHH..
-        Ff..bXb..fFFH.
-        ...FbXbF...fFH
-        ..Ff.X.fF...fF
-        .Ff..X..fF...f
-        Ff...X...fF...
-        f....X....f...
-        .....b........
-        ......X.......
-        ......X.......
-        .......b......
-        .......X......
-        ........X.....
-        ........b.....
-        .........X....
-        .........X....
-        .........b....
-        ..........X...
-        ..........X...
-        ..........bb..
-        ..........Xb..
         """,
         "cty.hills": """
         ..................................................3333333333333.................................
@@ -2085,6 +2790,67 @@ extension PixelCity {
             .sprite("cap.valley", x: 0, bottom: 86, depth: 0, flags: 0),
             .flag(x: 5, top: 50, bottom: 70, depth: 0),
         ]),
+        "galata": Scene(horizon: 60, clouds: [9, 21, 33], ops: [
+            .sprite("gal.far", x: 0, bottom: 60, depth: 3, flags: 0),
+            .sprite("gal.back", x: 0, bottom: 70, depth: 2, flags: 0),
+            .sprite("gal.tower", x: 61, bottom: 64, depth: 1, flags: 2),
+            .sprite("gal.left", x: 0, bottom: 70, depth: 1, flags: 0),
+            .sprite("gal.right", x: 78, bottom: 70, depth: 1, flags: 0),
+            .birds(row: 44, count: 4, speed: 2),
+            .sprite("gal.street", x: 0, bottom: 86, depth: 0, flags: 0),
+            .boat(["gal.tram"], bottom: 77, speed: -0.9, offset: 20, depth: 0),
+            .flag(x: 5, top: 50, bottom: 70, depth: 0),
+        ]),
+        "pamukkale": Scene(horizon: 62, clouds: [10, 22, 34], ops: [
+            .sprite("pam.hills", x: 0, bottom: 62, depth: 4, flags: 0),
+            .sprite("pam.ruins", x: 66, bottom: 42, depth: 2, flags: 2),
+            .sprite("pam.terraces", x: 0, bottom: 74, depth: 1, flags: 0),
+            .sprite("pam.ground", x: 0, bottom: 86, depth: 0, flags: 0),
+            .water(top: 70, bottom: 76, from: 0, to: 24, lagoon: true),
+            .sprite("tree.round", x: 26, bottom: 74, depth: 0, flags: 0),
+            .sprite("tree.roundSmall", x: 34, bottom: 74, depth: 0, flags: 0),
+            .birds(row: 44, count: 3, speed: 1.6),
+            .flag(x: 5, top: 50, bottom: 74, depth: 0),
+        ]),
+        "oludeniz": Scene(horizon: 58, clouds: [10, 24], ops: [
+            .sprite("olu.mountain", x: 0, bottom: 60, depth: 3, flags: 0),
+            .water(top: 58, bottom: 80),
+            .water(top: 62, bottom: 78, from: 0, to: 64, lagoon: true),
+            .sprite("olu.lagoon", x: 0, bottom: 78, depth: 1, flags: 0),
+            .boat(["olu.gulet"], bottom: 66, speed: 0.5, offset: 60, depth: 2),
+            .bob("olu.g3", x: 60, bottom: 36, depth: 2, amp: 2, period: 2.5),
+            .bob("olu.g1", x: 74, bottom: 44, depth: 1, amp: 2, period: 3),
+            .bob("olu.g2", x: 85, bottom: 36, depth: 1, amp: 3, period: 2),
+            .bob("olu.g4", x: 64, bottom: 56, depth: 1, amp: 2, period: 3.5),
+            .sprite("olu.pine", x: 84, bottom: 80, depth: 0, flags: 0),
+            .sprite("olu.pineSmall", x: 92, bottom: 80, depth: 0, flags: 0),
+            .flag(x: 5, top: 50, bottom: 78, depth: 0),
+        ]),
+        "ephesus": Scene(horizon: 62, clouds: [10, 24], ops: [
+            .sprite("eph.hills", x: 0, bottom: 64, depth: 3, flags: 0),
+            .sprite("eph.celsus", x: 58, bottom: 70, depth: 1, flags: 2),
+            .sprite("cypress.tall", x: 46, bottom: 70, depth: 1, flags: 0),
+            .sprite("cypress.mid", x: 51, bottom: 70, depth: 1, flags: 0),
+            .sprite("cypress.tall", x: 93, bottom: 70, depth: 1, flags: 0),
+            .sprite("eph.fragments", x: 10, bottom: 72, depth: 1, flags: 0),
+            .birds(row: 44, count: 3, speed: 1.5),
+            .sprite("eph.street", x: 0, bottom: 86, depth: 0, flags: 0),
+            .flag(x: 5, top: 50, bottom: 72, depth: 0),
+        ]),
+        "uzungol": Scene(horizon: 58, clouds: [10, 22, 33], ops: [
+            .sprite("uzg.mountains", x: 0, bottom: 62, depth: 3, flags: 0),
+            .sprite("uzg.house", x: 40, bottom: 60, depth: 2, flags: 0),
+            .sprite("uzg.house", x: 52, bottom: 58, depth: 2, flags: 0),
+            .sprite("uzg.house", x: 86, bottom: 61, depth: 2, flags: 0),
+            .water(top: 60, bottom: 78),
+            .sprite("uzg.mosque", x: 60, bottom: 66, depth: 1, flags: 2),
+            .sprite("uzg.pier", x: 44, bottom: 70, depth: 1, flags: 0),
+            .sprite("uzg.pine", x: 26, bottom: 70, depth: 1, flags: 0),
+            .sprite("uzg.pineSmall", x: 33, bottom: 70, depth: 1, flags: 0),
+            .sprite("uzg.pine", x: 90, bottom: 72, depth: 0, flags: 0),
+            .birds(row: 46, count: 3, speed: 1.4),
+            .flag(x: 5, top: 50, bottom: 74, depth: 0),
+        ]),
         "samarkand": Scene(horizon: 62, clouds: [10, 21, 33], ops: [
             .sprite("uz.mountains", x: 0, bottom: 62, depth: 4, flags: 0),
             .sprite("uz.farMosque", x: 4, bottom: 63, depth: 3, flags: 0),
@@ -2106,6 +2872,59 @@ extension PixelCity {
             .birds(row: 45, count: 3, speed: 1.5),
             .sprite("khv.ground", x: 0, bottom: 86, depth: 0, flags: 0),
             .flag(x: 5, top: 50, bottom: 70, depth: 0),
+        ]),
+        "bukhara": Scene(horizon: 62, clouds: [10, 22], ops: [
+            .sprite("bkh.mosque", x: 38, bottom: 68, depth: 2, flags: 2),
+            .sprite("bkh.madrasah", x: 77, bottom: 68, depth: 1, flags: 2),
+            .sprite("bkh.minaret", x: 64, bottom: 68, depth: 1, flags: 2),
+            .sprite("uz.poplar", x: 28, bottom: 68, depth: 1, flags: 0),
+            .sprite("uz.poplar", x: 34, bottom: 68, depth: 1, flags: 0),
+            .birds(row: 46, count: 3, speed: 1.4),
+            .sprite("bkh.square", x: 0, bottom: 84, depth: 0, flags: 0),
+            .flag(x: 5, top: 50, bottom: 70, depth: 0),
+        ]),
+        "guremir": Scene(horizon: 62, clouds: [9, 21, 33], ops: [
+            .sprite("gur.mausoleum", x: 56, bottom: 70, depth: 1, flags: 2),
+            .sprite("tree.big", x: 34, bottom: 70, depth: 1, flags: 0),
+            .sprite("tree.round", x: 46, bottom: 70, depth: 1, flags: 0),
+            .sprite("tree.round", x: 92, bottom: 72, depth: 0, flags: 0),
+            .birds(row: 46, count: 3, speed: 1.5),
+            .sprite("gur.paving", x: 0, bottom: 86, depth: 0, flags: 0),
+            .flag(x: 5, top: 50, bottom: 72, depth: 0),
+        ]),
+        "tashkent": Scene(horizon: 62, clouds: [9, 21, 33], ops: [
+            .sprite("tsk.city", x: 0, bottom: 62, depth: 3, flags: 0),
+            .sprite("tsk.tower", x: 80, bottom: 68, depth: 2, flags: 2),
+            .sprite("tsk.mosque", x: 59, bottom: 68, depth: 1, flags: 2),
+            .water(top: 66, bottom: 74),
+            .sprite("tree.big", x: 30, bottom: 68, depth: 1, flags: 0),
+            .sprite("tree.round", x: 44, bottom: 68, depth: 1, flags: 0),
+            .birds(row: 46, count: 3, speed: 1.6),
+            .sprite("tsk.bank", x: 0, bottom: 88, depth: 0, flags: 0),
+            .flag(x: 5, top: 50, bottom: 74, depth: 0),
+        ]),
+        "chimgan": Scene(horizon: 60, clouds: [10, 22, 34], ops: [
+            .sprite("chm.peaks", x: 0, bottom: 60, depth: 3, flags: 0),
+            .sprite("chm.foothills", x: 0, bottom: 66, depth: 2, flags: 0),
+            .water(top: 62, bottom: 72, lagoon: true),
+            .sprite("chm.meadow", x: 0, bottom: 86, depth: 0, flags: 0),
+            .sprite("uz.poplar", x: 26, bottom: 72, depth: 1, flags: 0),
+            .sprite("chm.poplar", x: 32, bottom: 72, depth: 1, flags: 0),
+            .sprite("uz.poplar", x: 38, bottom: 72, depth: 1, flags: 0),
+            .sprite("chm.dacha", x: 58, bottom: 74, depth: 1, flags: 0),
+            .sprite("tree.big", x: 82, bottom: 76, depth: 0, flags: 0),
+            .birds(row: 46, count: 3, speed: 1.4),
+            .flag(x: 5, top: 50, bottom: 76, depth: 0),
+        ]),
+        "bazaar": Scene(horizon: 62, clouds: [10, 22], ops: [
+            .sprite("bzr.dome", x: 46, bottom: 64, depth: 2, flags: 2),
+            .sprite("uz.poplar", x: 30, bottom: 66, depth: 2, flags: 0),
+            .sprite("uz.poplar", x: 38, bottom: 66, depth: 2, flags: 0),
+            .sprite("bzr.ground", x: 0, bottom: 86, depth: 0, flags: 0),
+            .sprite("bzr.stalls", x: 22, bottom: 74, depth: 1, flags: 0),
+            .sprite("bzr.melons", x: 10, bottom: 74, depth: 0, flags: 0),
+            .birds(row: 46, count: 4, speed: 1.8),
+            .flag(x: 5, top: 50, bottom: 74, depth: 0),
         ]),
         "dubai": Scene(horizon: 62, clouds: [11, 26], ops: [
             .sprite("dxb.far", x: 46, bottom: 63, depth: 3, flags: 0),
@@ -2190,19 +3009,6 @@ extension PixelCity {
             .sprite("cst.rocks", x: 0, bottom: 78, depth: 0, flags: 0),
             .flag(x: 5, top: 50, bottom: 72, depth: 0),
         ]),
-        "alps": Scene(horizon: 62, clouds: [10, 21, 36], ops: [
-            .sprite("alp.peaks", x: 0, bottom: 62, depth: 3, flags: 0),
-            .sprite("alp.forest", x: 0, bottom: 66, depth: 2, flags: 0),
-            .water(top: 64, bottom: 72),
-            .sprite("alp.church", x: 64, bottom: 66, depth: 1, flags: 2),
-            .sprite("alp.chalet", x: 78, bottom: 66, depth: 1, flags: 0),
-            .sprite("alp.chalet", x: 50, bottom: 66, depth: 1, flags: 0),
-            .sprite("alp.pine", x: 90, bottom: 67, depth: 1, flags: 0),
-            .sprite("alp.pine", x: 40, bottom: 67, depth: 1, flags: 0),
-            .birds(row: 46, count: 3, speed: 1.6),
-            .sprite("alp.meadow", x: 0, bottom: 86, depth: 0, flags: 0),
-            .flag(x: 5, top: 50, bottom: 72, depth: 0),
-        ]),
         "newyork": Scene(horizon: 62, clouds: [9, 21, 33], ops: [
             .sprite("ny.far", x: 0, bottom: 62, depth: 3, flags: 0),
             .sprite("ny.skyline", x: 46, bottom: 66, depth: 1, flags: 2),
@@ -2212,36 +3018,6 @@ extension PixelCity {
             .birds(row: 46, count: 3, speed: 2),
             .sprite("quay", x: 0, bottom: 88, depth: 0, flags: 0),
             .flag(x: 5, top: 50, bottom: 77, depth: 0),
-        ]),
-        "mountains": Scene(horizon: 62, clouds: [10, 22, 34], ops: [
-            .sprite("mnt.peaks", x: 0, bottom: 62, depth: 3, flags: 0),
-            .sprite("mnt.foothills", x: 0, bottom: 66, depth: 2, flags: 0),
-            .sprite("mnt.spruce", x: 58, bottom: 64, depth: 2, flags: 0),
-            .sprite("mnt.spruceSmall", x: 66, bottom: 64, depth: 2, flags: 0),
-            .sprite("mnt.spruce", x: 88, bottom: 65, depth: 2, flags: 0),
-            .water(top: 64, bottom: 69, from: 30, to: 96, lagoon: true),
-            .sprite("mnt.meadow", x: 0, bottom: 87, depth: 1, flags: 0),
-            .sprite("mnt.yurt", x: 60, bottom: 75, depth: 1, flags: 0),
-            .sprite("mnt.yurt", x: 74, bottom: 74, depth: 1, flags: 0),
-            .sprite("mnt.horse", x: 40, bottom: 75, depth: 1, flags: 0),
-            .sprite("mnt.horse", x: 86, bottom: 77, depth: 0, flags: 1),
-            .sprite("mnt.apple", x: 24, bottom: 74, depth: 1, flags: 0),
-            .birds(row: 46, count: 3, speed: 1.4),
-            .flag(x: 5, top: 50, bottom: 76, depth: 0),
-        ]),
-        "tropic": Scene(horizon: 58, clouds: [10, 22, 33], ops: [
-            .water(top: 58, bottom: 80, lagoon: true),
-            .sprite("trp.k4", x: 30, bottom: 60, depth: 3, flags: 0),
-            .sprite("trp.k2", x: 44, bottom: 61, depth: 3, flags: 0),
-            .sprite("trp.k1", x: 58, bottom: 63, depth: 2, flags: 0),
-            .sprite("trp.k3", x: 72, bottom: 64, depth: 2, flags: 0),
-            .boat(["trp.boat"], bottom: 70, speed: 0.9, offset: 20, depth: 1),
-            .birds(row: 44, count: 3, speed: 2),
-            .sprite("trp.beach", x: 0, bottom: 88, depth: 0, flags: 0),
-            .sprite("palm.lean", x: 80, bottom: 76, depth: 0, flags: 0),
-            .sprite("palm.big", x: 88, bottom: 76, depth: 0, flags: 0),
-            .sprite("palm.small", x: 26, bottom: 76, depth: 0, flags: 0),
-            .flag(x: 5, top: 50, bottom: 76, depth: 0),
         ]),
         "city": Scene(horizon: 62, clouds: [9, 21, 33], ops: [
             .sprite("cty.hills", x: 0, bottom: 62, depth: 4, flags: 0),
@@ -2259,52 +3035,12 @@ extension PixelCity {
 
     /// Места каждой страны — сменяются по дням. Пустой код — для остальных стран.
     static let places: [String: [String]] = [
-        "TR": ["istanbul", "cappadocia"],
-        "UZ": ["samarkand", "khiva"],
+        "TR": ["istanbul", "cappadocia", "galata", "pamukkale", "oludeniz", "ephesus", "uzungol"],
+        "UZ": ["samarkand", "khiva", "bukhara", "guremir", "tashkent", "chimgan", "bazaar"],
         "AE": ["dubai", "desert"],
         "RU": ["moscow", "village"],
-        "EU": ["paris", "coast", "alps"],
+        "EU": ["paris", "coast"],
         "US": ["newyork"],
-        "KZ": ["mountains"],
-        "KG": ["mountains"],
-        "TJ": ["mountains"],
-        "MN": ["mountains"],
-        "AZ": ["mountains"],
-        "GE": ["mountains"],
-        "AM": ["mountains"],
-        "CA": ["mountains"],
-        "TM": ["desert"],
-        "FR": ["paris"],
-        "DE": ["city", "alps"],
-        "AT": ["alps"],
-        "CH": ["alps"],
-        "SI": ["alps"],
-        "IT": ["coast"],
-        "ES": ["coast"],
-        "PT": ["coast"],
-        "GR": ["coast"],
-        "CY": ["coast"],
-        "HR": ["coast"],
-        "ME": ["coast"],
-        "MT": ["coast"],
-        "IL": ["desert"],
-        "EG": ["desert"],
-        "JO": ["desert"],
-        "QA": ["desert"],
-        "SA": ["desert"],
-        "OM": ["desert"],
-        "BH": ["desert"],
-        "KW": ["desert"],
-        "MA": ["desert"],
-        "TN": ["desert"],
-        "IN": ["tropic"],
-        "LK": ["tropic"],
-        "MV": ["tropic"],
-        "TH": ["tropic"],
-        "VN": ["tropic"],
-        "ID": ["tropic"],
-        "MY": ["tropic"],
-        "SG": ["tropic"],
         "": ["city"],
     ]
 
@@ -2381,786 +3117,6 @@ extension PixelCity {
         wwwwwwwwwwwwwww
         rrrrrrrrrrrrrrr
         wwwwwwwwwwwwwww
-        """),
-        "KZ": Flag(colors: ["b": 0x00AFCA, "y": 0xFEC50C], rows: """
-        bybbbbbbybbbbbb
-        bbbbbybbbbbybbb
-        bybbbbbyyybbbbb
-        bbbbbbyyyyybbbb
-        bybbbbbyyybbbbb
-        bbbbbybbbbbybbb
-        bybbyybbybbyybb
-        bbbbbyyyyyyybbb
-        bybbbbbbybbbbbb
-        bbbbbbbbbbbbbbb
-        """),
-        "KG": Flag(colors: ["r": 0xE8112D, "y": 0xFFEF00], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrryrryrryrrr
-        rrrrrryyyyyrrrr
-        rrrryyrrrrryyrr
-        rrrrryryryrrrrr
-        rrrryyrrrrryyrr
-        rrrrrryyyyyrrrr
-        rrrrryrryrryrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "TJ": Flag(colors: ["r": 0xCC0000, "w": 0xFFFFFF, "g": 0x006600, "y": 0xF8C300], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwywywywwwww
-        wwwwywwwwwywwww
-        wwwwwywywywwwww
-        wwwwwyyyyywwwww
-        ggggggggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        """),
-        "TM": Flag(colors: ["g": 0x00843D, "r": 0xD22630, "w": 0xFFFFFF, "y": 0xFFC72C], rows: """
-        gryrgwgwgwggggg
-        grwrggwgggggggg
-        gryrgwgwggggggg
-        grwrggggggggggg
-        gryrggggggggggg
-        grwrggggggggggg
-        gryrggggggggggg
-        grwrggggggggggg
-        gryrggggggggggg
-        grwrggggggggggg
-        """),
-        "AZ": Flag(colors: ["b": 0x00B5E2, "r": 0xEF3340, "g": 0x509E2F, "w": 0xFFFFFF], rows: """
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        rrrrrrwwrrrrrrr
-        rrrrrwrrrwrrrrr
-        rrrrrwrrwwwrrrr
-        rrrrrrwwrwrrrrr
-        ggggggggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        """),
-        "GE": Flag(colors: ["w": 0xFFFFFF, "r": 0xFF0000], rows: """
-        wwwwwwrrrwwwwww
-        wwrwwwrrrwwwrww
-        wrrrwwrrrwwrrrw
-        wwrwwwrrrwwwrww
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwrwwwrrrwwwrww
-        wrrrwwrrrwwrrrw
-        wwrwwwrrrwwwrww
-        wwwwwwrrrwwwwww
-        """),
-        "AM": Flag(colors: ["r": 0xD90012, "b": 0x0033A0, "o": 0xF2A800], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        ooooooooooooooo
-        ooooooooooooooo
-        ooooooooooooooo
-        """),
-        "BY": Flag(colors: ["r": 0xC8313E, "g": 0x4AA657, "w": 0xFFFFFF], rows: """
-        wrwrrrrrrrrrrrr
-        rwrrrrrrrrrrrrr
-        wrwrrrrrrrrrrrr
-        rwrrrrrrrrrrrrr
-        wrwrrrrrrrrrrrr
-        rwrrrrrrrrrrrrr
-        wrwrrrrrrrrrrrr
-        rwrgggggggggggg
-        wrwgggggggggggg
-        rwrgggggggggggg
-        """),
-        "UA": Flag(colors: ["b": 0x0057B7, "y": 0xFFD700], rows: """
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        """),
-        "MD": Flag(colors: ["b": 0x0046AE, "y": 0xFFD200, "r": 0xCC092F, "e": 0xA05A2C], rows: """
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbeyeyerrrrr
-        bbbbbeeeeerrrrr
-        bbbbbyeyeyrrrrr
-        bbbbbyyeyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        """),
-        "DE": Flag(colors: ["k": 0x000000, "r": 0xDD0000, "y": 0xFFCE00], rows: """
-        kkkkkkkkkkkkkkk
-        kkkkkkkkkkkkkkk
-        kkkkkkkkkkkkkkk
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        """),
-        "FR": Flag(colors: ["b": 0x0055A4, "w": 0xFFFFFF, "r": 0xEF4135], rows: """
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        bbbbbwwwwwrrrrr
-        """),
-        "IT": Flag(colors: ["g": 0x009246, "w": 0xFFFFFF, "r": 0xCE2B37], rows: """
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        """),
-        "ES": Flag(colors: ["r": 0xAA151B, "y": 0xF1BF00, "e": 0xC8102E, "o": 0xAD1519], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        yyyyyyyyyyyyyyy
-        yyyoyoyyyyyyyyy
-        yyyeyeyyyyyyyyy
-        yyyoooyyyyyyyyy
-        yyyyoyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "PT": Flag(colors: ["g": 0x006600, "r": 0xFF0000, "y": 0xFFE000, "w": 0xFFFFFF, "b": 0x003399], rows: """
-        ggggggrrrrrrrrr
-        ggggggrrrrrrrrr
-        gggggyyyrrrrrrr
-        ggggyrwryrrrrrr
-        ggggywbwyrrrrrr
-        ggggyrwryrrrrrr
-        gggggyyyrrrrrrr
-        ggggggrrrrrrrrr
-        ggggggrrrrrrrrr
-        ggggggrrrrrrrrr
-        """),
-        "GR": Flag(colors: ["b": 0x0D5EAF, "w": 0xFFFFFF], rows: """
-        bbwbbbbbbbbbbbb
-        bbwbbwwwwwwwwww
-        wwwwwbbbbbbbbbb
-        bbwbbwwwwwwwwww
-        bbwbbbbbbbbbbbb
-        wwwwwwwwwwwwwww
-        bbbbbbbbbbbbbbb
-        wwwwwwwwwwwwwww
-        bbbbbbbbbbbbbbb
-        wwwwwwwwwwwwwww
-        """),
-        "CY": Flag(colors: ["w": 0xFFFFFF, "o": 0xD57800, "g": 0x4E5B31], rows: """
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwoooowww
-        wwwwwooooooooww
-        wwwwoooooooowww
-        wwwwwwooowwwwww
-        wwwwwgwwwwwgwww
-        wwwwwwgggggwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        """),
-        "AT": Flag(colors: ["r": 0xED2939, "w": 0xFFFFFF], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "NL": Flag(colors: ["r": 0xAE1C28, "w": 0xFFFFFF, "b": 0x21468B], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        """),
-        "BE": Flag(colors: ["k": 0x000000, "y": 0xFAE042, "r": 0xED2939], rows: """
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        kkkkkyyyyyrrrrr
-        """),
-        "IE": Flag(colors: ["g": 0x169B62, "w": 0xFFFFFF, "o": 0xFF883E], rows: """
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        gggggwwwwwooooo
-        """),
-        "FI": Flag(colors: ["w": 0xFFFFFF, "b": 0x003580], rows: """
-        wwwwbbwwwwwwwww
-        wwwwbbwwwwwwwww
-        wwwwbbwwwwwwwww
-        wwwwbbwwwwwwwww
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        wwwwbbwwwwwwwww
-        wwwwbbwwwwwwwww
-        wwwwbbwwwwwwwww
-        wwwwbbwwwwwwwww
-        """),
-        "SE": Flag(colors: ["b": 0x006AA7, "y": 0xFECC00], rows: """
-        bbbbyybbbbbbbbb
-        bbbbyybbbbbbbbb
-        bbbbyybbbbbbbbb
-        bbbbyybbbbbbbbb
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        bbbbyybbbbbbbbb
-        bbbbyybbbbbbbbb
-        bbbbyybbbbbbbbb
-        bbbbyybbbbbbbbb
-        """),
-        "DK": Flag(colors: ["r": 0xC8102E, "w": 0xFFFFFF], rows: """
-        rrrrwwrrrrrrrrr
-        rrrrwwrrrrrrrrr
-        rrrrwwrrrrrrrrr
-        rrrrwwrrrrrrrrr
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        rrrrwwrrrrrrrrr
-        rrrrwwrrrrrrrrr
-        rrrrwwrrrrrrrrr
-        rrrrwwrrrrrrrrr
-        """),
-        "NO": Flag(colors: ["r": 0xBA0C2F, "w": 0xFFFFFF, "b": 0x00205B], rows: """
-        rrrrwbbwrrrrrrr
-        rrrrwbbwrrrrrrr
-        rrrrwbbwrrrrrrr
-        wwwwwbbwwwwwwww
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        wwwwwbbwwwwwwww
-        rrrrwbbwrrrrrrr
-        rrrrwbbwrrrrrrr
-        rrrrwbbwrrrrrrr
-        """),
-        "EE": Flag(colors: ["b": 0x0072CE, "k": 0x000000, "w": 0xFFFFFF], rows: """
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        kkkkkkkkkkkkkkk
-        kkkkkkkkkkkkkkk
-        kkkkkkkkkkkkkkk
-        kkkkkkkkkkkkkkk
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        """),
-        "LV": Flag(colors: ["r": 0x9E3039, "w": 0xFFFFFF], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "LT": Flag(colors: ["y": 0xFDB913, "g": 0x006A44, "r": 0xC1272D], rows: """
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        yyyyyyyyyyyyyyy
-        ggggggggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "SK": Flag(colors: ["w": 0xFFFFFF, "b": 0x0B4EA2, "r": 0xEE1C25], rows: """
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwrwrwwwwwwwww
-        bbwwwwwbbbbbbbb
-        bbwrwrwbbbbbbbb
-        bbwbbbwbbbbbbbb
-        bbwbbbwbbbbbbbb
-        rrrwwwrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "SI": Flag(colors: ["w": 0xFFFFFF, "b": 0x005DA4, "r": 0xED1C24, "y": 0xFFDD00], rows: """
-        wwwwwwwwwwwwwww
-        wwryyrwwwwwwwww
-        wwrbbrwwwwwwwww
-        bbrwbrbbbbbbbbb
-        bbwwwrbbbbbbbbb
-        bbbrrbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "HR": Flag(colors: ["r": 0xFF0000, "w": 0xFFFFFF, "b": 0x171796], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrbbbbbrrrrr
-        wwwwwrwrwrwwwww
-        wwwwwwrwrwwwwww
-        wwwwwrwrwrwwwww
-        wwwwwwrwrwwwwww
-        bbbbbbrwrbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        """),
-        "ME": Flag(colors: ["r": 0xC40308, "y": 0xD4AF37], rows: """
-        yyyyyyyyyyyyyyy
-        yrrrrrrrrrrrrry
-        yrrrryryryrrrry
-        yrrrryyyyyrrrry
-        yrrrrryyyrrrrry
-        yrrrryyyyyrrrry
-        yrrrrryryrrrrry
-        yrrrrrrrrrrrrry
-        yrrrrrrrrrrrrry
-        yyyyyyyyyyyyyyy
-        """),
-        "MT": Flag(colors: ["w": 0xFFFFFF, "r": 0xCF142B, "g": 0x9EA2A2], rows: """
-        wwwwwwwrrrrrrrr
-        wwgwwwwrrrrrrrr
-        wgggwwwrrrrrrrr
-        wwgwwwwrrrrrrrr
-        wwwwwwwrrrrrrrr
-        wwwwwwwrrrrrrrr
-        wwwwwwwrrrrrrrr
-        wwwwwwwrrrrrrrr
-        wwwwwwwrrrrrrrr
-        wwwwwwwrrrrrrrr
-        """),
-        "GB": Flag(colors: ["b": 0x012169, "w": 0xFFFFFF, "r": 0xC8102E], rows: """
-        rwbbbbwrwbbbbwr
-        wrwwbbwrwbbwwrw
-        bbwrwbwrwbwrwbb
-        wwwwwwwrwwwwwww
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwrwwwwwww
-        bbwrwbwrwbwrwbb
-        wrwwbbwrwbbwwrw
-        rwbbbbwrwbbbbwr
-        """),
-        "CH": Flag(colors: ["r": 0xDA291C, "w": 0xFFFFFF], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrwwwrrrrrr
-        rrrrrrwwwrrrrrr
-        rrrrwwwwwwwrrrr
-        rrrrwwwwwwwrrrr
-        rrrrrrwwwrrrrrr
-        rrrrrrwwwrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "CZ": Flag(colors: ["w": 0xFFFFFF, "r": 0xD7141A, "b": 0x11457E], rows: """
-        bbwwwwwwwwwwwww
-        bbbwwwwwwwwwwww
-        bbbbbwwwwwwwwww
-        bbbbbbwwwwwwwww
-        bbbbbbbwwwwwwww
-        bbbbbbbrrrrrrrr
-        bbbbbbrrrrrrrrr
-        bbbbbrrrrrrrrrr
-        bbbrrrrrrrrrrrr
-        bbrrrrrrrrrrrrr
-        """),
-        "PL": Flag(colors: ["w": 0xFFFFFF, "r": 0xDC143C], rows: """
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "HU": Flag(colors: ["r": 0xCE2939, "w": 0xFFFFFF, "g": 0x477050], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        ggggggggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        """),
-        "RS": Flag(colors: ["r": 0xC6363C, "b": 0x0C4076, "w": 0xFFFFFF, "y": 0xEDB92E], rows: """
-        rrrrrrrrrrrrrrr
-        rrrryyyrrrrrrrr
-        rrrryyyrrrrrrrr
-        bbbrwrwrbbbbbbb
-        bbbrwwwrbbbbbbb
-        bbbrrwrrbbbbbbb
-        bbbbrrrbbbbbbbb
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        """),
-        "BG": Flag(colors: ["w": 0xFFFFFF, "g": 0x00966E, "r": 0xD62612], rows: """
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        ggggggggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "RO": Flag(colors: ["b": 0x002B7F, "y": 0xFCD116, "r": 0xCE1126], rows: """
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        bbbbbyyyyyrrrrr
-        """),
-        "IL": Flag(colors: ["w": 0xFFFFFF, "b": 0x0038B8], rows: """
-        wwwwwwwwwwwwwww
-        bbbbbbbbbbbbbbb
-        wwwwwwwwwwwwwww
-        wwwwwwwbwwwwwww
-        wwwwwbbbbbwwwww
-        wwwwwwbwbwwwwww
-        wwwwwbbbbbwwwww
-        wwwwwwwbwwwwwww
-        bbbbbbbbbbbbbbb
-        wwwwwwwwwwwwwww
-        """),
-        "EG": Flag(colors: ["r": 0xCE1126, "w": 0xFFFFFF, "k": 0x000000, "y": 0xC09300], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        wwwwwwywywwwwww
-        wwwwwwyyywwwwww
-        wwwwwwwwwwwwwww
-        kkkkkkkkkkkkkkk
-        kkkkkkkkkkkkkkk
-        kkkkkkkkkkkkkkk
-        """),
-        "JO": Flag(colors: ["k": 0x000000, "w": 0xFFFFFF, "g": 0x007A3D, "r": 0xCE1126], rows: """
-        rrkkkkkkkkkkkkk
-        rrrkkkkkkkkkkkk
-        rrrrkkkkkkkkkkk
-        rrrrrwwwwwwwwww
-        rwrrrrwwwwwwwww
-        rwrrrrwwwwwwwww
-        rrrrrwwwwwwwwww
-        rrrrggggggggggg
-        rrrgggggggggggg
-        rrggggggggggggg
-        """),
-        "QA": Flag(colors: ["w": 0xFFFFFF, "m": 0x8A1538], rows: """
-        wwwwwmmmmmmmmmm
-        wwwwmmmmmmmmmmm
-        wwwwwmmmmmmmmmm
-        wwwwmmmmmmmmmmm
-        wwwwwmmmmmmmmmm
-        wwwwmmmmmmmmmmm
-        wwwwwmmmmmmmmmm
-        wwwwmmmmmmmmmmm
-        wwwwwmmmmmmmmmm
-        wwwwmmmmmmmmmmm
-        """),
-        "SA": Flag(colors: ["g": 0x006C35, "w": 0xFFFFFF], rows: """
-        ggggggggggggggg
-        ggggggggggggggg
-        gggwgwwgwgwwwgg
-        gggwwwwwwwwwggg
-        ggggggggggggggg
-        ggggggggggggggg
-        gggwwwwwwwwwggg
-        ggggwgggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        """),
-        "OM": Flag(colors: ["r": 0xDB161B, "w": 0xFFFFFF, "g": 0x008000], rows: """
-        rrrrwwwwwwwwwww
-        rwrwwwwwwwwwwww
-        rrwrwwwwwwwwwww
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrggggggggggg
-        rrrrggggggggggg
-        rrrrggggggggggg
-        """),
-        "BH": Flag(colors: ["w": 0xFFFFFF, "r": 0xCE1126], rows: """
-        wwwwwrrrrrrrrrr
-        wwwwrrrrrrrrrrr
-        wwwwwrrrrrrrrrr
-        wwwwrrrrrrrrrrr
-        wwwwwrrrrrrrrrr
-        wwwwrrrrrrrrrrr
-        wwwwwrrrrrrrrrr
-        wwwwrrrrrrrrrrr
-        wwwwwrrrrrrrrrr
-        wwwwrrrrrrrrrrr
-        """),
-        "KW": Flag(colors: ["g": 0x007A3D, "w": 0xFFFFFF, "r": 0xCE1126, "k": 0x000000], rows: """
-        kkggggggggggggg
-        kkkgggggggggggg
-        kkkkggggggggggg
-        kkkkkwwwwwwwwww
-        kkkkkwwwwwwwwww
-        kkkkkwwwwwwwwww
-        kkkkkwwwwwwwwww
-        kkkkrrrrrrrrrrr
-        kkkrrrrrrrrrrrr
-        kkrrrrrrrrrrrrr
-        """),
-        "IN": Flag(colors: ["o": 0xFF9933, "w": 0xFFFFFF, "g": 0x138808, "n": 0x000080], rows: """
-        ooooooooooooooo
-        ooooooooooooooo
-        ooooooooooooooo
-        wwwwwwnnnwwwwww
-        wwwwwwnwnwwwwww
-        wwwwwwnnnwwwwww
-        wwwwwwwwwwwwwww
-        ggggggggggggggg
-        ggggggggggggggg
-        ggggggggggggggg
-        """),
-        "LK": Flag(colors: ["y": 0xFFBE29, "g": 0x00534E, "o": 0xEB7400, "m": 0x8D153A], rows: """
-        yyyyyyyyyyyyyyy
-        yggooymmmmmmmmy
-        yggooymmmmmmmmy
-        yggooymmyymymmy
-        yggooymmyyyymmy
-        yggooymmmyymmmy
-        yggooymmymmymmy
-        yggooymmmmmmmmy
-        yggooymmmmmmmmy
-        yyyyyyyyyyyyyyy
-        """),
-        "MV": Flag(colors: ["r": 0xD21034, "g": 0x007E3A, "w": 0xFFFFFF], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrgggggggggrrr
-        rrrggggwwgggrrr
-        rrrgggwgggggrrr
-        rrrgggwgggggrrr
-        rrrggggwwgggrrr
-        rrrgggggggggrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "TH": Flag(colors: ["r": 0xA51931, "w": 0xF4F5F8, "b": 0x2D2A4A], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        bbbbbbbbbbbbbbb
-        wwwwwwwwwwwwwww
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "VN": Flag(colors: ["r": 0xDA251D, "y": 0xFFFF00], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrryrrrrrrr
-        rrrrryyyyyrrrrr
-        rrrrrryyyrrrrrr
-        rrrrrryryrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "ID": Flag(colors: ["r": 0xFF0000, "w": 0xFFFFFF], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        """),
-        "MY": Flag(colors: ["r": 0xCC0001, "w": 0xFFFFFF, "n": 0x010066, "y": 0xFFCC00], rows: """
-        nnnnnnnrrrrrrrr
-        nnyynnnwwwwwwww
-        nynnnynrrrrrrrr
-        nynnyynwwwwwwww
-        nnyynnnrrrrrrrr
-        nnnnnnnwwwwwwww
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        """),
-        "SG": Flag(colors: ["r": 0xEF3340, "w": 0xFFFFFF], rows: """
-        rrrrrrrrrrrrrrr
-        rrwwrwrrrrrrrrr
-        rwrrrwwrrrrrrrr
-        rrwwrwrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        """),
-        "CN": Flag(colors: ["r": 0xEE1C25, "y": 0xFFFF00], rows: """
-        rrrrrrrrrrrrrrr
-        rryrryrrrrrrrrr
-        ryyyrrrrrrrrrrr
-        rryrryrrrrrrrrr
-        ryryryrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "JP": Flag(colors: ["w": 0xFFFFFF, "r": 0xBC002D], rows: """
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwrrrwwwwww
-        wwwwwrrrrrwwwww
-        wwwwwrrrrrwwwww
-        wwwwwrrrrrwwwww
-        wwwwwwrrrwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        wwwwwwwwwwwwwww
-        """),
-        "KR": Flag(colors: ["w": 0xFFFFFF, "r": 0xCD2E3A, "b": 0x0047A0, "k": 0x000000], rows: """
-        wwwwwwwwwwwwwww
-        wkkwwwwwwwwwkkw
-        wkwwwwwwwwwwwkw
-        wwkwwwrrrwwwkww
-        wwwwwrrrrbwwwww
-        wwwwwrbbbbwwwww
-        wwkwwwbbbwwwkww
-        wkwwwwwwwwwwwkw
-        wkkwwwwwwwwwkkw
-        wwwwwwwwwwwwwww
-        """),
-        "MN": Flag(colors: ["r": 0xC4272F, "b": 0x015197, "y": 0xF9CF02], rows: """
-        rrrrrbbbbbrrrrr
-        rryrrbbbbbrrrrr
-        rryrrbbbbbrrrrr
-        ryyyrbbbbbrrrrr
-        rryrrbbbbbrrrrr
-        ryyyrbbbbbrrrrr
-        rryrrbbbbbrrrrr
-        rryrrbbbbbrrrrr
-        rryrrbbbbbrrrrr
-        rrrrrbbbbbrrrrr
-        """),
-        "CA": Flag(colors: ["r": 0xFF0000, "w": 0xFFFFFF], rows: """
-        rrrrwwwwwwwrrrr
-        rrrrwwwwwwwrrrr
-        rrrrwwwrwwwrrrr
-        rrrrwrwrwrwrrrr
-        rrrrwrrrrrwrrrr
-        rrrrwwrrrwwrrrr
-        rrrrwrrrrrwrrrr
-        rrrrwwwrwwwrrrr
-        rrrrwwwwwwwrrrr
-        rrrrwwwwwwwrrrr
-        """),
-        "MX": Flag(colors: ["g": 0x006847, "w": 0xFFFFFF, "r": 0xCE1126, "b": 0x8C5A2B], rows: """
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwbwwrrrrr
-        gggggwbbbwrrrrr
-        gggggwgbgwrrrrr
-        gggggwwgwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        gggggwwwwwrrrrr
-        """),
-        "MA": Flag(colors: ["r": 0xC1272D, "g": 0x006233], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrgrrrrrrr
-        rrrrrgggggrrrrr
-        rrrrrrgrgrrrrrr
-        rrrrrrgggrrrrrr
-        rrrrrgrrrgrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        """),
-        "TN": Flag(colors: ["r": 0xE70013, "w": 0xFFFFFF], rows: """
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrwwwrrrrrr
-        rrrrrwwrrwrrrrr
-        rrrrrwrwwrrrrrr
-        rrrrrwwrrwrrrrr
-        rrrrrrwwwrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
-        rrrrrrrrrrrrrrr
         """),
     ]
 }
