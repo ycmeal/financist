@@ -160,7 +160,7 @@ struct StatsContent: View {
             if keepAnchor { keepAnchor = false } else { anchor = .now }
         }
         .onChange(of: anchor) { selectedDay = nil }
-        .sheet(item: $editing) { ExpenseFormView(expense: $0) }
+        .sheet(item: $editing) { ExpenseDetailView(expense: $0) }
         .fullScreenCover(item: $addingOn) { AddExpenseView(presetDate: $0.date) }
         .onAppear(perform: applyJump)
         .onChange(of: store.statsJump) { applyJump() }

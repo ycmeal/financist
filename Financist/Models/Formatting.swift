@@ -106,6 +106,14 @@ enum RuDate {
         monthsGenitive[(calendar.component(.month, from: date)) - 1]
     }
 
+    static let monthsPrepositional = ["январе", "феврале", "марте", "апреле", "мае", "июне",
+                                      "июле", "августе", "сентябре", "октябре", "ноябре", "декабре"]
+
+    /// «октябре» — для «в октябре».
+    static func monthPrepositional(_ date: Date) -> String {
+        monthsPrepositional[(calendar.component(.month, from: date)) - 1]
+    }
+
     /// «28 октября»
     static func day(_ date: Date) -> String {
         "\(calendar.component(.day, from: date)) \(monthGenitive(date))"

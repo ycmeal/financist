@@ -65,7 +65,7 @@ struct ExpenseSearchView: View {
                     Button("Готово") { dismiss() }
                 }
             }
-            .sheet(item: $editing) { ExpenseFormView(expense: $0) }
+            .sheet(item: $editing) { ExpenseDetailView(expense: $0) }
             .undoToast()
             .task {
                 // Сразу ставим курсор в поле поиска, когда лист уже открылся.

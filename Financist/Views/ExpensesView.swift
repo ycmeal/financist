@@ -4,6 +4,7 @@ struct ExpensesView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.palette) private var palette
     @State private var editing: Expense?
+    @State private var viewing: Expense?
     @State private var repeating: Expense?
     @State private var isSearching = false
     @State private var showingSubscriptions = false
@@ -129,7 +130,8 @@ struct ExpensesView: View {
             .fullScreenCover(item: $repeating) { AddExpenseView(template: $0).zoomDestination($0.id, in: zoom) }
             .sheet(isPresented: $isSearching) { ExpenseSearchView() }
             .sheet(isPresented: $showingSubscriptions) { SubscriptionsView() }
-            .sheet(item: $editing) { ExpenseFormView(expense: $0).zoomDestination($0.id, in: zoom) }
+            .sheet(item: $viewing) { ExpenseDetailView(expense: $0).zoomDestination($0.id, in: zoom) }
+            .sheet(item: $editing) { ExpenseFormView(expense: $0) }
             .sheet(item: $openedTrial) { TrialEditView(trial: $0) }
             // Нажали на напоминание о пробной подписке — сразу спрашиваем про неё.
             .onChange(of: store.trialToOpen, initial: true) {
@@ -153,7 +155,8 @@ struct ExpensesView: View {
     }
 
     private func expenseButton(_ expense: Expense) -> some View {
-        Button { editing = expense } label: { ExpenseRow(expense: expense) }
+        // Нажатие — карточка траты; «Изменить» из меню — сразу форма правки.
+        Button { viewing = expense } label: { ExpenseRow(expense: expense) }
             .tint(Color.primary)
             .zoomSource(expense.id, in: zoom)
             .swipeActions(edge: .leading) {
@@ -432,6 +435,6 @@ struct ExpenseListView: View {
         .warmListBackground()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $editing) { ExpenseFormView(expense: $0) }
+        .sheet(item: $editing) { ExpenseDetailView(expense: $0) }
     }
 }
