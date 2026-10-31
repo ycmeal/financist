@@ -356,19 +356,34 @@ struct ExpenseRow: View {
     @Environment(AppStore.self) private var store
     let expense: Expense
     var showDate = false
+    /// Как у CategoryIcon: время под значком не шире самого значка.
+    @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 34
 
     var body: some View {
         let category = store.category(for: expense.categoryID)
         // Каждая трата — в двух валютах: вторая всегда доллары, а у трат в долларах — валюта итогов или ввода.
         let second = [Currency.usd, store.displayCurrency, store.vault.inputCurrency].first { $0 != expense.currency }
         HStack(alignment: .top, spacing: 12) {
-            CategoryIcon(category: category)
+            // Время — мелко под значком, чтобы в строке не было «категория · время · оплата» подряд.
+            VStack(spacing: 5) {
+                CategoryIcon(category: category)
+                Text(RuDate.time(expense.date))
+                    .font(.caption2)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: iconSize)
+            }
             AdaptiveRow(spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(expense.note.isEmpty ? category.name : expense.note)
-                    Text(subtitle(category))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    let sub = subtitle(category)
+                    if !sub.isEmpty {
+                        Text(sub)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Spacer(minLength: 0)
                 VStack(alignment: .trailing, spacing: 2) {
@@ -387,10 +402,13 @@ struct ExpenseRow: View {
         .padding(.vertical, 2)
     }
 
+    /// «Продукты · картой»; в списках из «Итогов» и поиска — ещё и день: «Продукты · Пн, 26 октября · картой».
     private func subtitle(_ category: ExpenseCategory) -> String {
-        let when = showDate ? RuDate.dayTitle(expense.date) : RuDate.time(expense.date)
-        let paid = expense.payment.map { " · \($0.phrase)" } ?? ""
-        return (expense.note.isEmpty ? when : "\(category.name) · \(when)") + paid
+        var parts: [String] = []
+        if !expense.note.isEmpty { parts.append(category.name) }
+        if showDate { parts.append(RuDate.dayTitle(expense.date)) }
+        if let payment = expense.payment { parts.append(payment.phrase) }
+        return parts.joined(separator: " · ")
     }
 }
 
